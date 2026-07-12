@@ -21,11 +21,24 @@ claude auth status
 
 ## Install AI Tray (macOS)
 
-1. Build or obtain `AI Tray.app` (see [Packaging](RH-003-packaging.md)).
-2. Move to `/Applications` (optional).
-3. Open the app (first open may require **System Settings → Privacy & Security** approval for unsigned builds).
-4. Look for the **menu bar** icon (window may start hidden).
-5. Use tray menu → **Open** or **Settings**.
+1. Build Release:
+
+```bash
+cd ai_tray
+flutter build macos --release
+```
+
+2. Clear Gatekeeper quarantine on the local build (unsigned apps are blocked when double-clicked):
+
+```bash
+xattr -cr "build/macos/Build/Products/Release/AI Tray.app"
+```
+
+3. Open `AI Tray.app` (or move to `/Applications` first).
+4. If macOS still blocks it: **right-click → Open**, or **System Settings → Privacy & Security → Open Anyway**.
+5. You should see the usage window and a menu bar icon. Closing the window hides to the tray (does not quit).
+
+> Debug (`flutter run -d macos`) bypasses Gatekeeper; Release `.app` double-click does not. That is why Debug can work while the Release `.app` looks broken.
 
 ## Install AI Tray (Windows — Experimental)
 

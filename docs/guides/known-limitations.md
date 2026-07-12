@@ -6,7 +6,7 @@
 4. **Free-text parser.** Format churn from Claude Code can break parsing until fixtures/parser update.
 5. **Windows is Experimental (PD-010).** macOS is the officially validated platform for v1.0.0; Windows validation is deferred to **S-001A**.
 6. **Unsigned macOS builds.** Gatekeeper friction; no notarization in RC1.
-7. **Placeholder app icons.** Stock Flutter artwork.
+7. **App Sandbox is disabled** on macOS so the app can spawn Claude CLI. Do not re-enable without an alternate usage data path.
 8. **PATH differences** between Terminal and GUI may require CLI path override.
 9. **No charts / history / multi-account.** Feature-frozen for RC1.
 10. **Accessibility** not audited (deferred).

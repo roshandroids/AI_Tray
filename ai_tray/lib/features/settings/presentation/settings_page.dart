@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/di/providers.dart';
+import 'package:ai_tray/core/theme/app_theme_mode.dart';
+import 'package:ai_tray/core/theme/spacing.dart';
+import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/core/theme/theme_controller.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +53,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     await _reload();
   }
 
+  Future<void> _setTheme(AppThemePreference mode) async {
+    await ref.read(themeControllerProvider.notifier).setPreference(mode);
+    await _reload();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themePref = ref.watch(themeControllerProvider).value;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: FutureBuilder<AppSettings>(
@@ -60,9 +71,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             return const Center(child: CircularProgressIndicator());
           }
           final settings = snapshot.data!;
+          final selectedTheme = themePref ?? settings.themeMode;
+
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(Spacing.lg),
             children: [
+              Text('Theme', style: context.typography.sectionTitle),
+              const SizedBox(height: Spacing.sm),
+              SegmentedButton<AppThemePreference>(
+                segments: const [
+                  ButtonSegment(
+                    value: AppThemePreference.system,
+                    label: Text('System'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemePreference.dark,
+                    label: Text('Dark'),
+                  ),
+                  ButtonSegment(
+                    value: AppThemePreference.light,
+                    label: Text('Light'),
+                  ),
+                ],
+                selected: {selectedTheme},
+                onSelectionChanged: (selected) {
+                  if (selected.isEmpty) return;
+                  unawaited(_setTheme(selected.first));
+                },
+              ),
+              const SizedBox(height: Spacing.lg),
+              const Divider(),
+              const SizedBox(height: Spacing.sm),
               SwitchListTile(
                 title: const Text('Auto refresh'),
                 value: settings.autoRefreshEnabled,
@@ -77,6 +116,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 subtitle: Text('${settings.refreshInterval.inSeconds}s'),
                 trailing: DropdownButton<int>(
                   value: settings.refreshInterval.inSeconds,
+                  dropdownColor: context.colors.surfaceRaised,
+                  style: context.typography.body,
                   items: const [
                     DropdownMenuItem(value: 30, child: Text('30s')),
                     DropdownMenuItem(value: 45, child: Text('45s')),
@@ -110,6 +151,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 trailing: DropdownButton<double?>(
                   value: settings.notifyAtSessionPercent,
+                  dropdownColor: context.colors.surfaceRaised,
+                  style: context.typography.body,
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Off')),
                     DropdownMenuItem(value: 50, child: Text('50%')),
@@ -127,6 +170,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           showStaleIndicator: settings.showStaleIndicator,
                           notifyAtSessionPercent: value,
                           claudeBinaryPath: settings.claudeBinaryPath,
+                          themeMode: settings.themeMode,
                         ),
                       ),
                     );
@@ -149,12 +193,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   );
                 },
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: Spacing.md),
               TextField(
                 controller: _binaryController,
+                style: context.typography.body,
                 decoration: const InputDecoration(
                   labelText: 'Claude binary path (optional)',
-                  border: OutlineInputBorder(),
                 ),
                 onSubmitted: (value) {
                   unawaited(
@@ -168,6 +212,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         notifyAtSessionPercent: settings.notifyAtSessionPercent,
                         claudeBinaryPath:
                             value.trim().isEmpty ? null : value.trim(),
+                        themeMode: settings.themeMode,
                       ),
                     ),
                   );

@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:meta/meta.dart';
 
 /// User-configurable MVP preferences.
@@ -11,6 +12,7 @@ final class AppSettings {
     required bool showStaleIndicator,
     double? notifyAtSessionPercent,
     String? claudeBinaryPath,
+    AppThemePreference themeMode = AppThemePreference.system,
   }) {
     _validateRefreshInterval(refreshInterval);
     final threshold = notifyAtSessionPercent;
@@ -26,6 +28,7 @@ final class AppSettings {
       launchAtLogin: launchAtLogin,
       claudeBinaryPath: (path == null || path.isEmpty) ? null : path,
       showStaleIndicator: showStaleIndicator,
+      themeMode: themeMode,
     );
   }
 
@@ -37,6 +40,7 @@ final class AppSettings {
     required this.launchAtLogin,
     required this.claudeBinaryPath,
     required this.showStaleIndicator,
+    required this.themeMode,
   });
 
   /// MVP defaults aligned with planning (60s auto-refresh).
@@ -61,6 +65,7 @@ final class AppSettings {
   final bool launchAtLogin;
   final String? claudeBinaryPath;
   final bool showStaleIndicator;
+  final AppThemePreference themeMode;
 
   AppSettings copyWith({
     bool? autoRefreshEnabled,
@@ -70,6 +75,7 @@ final class AppSettings {
     bool? launchAtLogin,
     String? claudeBinaryPath,
     bool? showStaleIndicator,
+    AppThemePreference? themeMode,
   }) {
     return AppSettings(
       autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
@@ -80,6 +86,7 @@ final class AppSettings {
       launchAtLogin: launchAtLogin ?? this.launchAtLogin,
       claudeBinaryPath: claudeBinaryPath ?? this.claudeBinaryPath,
       showStaleIndicator: showStaleIndicator ?? this.showStaleIndicator,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
@@ -92,7 +99,8 @@ final class AppSettings {
         other.notifyAtSessionPercent == notifyAtSessionPercent &&
         other.launchAtLogin == launchAtLogin &&
         other.claudeBinaryPath == claudeBinaryPath &&
-        other.showStaleIndicator == showStaleIndicator;
+        other.showStaleIndicator == showStaleIndicator &&
+        other.themeMode == themeMode;
   }
 
   @override
@@ -104,6 +112,7 @@ final class AppSettings {
         launchAtLogin,
         claudeBinaryPath,
         showStaleIndicator,
+        themeMode,
       );
 }
 

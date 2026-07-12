@@ -3,8 +3,11 @@ import FlutterMacOS
 
 @main
 class AppDelegate: FlutterAppDelegate {
-  override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    return true
+  /// Menu bar apps must keep running when the usage window is hidden.
+  override func applicationShouldTerminateAfterLastWindowClosed(
+    _ sender: NSApplication
+  ) -> Bool {
+    return false
   }
 
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {

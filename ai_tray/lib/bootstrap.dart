@@ -46,4 +46,9 @@ Future<void> bootstrap({
       child: const AiTrayApp(),
     ),
   );
+
+  // Release + Finder launches need the window shown after the first frame.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(ensureDesktopWindowVisible(appLogger));
+  });
 }

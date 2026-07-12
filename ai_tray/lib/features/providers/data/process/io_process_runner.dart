@@ -5,6 +5,7 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/providers/data/process/desktop_process_environment.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 
 /// Production [ProcessRunner] backed by `dart:io` [Process].
@@ -21,16 +22,20 @@ final class IoProcessRunner implements ProcessRunner {
     String? workingDirectory,
   }) async {
     final started = DateTime.now().toUtc();
+    final resolved = DesktopProcessEnvironment.resolveExecutable(executable);
+    final environment = DesktopProcessEnvironment.enriched();
     _logger.debug(
-      'process start executable=$executable args=${arguments.join(' ')}',
+      'process start executable=$resolved args=${arguments.join(' ')}',
       name: 'process_runner',
     );
 
     try {
       final process = await Process.start(
-        executable,
+        resolved,
         arguments,
         workingDirectory: workingDirectory,
+        environment: environment,
+        includeParentEnvironment: true,
       );
       // Close stdin for non-interactive Claude -p usage.
       // ignore: unawaited_futures -- fire-and-forget stdin close
@@ -83,12 +88,14 @@ final class IoProcessRunner implements ProcessRunner {
         stackTrace: stackTrace,
         failure: AppFailure(
           code: FailureCode.processLaunchFailed,
-          message: 'Could not start $executable',
+          message: 'Could not start $resolved',
           detail: error.message,
         ),
       );
-      final notFound = error.message.toLowerCase().contains('no such file') ||
-          error.errorCode == 2;
+      final lower = error.message.toLowerCase();
+      final notFound = lower.contains('no such file') || error.errorCode == 2;
+      final denied =
+          lower.contains('operation not permitted') || error.errorCode == 1;
       return Result.failure(
         AppFailure(
           code: notFound
@@ -96,7 +103,9 @@ final class IoProcessRunner implements ProcessRunner {
               : FailureCode.processLaunchFailed,
           message: notFound
               ? 'Claude CLI was not found'
-              : 'Could not start $executable',
+              : denied
+              ? 'macOS blocked launching Claude CLI'
+              : 'Could not start $resolved',
           detail: error.message,
         ),
       );

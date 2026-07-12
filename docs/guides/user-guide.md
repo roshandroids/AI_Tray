@@ -13,6 +13,8 @@ AI Tray shows your **Claude Code subscription usage** in the macOS menu bar or W
 
 Closing the window (traffic light / X) **hides** the app to the tray; it does not quit.
 
+On launch, the usage window opens so you can confirm the app started. Use the tray after you close the window.
+
 ## Usage window
 
 - **Live** — Latest successful parse (Shape A).

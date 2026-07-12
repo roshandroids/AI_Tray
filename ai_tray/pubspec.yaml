@@ -27,3 +27,12 @@ flutter:
   assets:
     - assets/tray/tray_icon_32.png
     - assets/tray/tray_icon.ico
+  fonts:
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Regular.otf
+          weight: 400
+        - asset: assets/fonts/IBMPlexMono-Medium.otf
+          weight: 500
+        - asset: assets/fonts/IBMPlexMono-SemiBold.otf
+          weight: 600

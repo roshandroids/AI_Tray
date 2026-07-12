@@ -8,7 +8,7 @@ import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -25,12 +25,13 @@ Future<void> initializeDesktopShell(AppLogger logger) async {
   const options = WindowOptions(
     size: Size(420, 560),
     center: true,
-    skipTaskbar: true,
+    // Keep Dock presence so double-clicking the .app is discoverable.
+    skipTaskbar: false,
     titleBarStyle: TitleBarStyle.normal,
   );
   await windowManager.waitUntilReadyToShow(options, () async {
     await windowManager.setPreventClose(true);
-    await windowManager.hide();
+    // Visibility is finalized after the first Flutter frame (Release-safe).
   });
 
   try {
@@ -49,6 +50,19 @@ Future<void> initializeDesktopShell(AppLogger logger) async {
     );
   } on Exception catch (error) {
     logger.warning('launch_at_startup setup failed: $error', name: 'tray');
+  }
+}
+
+/// Shows and focuses the main window (call after runApp / first frame).
+Future<void> ensureDesktopWindowVisible(AppLogger logger) async {
+  if (kIsWeb || !(Platform.isMacOS || Platform.isWindows)) {
+    return;
+  }
+  try {
+    await windowManager.show();
+    await windowManager.focus();
+  } on Exception catch (error) {
+    logger.warning('show window failed: $error', name: 'tray');
   }
 }
 
@@ -101,7 +115,7 @@ final class TrayController with TrayListener, WindowListener {
     final label = usage == null
         ? 'Usage unavailable'
         : 'Session ${usage.sessionUsedPercent.toStringAsFixed(0)}%'
-            '${usage.isFromCache ? ' (cached)' : ''}';
+              '${usage.isFromCache ? ' (cached)' : ''}';
 
     await trayManager.setContextMenu(
       Menu(
@@ -158,6 +172,16 @@ final class TrayController with TrayListener, WindowListener {
       } else {
         await launchAtStartup.disable();
       }
+    } on MissingPluginException catch (error) {
+      logger.warning(
+        'launchAtLogin unavailable (rebuild macOS runner): $error',
+        name: 'tray',
+      );
+    } on PlatformException catch (error) {
+      logger.warning(
+        'launchAtLogin update failed: ${error.code} ${error.message}',
+        name: 'tray',
+      );
     } on Exception catch (error) {
       logger.warning('launchAtLogin update failed: $error', name: 'tray');
     }

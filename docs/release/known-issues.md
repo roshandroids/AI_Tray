@@ -14,7 +14,9 @@
 | KI-08 | Accessibility not audited | Medium | Deferred | Open |
 | KI-09 | Sleep/wake auto-refresh not proven in automated tests | Medium | Run RH-002 §10 during dogfood | Open |
 | KI-10 | Manual QA checklist not fully executed in hardening session | Medium | Dogfood + complete RH-002 | Open |
-| KI-11 | macOS Info.plist short version shows `1.0.0.1` for pubspec `1.0.0-rc.1+1` | Low | Rely on git tag `v1.0.0-rc1` / release notes | Open |
+| KI-12 | macOS App Sandbox blocked `claude` process launch (`Operation not permitted`) | Critical | Sandbox on + temporary exceptions for Homebrew/`usr/local` + `~/.claude` (dogfood) | **Fixed** |
+| KI-13 | macOS “access all folders” / Files and Folders prompts | Medium | Avoid full-PATH `existsSync` probes; keep sandbox + narrow exceptions | **Fixed** |
+| KI-13 | App quit immediately after hide-on-startup (`applicationShouldTerminateAfterLastWindowClosed == true`) | Critical | AppDelegate returns `false` (dogfood fix) | **Fixed** |
 
 ## Dogfood log template
 

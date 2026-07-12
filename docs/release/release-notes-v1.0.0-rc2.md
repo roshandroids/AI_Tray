@@ -61,3 +61,41 @@ See [Known Issues](known-issues.md).
 ## Bug-fix bar (during dogfood)
 
 Every user-visible fix must include: root cause · resolution · regression test (when practical) · release note update.
+
+## Dogfood fixes (post-tag)
+
+### macOS: Claude CLI “Operation not permitted”
+
+| | |
+|--|--|
+| **Root cause** | Default App Sandbox blocked `Process.start` for the external `claude` binary |
+| **Resolution** | Keep App Sandbox **on** with temporary absolute-path exceptions for `/opt/homebrew/`, `/usr/local/`, `/usr/bin/`, home-relative `.claude/` access, and network client; resolve `claude` only via known CLI prefixes (no full-PATH FS probes) |
+| **Regression** | `test/unit/process/io_process_runner_test.dart`; Release `.app` refresh success with sandboxed entitlements |
+| **User impact** | Usage refresh works without unsandboxed “all folders” exposure |
+
+### macOS: App exits immediately after launch (“Lost connection to device”)
+
+| | |
+|--|--|
+| **Root cause** | Startup hides the window for tray mode, but `applicationShouldTerminateAfterLastWindowClosed` returned `true`, so AppKit quit the process (exit 0) as soon as the window was hidden — often right as Claude CLI spawn began |
+| **Resolution** | Return `false` from `applicationShouldTerminateAfterLastWindowClosed` in `AppDelegate.swift` |
+| **Regression** | Manual: launch Debug/Release `.app` and confirm process stays alive with tray icon; automated entitlements/AppDelegate source check |
+| **User impact** | App remains in the menu bar and can complete usage refresh |
+
+### macOS: Launch at login MissingPluginException
+
+| | |
+|--|--|
+| **Root cause** | `launch_at_startup` requires a manual macOS method channel; it is not registered by `GeneratedPluginRegistrant` |
+| **Resolution** | Implement `launch_at_startup` channel in `MainFlutterWindow.swift` using `SMAppService` (macOS 13+) |
+| **Regression** | Manual Settings toggle after full rebuild; MissingPluginException warnings should stop |
+| **User impact** | Launch-at-login toggle can talk to Login Items |
+
+### macOS: Release build appears not to open
+
+| | |
+|--|--|
+| **Root cause** | Startup hid the window and used `skipTaskbar: true`, so Finder launch showed no Dock/window while the process ran in the menu bar |
+| **Resolution** | Show + focus window on cold start; keep Dock presence; close still hides to tray |
+| **Regression** | Launch Release `.app` and confirm window appears; close → tray; tray Open → window |
+| **User impact** | Double-clicking the Release app visibly opens AI Tray |

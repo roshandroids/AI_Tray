@@ -2,11 +2,27 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Sandbox on: limits default FS access vs unsandboxed "all folders". -->
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
 	<key>com.apple.security.cs.allow-jit</key>
 	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
 	<key>com.apple.security.network.server</key>
 	<true/>
+	<!-- Static read/exec extension for common Claude install prefixes. -->
+	<key>com.apple.security.temporary-exception.files.absolute-path.read-only</key>
+	<array>
+		<string>/opt/homebrew/</string>
+		<string>/usr/local/</string>
+		<string>/usr/bin/</string>
+	</array>
+	<!-- Claude stores auth/session under ~/.claude. -->
+	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+	<array>
+		<string>.claude/</string>
+		<string>.config/claude/</string>
+	</array>
 </dict>
 </plist>

@@ -1,6 +1,7 @@
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
@@ -21,21 +22,25 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
       return AppSettings(
         autoRefreshEnabled:
             _prefs.getBool('${_prefix}autoRefreshEnabled') ??
-                defaults.autoRefreshEnabled,
+            defaults.autoRefreshEnabled,
         refreshInterval: intervalSeconds == null
             ? defaults.refreshInterval
             : Duration(seconds: intervalSeconds.clamp(30, 60)),
         notificationsEnabled:
             _prefs.getBool('${_prefix}notificationsEnabled') ??
-                defaults.notificationsEnabled,
+            defaults.notificationsEnabled,
         launchAtLogin:
             _prefs.getBool('${_prefix}launchAtLogin') ?? defaults.launchAtLogin,
         showStaleIndicator:
             _prefs.getBool('${_prefix}showStaleIndicator') ??
-                defaults.showStaleIndicator,
-        notifyAtSessionPercent:
-            _prefs.getDouble('${_prefix}notifyAtSessionPercent'),
+            defaults.showStaleIndicator,
+        notifyAtSessionPercent: _prefs.getDouble(
+          '${_prefix}notifyAtSessionPercent',
+        ),
         claudeBinaryPath: _prefs.getString('${_prefix}claudeBinaryPath'),
+        themeMode: AppThemePreference.fromStorage(
+          _prefs.getString('${_prefix}themeMode'),
+        ),
       );
     } on Exception {
       return AppSettings.defaults();
@@ -81,6 +86,10 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
           settings.claudeBinaryPath!,
         );
       }
+      await _prefs.setString(
+        '${_prefix}themeMode',
+        settings.themeMode.storageValue,
+      );
       return const Result.success(Unit.unit);
     } on Exception {
       return const Result.failure(
@@ -95,7 +104,7 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
 
 final class InMemorySettingsRepository implements SettingsRepository {
   InMemorySettingsRepository([AppSettings? initial])
-      : _settings = initial ?? AppSettings.defaults();
+    : _settings = initial ?? AppSettings.defaults();
 
   AppSettings _settings;
 
