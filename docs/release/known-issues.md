@@ -1,4 +1,6 @@
-# Known Issues — v1.0.0-rc.1
+# Known Issues — v1.0.0-rc.2
+
+**Active release:** `v1.0.0-rc2` · dogfooding (PD-011)
 
 | ID | Issue | Severity | Workaround | Status |
 |--|--|--|--|--|

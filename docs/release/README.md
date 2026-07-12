@@ -1,10 +1,15 @@
-# Release Hardening Index (RC1)
+# Release Index
+
+**Current:** **v1.0.0-rc2** · dogfooding ([PD-011](PD-011-rc2-dogfooding.md))  
+**Release notes:** [release-notes-v1.0.0-rc2.md](release-notes-v1.0.0-rc2.md)  
+**Postmortem:** [../POSTMORTEM.md](../POSTMORTEM.md)  
+**Feature freeze:** no new features — critical bugs, stability, docs only
+
+## RC1 hardening (historical)
 
 **Decision:** Product Owner Decision 007 — Release Hardening  
-**Closure:** Product Owner Decision 008 — MVP complete; dogfooding  
-**Version:** `1.0.0-rc.1` · tag `v1.0.0-rc1`  
-**Postmortem:** [../POSTMORTEM.md](../POSTMORTEM.md)  
-**Feature freeze:** analytics, charts, multi-provider/account, UI redesigns, new settings, architecture refactors — **not permitted**
+**Closure:** Product Owner Decision 008 — MVP complete  
+**Version:** `1.0.0-rc.1` · tag `v1.0.0-rc1`
 
 ## RH tasks
 
@@ -18,11 +23,12 @@
 
 ## Final deliverables
 
-1. [Release Notes (RC1)](release-notes-v1.0.0-rc1.md) — titled for v1.0.0 line; artifact is **rc.1**
+1. [Release Notes (RC2)](release-notes-v1.0.0-rc2.md) · [RC1](release-notes-v1.0.0-rc1.md)
 2. [Final QA Report](final-qa-report.md)
 3. [Known Issues](known-issues.md)
 4. [Technical Debt Report](RH-005-technical-debt.md)
 5. [Recommended v1.1 Roadmap](v1.1-product-roadmap.md)
+6. [PD-011 Dogfooding](PD-011-rc2-dogfooding.md)
 
 ## Guides (RH-004)
 

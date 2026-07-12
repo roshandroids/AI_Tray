@@ -1,21 +1,19 @@
 # Documentation Index
 
-**Project status:** MVP complete · Phase 2 complete · **Ship RC2** recommended ([S-010](stabilization/S-010-ga-recommendation.md))  
+**Project status:** **v1.0.0-rc2** · dogfooding (PD-011) · feature freeze  
 **Platforms:** macOS validated · Windows Experimental ([PD-010](stabilization/PD-010-defer-windows.md))  
 **Postmortem:** [POSTMORTEM.md](POSTMORTEM.md)  
-**Phase 2:** [../AI_Tray_Phase2_Stabilization_Checklist.md](../AI_Tray_Phase2_Stabilization_Checklist.md) · [stabilization/](stabilization/) · [STABILIZATION_REPORT.md](stabilization/STABILIZATION_REPORT.md)
+**Phase 2:** [STABILIZATION_REPORT.md](stabilization/STABILIZATION_REPORT.md) · [S-010](stabilization/S-010-ga-recommendation.md)
 
 ## Start here
 
 | Doc | Description |
 |--|--|
-| [POSTMORTEM.md](POSTMORTEM.md) | Lessons learned; process closure |
-| [../AI_Tray_Phase2_Stabilization_Checklist.md](../AI_Tray_Phase2_Stabilization_Checklist.md) | Phase 2 stabilization checklist |
-| [stabilization/README.md](stabilization/README.md) | Phase 2 progress log |
-| [stabilization/STABILIZATION_REPORT.md](stabilization/STABILIZATION_REPORT.md) | Aggregate stabilization report |
-| [stabilization/S-010-ga-recommendation.md](stabilization/S-010-ga-recommendation.md) | GA / RC2 recommendation |
-| [dogfood/feedback-checklist.md](dogfood/feedback-checklist.md) | Dogfood feedback checklist |
-| [guides/installation.md](guides/installation.md) | Install & first run |
+| [release/release-notes-v1.0.0-rc2.md](release/release-notes-v1.0.0-rc2.md) | RC2 release notes |
+| [release/PD-011-rc2-dogfooding.md](release/PD-011-rc2-dogfooding.md) | Dogfood policy |
+| [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
+| [dogfood/daily-observation-log.md](dogfood/daily-observation-log.md) | Daily running log |
+| [POSTMORTEM.md](POSTMORTEM.md) | Lessons learned |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
 | [release/README.md](release/README.md) | RC1 hardening & final deliverables |

@@ -2,8 +2,8 @@
 
 Flutter desktop companion for Claude Code subscription usage (macOS menu bar / Windows system tray).
 
-**Status:** MVP complete · **v1.0.0-rc.1** (`1.0.0-rc.1+1`) · dogfooding  
-**Docs:** [../docs/README.md](../docs/README.md) · [Install](../docs/guides/installation.md) · [User guide](../docs/guides/user-guide.md)
+**Status:** **v1.0.0-rc.2** (`1.0.0-rc.2+2`) · dogfooding · feature freeze (PD-011)  
+**Docs:** [../docs/README.md](../docs/README.md) · [RC2 notes](../docs/release/release-notes-v1.0.0-rc2.md) · [Install](../docs/guides/installation.md)
 
 ## Prerequisites
 
