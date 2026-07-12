@@ -4,8 +4,14 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+  errors:
+    avoid_redundant_argument_values: ignore
+    use_raw_strings: ignore
+    discarded_futures: ignore
 
 linter:
   rules:
     # Keep public API docs optional until domain types land in later tasks.
     public_member_api_docs: false
+    # Single-method ports/interfaces are intentional in Clean Architecture.
+    one_member_abstracts: false

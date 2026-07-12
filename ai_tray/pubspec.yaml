@@ -10,7 +10,12 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.2
+  launch_at_startup: ^0.5.1
+  local_notifier: ^0.1.6
   meta: ^1.17.0
+  shared_preferences: ^2.5.5
+  tray_manager: ^0.5.3
+  window_manager: ^0.5.2
 
 dev_dependencies:
   flutter_test:
