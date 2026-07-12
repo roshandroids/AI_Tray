@@ -5,6 +5,7 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/tray/presentation/tray_menu_builder.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:flutter/foundation.dart';
@@ -111,25 +112,16 @@ final class TrayController with TrayListener, WindowListener {
   }
 
   Future<void> _rebuildMenu(RefreshStatus status) async {
-    final usage = status.lastResult?.usage;
-    final label = usage == null
-        ? 'Usage unavailable'
-        : 'Session ${usage.sessionUsedPercent.toStringAsFixed(0)}%'
-              '${usage.isFromCache ? ' (cached)' : ''}';
-
-    await trayManager.setContextMenu(
-      Menu(
-        items: [
-          MenuItem(key: 'status', label: label, disabled: true),
-          MenuItem.separator(),
-          MenuItem(key: 'open', label: 'Open'),
-          MenuItem(key: 'refresh', label: 'Refresh'),
-          MenuItem(key: 'settings', label: 'Settings'),
-          MenuItem.separator(),
-          MenuItem(key: 'quit', label: 'Quit'),
-        ],
-      ),
-    );
+    final snapshot = TrayMenuBuilder.fromStatus(status);
+    await trayManager.setContextMenu(snapshot.buildMenu());
+    await trayManager.setToolTip(snapshot.toolTip);
+    if (Platform.isMacOS) {
+      try {
+        await trayManager.setTitle(snapshot.iconTitle);
+      } on Exception catch (error) {
+        logger.warning('tray title failed: $error', name: 'tray');
+      }
+    }
   }
 
   @override
