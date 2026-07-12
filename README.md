@@ -12,6 +12,7 @@ Native desktop companion for **Claude Code** subscription usage (macOS menu bar 
 | App package | [ai_tray/](ai_tray/) · [ai_tray/README.md](ai_tray/README.md) |
 | Docs index | [docs/README.md](docs/README.md) |
 | **RC2 release notes** | [docs/release/release-notes-v1.0.0-rc2.md](docs/release/release-notes-v1.0.0-rc2.md) |
+| **CI/CD** | [docs/release/CI-CD.md](docs/release/CI-CD.md) |
 | **Dogfooding** | [docs/dogfood/README.md](docs/dogfood/README.md) · [daily log](docs/dogfood/daily-observation-log.md) |
 | PD-011 | [docs/release/PD-011-rc2-dogfooding.md](docs/release/PD-011-rc2-dogfooding.md) |
 | Install | [docs/guides/installation.md](docs/guides/installation.md) |
