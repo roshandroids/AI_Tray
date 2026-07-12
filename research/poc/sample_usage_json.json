@@ -1,0 +1,31 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 122,
+  "duration_api_ms": 0,
+  "num_turns": 0,
+  "result": "You are currently using your subscription to power your Claude Code usage\n\nWhat's contributing to your limits usage?\nApproximate, based on local sessions on this machine — does not include other devices or claude.ai. Behaviors are independent characteristics, not a breakdown.\n\nLast 24h · 246 requests · 3 sessions\n  100% of your usage was at >150k context\n\nLast 7d · 2674 requests · 20 sessions\n  85% of your usage came from subagent-heavy sessions\n  72% of your usage came from sessions active for 8+ hours\n  67% of your usage was at >150k context\n  Top skills: /commits-skill 1%, /06-review-feedback 1%, /01-story-intake 1%, /artifact-design 1%\n  Top subagents: fork 2%, Explore 1%\n  Top MCP servers: ccd_session 5%, claude.ai Atlassian Rovo 3%",
+  "stop_reason": null,
+  "session_id": "a085cd36-b289-4eab-8b50-04d7a79db18e",
+  "total_cost_usd": 0,
+  "usage": {
+    "input_tokens": 0,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "output_tokens": 0,
+    "server_tool_use": { "web_search_requests": 0, "web_fetch_requests": 0 },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "modelUsage": {},
+  "permission_denials": [],
+  "fast_mode_state": "off",
+  "uuid": "b2afd5a0-0377-4801-9524-85304e284acc"
+}
