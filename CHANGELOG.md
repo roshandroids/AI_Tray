@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-07-12
+
 ### Added
 - GitHub Actions CI (Format, Analyze, Test, Build macOS) and tagged Release workflow (PD-016).
 - One-command release script: `scripts/release/publish.sh`.

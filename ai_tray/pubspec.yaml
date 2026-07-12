@@ -1,7 +1,7 @@
 name: ai_tray
 description: Native desktop companion for Claude Code usage (macOS menu bar / Windows tray).
 publish_to: "none"
-version: 1.0.0-rc.2+2
+version: 1.0.0+3
 
 environment:
   sdk: ^3.10.8
