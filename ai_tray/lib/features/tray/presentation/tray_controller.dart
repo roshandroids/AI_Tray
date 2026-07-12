@@ -75,14 +75,14 @@ final class TrayController with TrayListener, WindowListener {
     windowManager.addListener(this);
 
     try {
-      // Prefer platform default if bundled icon path is unavailable.
+      // Bundled Flutter assets (required for packaged Release builds).
       if (Platform.isMacOS) {
         await trayManager.setIcon(
-          'macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png',
-          isTemplate: true,
+          'assets/tray/tray_icon_32.png',
+          isTemplate: false,
         );
       } else if (Platform.isWindows) {
-        await trayManager.setIcon('windows/runner/resources/app_icon.ico');
+        await trayManager.setIcon('assets/tray/tray_icon.ico');
       }
     } on Exception catch (error) {
       logger.warning('tray icon failed: $error', name: 'tray');

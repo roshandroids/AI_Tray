@@ -85,8 +85,6 @@ final class UsageRepositoryImpl implements UsageRepository {
       currentStatus: _status,
     );
 
-    _emit(_statusAfter(result, settings));
-
     if (result.status == RefreshOutcome.failure) {
       final code = result.error?.code;
       if (code == FailureCode.cliNotInstalled ||
@@ -99,6 +97,8 @@ final class UsageRepositoryImpl implements UsageRepository {
         );
       }
     }
+
+    _emit(_statusAfter(result, settings));
 
     await _reschedule(settings);
     return result;

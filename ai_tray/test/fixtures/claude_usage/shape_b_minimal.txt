@@ -1,0 +1,6 @@
+You are currently using your subscription to power your Claude Code usage
+
+What's contributing to your limits usage?
+
+Last 24h · 10 requests · 1 sessions
+  100% of your usage was at >150k context

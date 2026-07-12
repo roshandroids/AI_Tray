@@ -1,8 +1,8 @@
 # Lightweight Planning Package — Task 0002
 
-**Status:** Task 0002 approved · Task 0003 ADR-002 awaiting Product Owner acceptance  
+**Status:** Historical · complete (ADR-001/002 accepted · MVP implemented · RC1 closed)  
 **Date:** 2026-07-12  
-**Prerequisite:** Task 0001 approved (PASS WITH LIMITATIONS) · Decision 002 · Decision 003
+**Current project status:** [docs/README.md](../README.md) · [POSTMORTEM.md](../POSTMORTEM.md)
 
 ---
 
@@ -18,21 +18,12 @@
 | 6 | MVP Backlog | [docs/planning/mvp-backlog.md](mvp-backlog.md) |
 | 7 | Risk Register | [docs/planning/risk-register.md](risk-register.md) |
 
-Supporting research (already approved):
+Supporting research:
 
 - [research/claude-cli.md](../../research/claude-cli.md)
 
 ---
 
-## Planning constraints honored
+## Note
 
-- No Flutter project scaffolded
-- No production application code
-- No UI screen design
-- No tray implementation started
-
----
-
-## Approval gate
-
-**Stop.** ADR-002 is Proposed. Do not scaffold the Flutter project or begin Implementation until the Product Owner accepts ADR-002 and explicitly authorizes implementation.
+This package was produced under a planning gate (“no implementation yet”). That gate has been satisfied and closed. Do not treat the old “Stop — do not scaffold” language as current policy; see Decision 008 / dogfooding status in the docs index.

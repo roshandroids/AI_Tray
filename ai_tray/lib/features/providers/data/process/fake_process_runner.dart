@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/result/result.dart';
@@ -9,7 +11,7 @@ final class FakeProcessRunner implements ProcessRunner {
     this.handler,
   });
 
-  Result<ProcessRunResult> Function(
+  FutureOr<Result<ProcessRunResult>> Function(
     String executable,
     List<String> arguments,
   )? handler;

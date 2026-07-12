@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
@@ -115,5 +116,63 @@ void main() {
     expect(result.error?.code, FailureCode.incompleteOutput);
     expect(result.usage?.sessionUsedPercent, 11);
     expect(result.usage?.isFromCache, isTrue);
+  });
+
+  test('timeout hard failure keeps LKG after prior success', () async {
+    runner.handler = (exe, args) {
+      return Result.success(
+        ProcessRunResult(
+          exitCode: 0,
+          stdout: jsonEncode(envelopeFor(shapeA)),
+          stderr: '',
+          duration: const Duration(milliseconds: 10),
+        ),
+      );
+    };
+    await service.refresh(
+      settings: AppSettings.defaults(),
+      currentStatus: RefreshStatus.initial(),
+    );
+
+    runner.handler = (exe, args) {
+      return const Result.failure(
+        AppFailure(
+          code: FailureCode.timeout,
+          message: 'timed out',
+        ),
+      );
+    };
+
+    final result = await service.refresh(
+      settings: AppSettings.defaults(),
+      currentStatus: RefreshStatus.initial(),
+    );
+
+    expect(result.status, RefreshOutcome.failure);
+    expect(result.error?.code, FailureCode.timeout);
+    expect(result.usage?.sessionUsedPercent, 2.0);
+  });
+
+  test('unknown output does not write invented cache', () async {
+    runner.handler = (exe, args) {
+      return Result.success(
+        ProcessRunResult(
+          exitCode: 0,
+          stdout: jsonEncode(envelopeFor('Total cost: \$0\nUsage: 0 input')),
+          stderr: '',
+          duration: Duration.zero,
+        ),
+      );
+    };
+
+    final result = await service.refresh(
+      settings: AppSettings.defaults(),
+      currentStatus: RefreshStatus.initial(),
+    );
+
+    expect(result.status, RefreshOutcome.failure);
+    expect(result.error?.code, FailureCode.unknownCliOutput);
+    final cached = await cache.read();
+    expect(cached.valueOrNull, isNull);
   });
 }

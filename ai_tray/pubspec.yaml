@@ -1,7 +1,7 @@
 name: ai_tray
 description: Native desktop companion for Claude Code usage (macOS menu bar / Windows tray).
 publish_to: "none"
-version: 0.1.0+1
+version: 1.0.0-rc.1+1
 
 environment:
   sdk: ^3.10.8
@@ -24,3 +24,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/tray/tray_icon_32.png
+    - assets/tray/tray_icon.ico

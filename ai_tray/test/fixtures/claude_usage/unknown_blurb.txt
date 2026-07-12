@@ -1,0 +1,2 @@
+Some unrelated CLI blurb with no usage lines.
+Try again later.
