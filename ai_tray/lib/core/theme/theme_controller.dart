@@ -5,8 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Loads and persists the user's theme preference (PD-014).
 final themeControllerProvider =
     AsyncNotifierProvider<ThemeController, AppThemePreference>(
-  ThemeController.new,
-);
+      ThemeController.new,
+    );
 
 final class ThemeController extends AsyncNotifier<AppThemePreference> {
   @override

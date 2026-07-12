@@ -21,15 +21,15 @@ sealed class Result<T> {
 
   /// Success value, or `null` when failed.
   T? get valueOrNull => switch (this) {
-        Success(:final value) => value,
-        Failure() => null,
-      };
+    Success(:final value) => value,
+    Failure() => null,
+  };
 
   /// Failure, or `null` when successful.
   AppFailure? get failureOrNull => switch (this) {
-        Success() => null,
-        Failure(:final failure) => failure,
-      };
+    Success() => null,
+    Failure(:final failure) => failure,
+  };
 
   R when<R>({
     required R Function(T value) success,

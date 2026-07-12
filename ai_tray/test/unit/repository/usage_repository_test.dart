@@ -79,13 +79,13 @@ void main() {
   });
 
   Map<String, dynamic> envelopeFor(String resultText) => {
-        'type': 'result',
-        'subtype': 'success',
-        'is_error': false,
-        'result': resultText,
-        'total_cost_usd': 0,
-        'duration_api_ms': 0,
-      };
+    'type': 'result',
+    'subtype': 'success',
+    'is_error': false,
+    'result': resultText,
+    'total_cost_usd': 0,
+    'duration_api_ms': 0,
+  };
 
   test('refresh success updates status and cache', () async {
     runner.handler = (exe, args) {

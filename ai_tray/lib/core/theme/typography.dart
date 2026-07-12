@@ -56,8 +56,11 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
     return TrayTypography(
       display: mono(size: 22, weight: FontWeight.w600, color: colors.title),
       heading: mono(size: 16, weight: FontWeight.w600, color: colors.title),
-      sectionTitle:
-          mono(size: 13, weight: FontWeight.w600, color: colors.title),
+      sectionTitle: mono(
+        size: 13,
+        weight: FontWeight.w600,
+        color: colors.title,
+      ),
       appBarTitle: mono(
         size: 15,
         weight: FontWeight.w600,

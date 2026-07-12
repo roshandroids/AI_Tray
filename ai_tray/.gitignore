@@ -39,6 +39,9 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Golden test failure diffs (local/CI debug output)
+test/golden/failures/
+
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile

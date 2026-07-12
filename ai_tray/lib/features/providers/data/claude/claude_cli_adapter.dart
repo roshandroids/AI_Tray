@@ -15,9 +15,9 @@ final class ClaudeCliAdapter implements AiProviderPort {
     required ProcessRunner processRunner,
     required AppLogger logger,
     String defaultBinary = 'claude',
-  })  : _processRunner = processRunner,
-        _logger = logger,
-        _defaultBinary = defaultBinary;
+  }) : _processRunner = processRunner,
+       _logger = logger,
+       _defaultBinary = defaultBinary;
 
   final ProcessRunner _processRunner;
   final AppLogger _logger;

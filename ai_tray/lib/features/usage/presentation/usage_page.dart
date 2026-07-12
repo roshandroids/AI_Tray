@@ -104,8 +104,8 @@ final class UsagePage extends ConsumerWidget {
                         onPressed: refreshing
                             ? null
                             : () => unawaited(
-                                  repository.refresh(manual: true),
-                                ),
+                                repository.refresh(manual: true),
+                              ),
                         child: Text(refreshing ? 'Refreshing…' : 'Refresh'),
                       ),
                     ),

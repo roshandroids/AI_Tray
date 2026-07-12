@@ -47,13 +47,13 @@ void main() {
   });
 
   Map<String, dynamic> envelopeFor(String resultText) => {
-        'type': 'result',
-        'subtype': 'success',
-        'is_error': false,
-        'result': resultText,
-        'total_cost_usd': 0,
-        'duration_api_ms': 0,
-      };
+    'type': 'result',
+    'subtype': 'success',
+    'is_error': false,
+    'result': resultText,
+    'total_cost_usd': 0,
+    'duration_api_ms': 0,
+  };
 
   void respondWith(String text) {
     runner.handler = (exe, args) {
@@ -68,50 +68,52 @@ void main() {
     };
   }
 
-  test('500 cycles: Shape A then sticky Shape B keep LKG, never invent %',
-      () async {
-    respondWith(shapeA);
-    var status = RefreshStatus.initial();
-    final first = await service.refresh(
-      settings: AppSettings.defaults(),
-      currentStatus: status,
-    );
-    expect(first.status, RefreshOutcome.success);
-    status = status.copyWith(lastResult: first);
-
-    respondWith(shapeB);
-    var softs = 0;
-    for (var i = 0; i < 250; i++) {
-      final result = await service.refresh(
+  test(
+    '500 cycles: Shape A then sticky Shape B keep LKG, never invent %',
+    () async {
+      respondWith(shapeA);
+      var status = RefreshStatus.initial();
+      final first = await service.refresh(
         settings: AppSettings.defaults(),
         currentStatus: status,
       );
-      expect(result.status, RefreshOutcome.softFailure);
-      expect(result.usage?.sessionUsedPercent, 2.0);
-      expect(result.usage?.isFromCache, isTrue);
-      softs++;
-      status = status.copyWith(lastResult: result);
-    }
+      expect(first.status, RefreshOutcome.success);
+      status = status.copyWith(lastResult: first);
 
-    respondWith(shapeA);
-    var successes = 0;
-    for (var i = 0; i < 249; i++) {
-      final result = await service.refresh(
-        settings: AppSettings.defaults(),
-        currentStatus: status,
-      );
-      expect(result.status, RefreshOutcome.success);
-      expect(result.usage?.sessionUsedPercent, 2.0);
-      expect(result.usage?.isFromCache, isFalse);
-      successes++;
-      status = status.copyWith(lastResult: result);
-    }
+      respondWith(shapeB);
+      var softs = 0;
+      for (var i = 0; i < 250; i++) {
+        final result = await service.refresh(
+          settings: AppSettings.defaults(),
+          currentStatus: status,
+        );
+        expect(result.status, RefreshOutcome.softFailure);
+        expect(result.usage?.sessionUsedPercent, 2.0);
+        expect(result.usage?.isFromCache, isTrue);
+        softs++;
+        status = status.copyWith(lastResult: result);
+      }
 
-    expect(softs, 250);
-    expect(successes, 249);
-    final cached = await cache.read();
-    expect(cached.valueOrNull?.sessionUsedPercent, 2.0);
-  });
+      respondWith(shapeA);
+      var successes = 0;
+      for (var i = 0; i < 249; i++) {
+        final result = await service.refresh(
+          settings: AppSettings.defaults(),
+          currentStatus: status,
+        );
+        expect(result.status, RefreshOutcome.success);
+        expect(result.usage?.sessionUsedPercent, 2.0);
+        expect(result.usage?.isFromCache, isFalse);
+        successes++;
+        status = status.copyWith(lastResult: result);
+      }
+
+      expect(softs, 250);
+      expect(successes, 249);
+      final cached = await cache.read();
+      expect(cached.valueOrNull?.sessionUsedPercent, 2.0);
+    },
+  );
 
   test('single-flight coalesces concurrent refresh calls', () async {
     var starts = 0;

@@ -84,5 +84,5 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/pd013_after.png'),
     );
-  });
+  }, tags: ['golden']);
 }

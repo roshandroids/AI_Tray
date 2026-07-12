@@ -210,8 +210,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         launchAtLogin: settings.launchAtLogin,
                         showStaleIndicator: settings.showStaleIndicator,
                         notifyAtSessionPercent: settings.notifyAtSessionPercent,
-                        claudeBinaryPath:
-                            value.trim().isEmpty ? null : value.trim(),
+                        claudeBinaryPath: value.trim().isEmpty
+                            ? null
+                            : value.trim(),
                         themeMode: settings.themeMode,
                       ),
                     ),

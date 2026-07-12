@@ -23,11 +23,11 @@ final class RefreshService {
     required AppLogger logger,
     this.softRetryDelay = const Duration(seconds: 3),
     this.hardRetryDelay = const Duration(seconds: 2),
-  })  : _provider = provider,
-        _parser = parser,
-        _validator = validator,
-        _cache = cache,
-        _logger = logger;
+  }) : _provider = provider,
+       _parser = parser,
+       _validator = validator,
+       _cache = cache,
+       _logger = logger;
 
   final AiProviderPort _provider;
   final UsageParser _parser;
@@ -103,8 +103,9 @@ final class RefreshService {
             final cached = await _readCache();
             final soft = failure.code == FailureCode.incompleteOutput;
             final result = RefreshResult(
-              status:
-                  soft ? RefreshOutcome.softFailure : RefreshOutcome.failure,
+              status: soft
+                  ? RefreshOutcome.softFailure
+                  : RefreshOutcome.failure,
               usage: cached,
               parserState: candidate.parserState,
               error: failure,
@@ -174,7 +175,8 @@ final class RefreshService {
         return _provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
       },
       onFailure: (failure) async {
-        final retryable = failure.code == FailureCode.timeout ||
+        final retryable =
+            failure.code == FailureCode.timeout ||
             failure.code == FailureCode.processNonZeroExit ||
             failure.code == FailureCode.unknown;
         if (!retryable) {

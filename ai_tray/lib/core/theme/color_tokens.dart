@@ -155,8 +155,11 @@ final class TrayColorTokens extends ThemeExtension<TrayColorTokens> {
       error: Color.lerp(error, other.error, t)!,
       focus: Color.lerp(focus, other.focus, t)!,
       buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t)!,
-      statusRefreshing:
-          Color.lerp(statusRefreshing, other.statusRefreshing, t)!,
+      statusRefreshing: Color.lerp(
+        statusRefreshing,
+        other.statusRefreshing,
+        t,
+      )!,
       statusIdle: Color.lerp(statusIdle, other.statusIdle, t)!,
     );
   }

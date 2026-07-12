@@ -34,8 +34,9 @@ final aiProviderPortProvider = Provider<AiProviderPort>((ref) {
 
 final usageParserProvider = Provider<UsageParser>((ref) => UsageParser());
 
-final usageValidatorProvider =
-    Provider<UsageValidator>((ref) => UsageValidator());
+final usageValidatorProvider = Provider<UsageValidator>(
+  (ref) => UsageValidator(),
+);
 
 final usageCacheProvider = Provider<UsageCache>((ref) {
   return SharedPreferencesUsageCache(ref.watch(sharedPreferencesProvider));

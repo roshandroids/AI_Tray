@@ -39,6 +39,7 @@ final class TrayMenuSnapshot {
   final String footerStatusLine;
   final String footerUpdatedLine;
   final String toolTip;
+
   /// macOS menu-bar title beside the tray icon (empty when unavailable).
   final String iconTitle;
 
@@ -113,13 +114,13 @@ abstract final class TrayMenuBuilder {
         ? 'Resets ${usage!.sessionResetsAtRaw!.trim()}'
         : 'Resets —';
 
-    final weekTitle = week != null
-        ? _weekTitle(week.label)
-        : 'Current Week';
-    final weekBar =
-        week != null ? _progressBar(week.usedPercent) : _progressBar(0);
-    final weekPctLine =
-        week != null ? '${week.usedPercent.round()}% used' : '—';
+    final weekTitle = week != null ? _weekTitle(week.label) : 'Current Week';
+    final weekBar = week != null
+        ? _progressBar(week.usedPercent)
+        : _progressBar(0);
+    final weekPctLine = week != null
+        ? '${week.usedPercent.round()}% used'
+        : '—';
     final weekReset = (week?.resetsAtRaw?.trim().isNotEmpty ?? false)
         ? 'Resets ${week!.resetsAtRaw!.trim()}'
         : 'Resets —';
@@ -186,8 +187,7 @@ abstract final class TrayMenuBuilder {
         FailureCode.notAuthenticated => '🔴 Not authenticated',
         FailureCode.timeout => '🔴 Refresh timed out',
         FailureCode.processLaunchFailed ||
-        FailureCode.processNonZeroExit =>
-          '🔴 Could not reach Claude',
+        FailureCode.processNonZeroExit => '🔴 Could not reach Claude',
         _ => '🔴 Connection error',
       };
     }

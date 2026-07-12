@@ -14,7 +14,8 @@ final class FakeProcessRunner implements ProcessRunner {
   FutureOr<Result<ProcessRunResult>> Function(
     String executable,
     List<String> arguments,
-  )? handler;
+  )?
+  handler;
 
   final List<(String, List<String>)> calls = [];
 

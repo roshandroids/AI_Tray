@@ -27,8 +27,9 @@ void main() {
   });
 
   test('parses Shape A decimal percent', () {
-    final candidate =
-        parser.parse(rawText: fixture('shape_a_decimal_percent.txt'));
+    final candidate = parser.parse(
+      rawText: fixture('shape_a_decimal_percent.txt'),
+    );
     expect(candidate.sessionUsedPercent, 47.5);
     expect(candidate.weekly.length, 2);
     final validated = validator.validate(
@@ -40,8 +41,9 @@ void main() {
   });
 
   test('parses Shape A with ASCII dot separator', () {
-    final candidate =
-        parser.parse(rawText: fixture('shape_a_dot_separator.txt'));
+    final candidate = parser.parse(
+      rawText: fixture('shape_a_dot_separator.txt'),
+    );
     expect(candidate.parserState.shape, UsageShape.rateLimitsPresent);
     expect(candidate.sessionUsedPercent, 3.0);
     expect(candidate.weekly.single.usedPercent, 1.0);
@@ -49,8 +51,9 @@ void main() {
   });
 
   test('parses Shape B fixture as contribution only', () {
-    final candidate =
-        parser.parse(rawText: fixture('shape_b_contribution_only.txt'));
+    final candidate = parser.parse(
+      rawText: fixture('shape_b_contribution_only.txt'),
+    );
 
     expect(candidate.parserState.shape, UsageShape.contributionOnly);
     expect(candidate.sessionUsedPercent, isNull);
@@ -68,9 +71,11 @@ void main() {
   });
 
   test('reads result text from JSON envelope', () {
-    final envelope = jsonDecode(
-      fixture('envelope_success.json'),
-    ) as Map<String, dynamic>;
+    final envelope =
+        jsonDecode(
+              fixture('envelope_success.json'),
+            )
+            as Map<String, dynamic>;
 
     final candidate = parser.parse(rawText: '{}', envelopeJson: envelope);
 

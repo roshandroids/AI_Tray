@@ -19,8 +19,7 @@ final class ProviderId {
   final String value;
 
   @override
-  bool operator ==(Object other) =>
-      other is ProviderId && other.value == value;
+  bool operator ==(Object other) => other is ProviderId && other.value == value;
 
   @override
   int get hashCode => value.hashCode;

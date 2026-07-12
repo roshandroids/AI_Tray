@@ -109,12 +109,12 @@ final class ParserState {
 
   @override
   int get hashCode => Object.hash(
-        shape,
-        rateLimitsPresent,
-        matchedSessionLine,
-        matchedWeekLineCount,
-        validation,
-        Object.hashAll(messages),
-        rawTextLength,
-      );
+    shape,
+    rateLimitsPresent,
+    matchedSessionLine,
+    matchedWeekLineCount,
+    validation,
+    Object.hashAll(messages),
+    rawTextLength,
+  );
 }

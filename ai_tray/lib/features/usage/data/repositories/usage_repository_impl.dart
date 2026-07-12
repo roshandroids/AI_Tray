@@ -20,11 +20,11 @@ final class UsageRepositoryImpl implements UsageRepository {
     required UsageCache cache,
     required SettingsRepository settingsRepository,
     required AppLogger logger,
-  })  : _refreshService = refreshService,
-        _cache = cache,
-        _settingsRepository = settingsRepository,
-        _logger = logger,
-        _statusController = StreamController<RefreshStatus>.broadcast() {
+  }) : _refreshService = refreshService,
+       _cache = cache,
+       _settingsRepository = settingsRepository,
+       _logger = logger,
+       _statusController = StreamController<RefreshStatus>.broadcast() {
     _status = RefreshStatus.initial();
   }
 

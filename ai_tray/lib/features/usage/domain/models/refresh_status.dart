@@ -90,11 +90,11 @@ final class RefreshStatus {
 
   @override
   int get hashCode => Object.hash(
-        phase,
-        lastResult,
-        lastSuccessAt,
-        nextScheduledAt,
-        consecutiveSoftFailures,
-        consecutiveHardFailures,
-      );
+    phase,
+    lastResult,
+    lastSuccessAt,
+    nextScheduledAt,
+    consecutiveSoftFailures,
+    consecutiveHardFailures,
+  );
 }

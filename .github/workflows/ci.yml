@@ -92,8 +92,8 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Test
-        run: flutter test
+      - name: Test (unit + widget, excluding macOS goldens)
+        run: flutter test --exclude-tags golden
 
   build-macos:
     name: Build macOS
@@ -116,6 +116,9 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Golden tests (macOS renderer)
+        run: flutter test --tags golden
 
       - name: Build macOS (release)
         run: flutter build macos --release

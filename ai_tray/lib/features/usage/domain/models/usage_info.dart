@@ -94,15 +94,15 @@ final class UsageInfo {
 
   @override
   int get hashCode => Object.hash(
-        sessionUsedPercent,
-        sessionResetsAt,
-        sessionResetsAtRaw,
-        Object.hashAll(weekly),
-        fetchedAt,
-        source,
-        isFromCache,
-        providerId,
-      );
+    sessionUsedPercent,
+    sessionResetsAt,
+    sessionResetsAtRaw,
+    Object.hashAll(weekly),
+    fetchedAt,
+    source,
+    isFromCache,
+    providerId,
+  );
 }
 
 double _requirePercent(double value, String name) {

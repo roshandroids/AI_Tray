@@ -75,11 +75,11 @@ final class RefreshResult {
 
   @override
   int get hashCode => Object.hash(
-        status,
-        usage,
-        parserState,
-        error,
-        duration,
-        cliExitCode,
-      );
+    status,
+    usage,
+    parserState,
+    error,
+    duration,
+    cliExitCode,
+  );
 }

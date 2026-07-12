@@ -105,15 +105,15 @@ final class AppSettings {
 
   @override
   int get hashCode => Object.hash(
-        autoRefreshEnabled,
-        refreshInterval,
-        notificationsEnabled,
-        notifyAtSessionPercent,
-        launchAtLogin,
-        claudeBinaryPath,
-        showStaleIndicator,
-        themeMode,
-      );
+    autoRefreshEnabled,
+    refreshInterval,
+    notificationsEnabled,
+    notifyAtSessionPercent,
+    launchAtLogin,
+    claudeBinaryPath,
+    showStaleIndicator,
+    themeMode,
+  );
 }
 
 void _validateRefreshInterval(Duration interval) {

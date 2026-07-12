@@ -84,7 +84,7 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/pd014_dark.png'),
     );
-  });
+  }, tags: ['golden']);
 
   testWidgets('pd014 light theme golden', (tester) async {
     await _loadPlex();
@@ -98,5 +98,5 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('goldens/pd014_light.png'),
     );
-  });
+  }, tags: ['golden']);
 }
