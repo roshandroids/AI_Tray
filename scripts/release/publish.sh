@@ -97,7 +97,11 @@ if [[ "$UNRELEASED_LINES" == "0" ]]; then
   fail "Add release notes under ## [Unreleased] before publishing"
 fi
 
-NEW_VERSION=$("$SCRIPT_DIR/bump_version.sh" "$BUMP" "${PRE_ARGS[@]}")
+if ((${#PRE_ARGS[@]})); then
+  NEW_VERSION=$("$SCRIPT_DIR/bump_version.sh" "$BUMP" "${PRE_ARGS[@]}")
+else
+  NEW_VERSION=$("$SCRIPT_DIR/bump_version.sh" "$BUMP")
+fi
 VERSION_NAME="${NEW_VERSION%%+*}"
 TAG="v${VERSION_NAME}"
 TODAY=$(date +%Y-%m-%d)
