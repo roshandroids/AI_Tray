@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Semantic color tokens exposed via [ThemeExtension] (PD-014).
+/// Semantic color tokens exposed via [ThemeExtension] (PD-014 / PD-020).
 @immutable
 final class TrayColorTokens extends ThemeExtension<TrayColorTokens> {
   const TrayColorTokens({
@@ -45,47 +45,49 @@ final class TrayColorTokens extends ThemeExtension<TrayColorTokens> {
   final Color statusRefreshing;
   final Color statusIdle;
 
+  /// Terminal dark palette — neon status colors (PD-020).
   static const dark = TrayColorTokens(
-    background: Color(0xFF161513),
-    surface: Color(0xFF1C1B19),
-    surfaceRaised: Color(0xFF242320),
-    divider: Color(0xFF2E2C28),
-    title: Color(0xFFD2C093),
-    textPrimary: Color(0xFFD8D4CC),
-    textSecondary: Color(0xFF8A857C),
-    textMuted: Color(0xFF6B665E),
-    primary: Color(0xFFD2C093),
-    onPrimary: Color(0xFF161513),
-    meterFill: Color(0xFF828CB7),
-    meterTrack: Color(0xFF2A2F3D),
-    success: Color(0xFF6B9B7A),
-    warning: Color(0xFFC4A35A),
-    error: Color(0xFFC4756B),
-    focus: Color(0xFF9AA3C7),
-    buttonDisabled: Color(0xFF3A3834),
-    statusRefreshing: Color(0xFF8A857C),
-    statusIdle: Color(0xFF6B665E),
+    background: Color(0xFF111113),
+    surface: Color(0xFF161618),
+    surfaceRaised: Color(0xFF1C1C1F),
+    divider: Color(0xFF2A2A2E),
+    title: Color(0xFFE8E6E1),
+    textPrimary: Color(0xFFD4D2CC),
+    textSecondary: Color(0xFF8B8A86),
+    textMuted: Color(0xFF6B6A66),
+    primary: Color(0xFFA78BFA),
+    onPrimary: Color(0xFF111113),
+    meterFill: Color(0xFFA78BFA),
+    meterTrack: Color(0xFF2A2A30),
+    success: Color(0xFF22C55E),
+    warning: Color(0xFFEAB308),
+    error: Color(0xFFEF4444),
+    focus: Color(0xFFA78BFA),
+    buttonDisabled: Color(0xFF2A2A2E),
+    statusRefreshing: Color(0xFF7C3AED),
+    statusIdle: Color(0xFF6B6A66),
   );
 
+  /// Light terminal companion — same semantic accents on paper.
   static const light = TrayColorTokens(
-    background: Color(0xFFF5F3EF),
+    background: Color(0xFFF4F3F0),
     surface: Color(0xFFFAFAF8),
     surfaceRaised: Color(0xFFFFFFFF),
-    divider: Color(0xFFE3DFD6),
-    title: Color(0xFF7A6340),
+    divider: Color(0xFFD8D6D0),
+    title: Color(0xFF1A1A1C),
     textPrimary: Color(0xFF2C2A26),
     textSecondary: Color(0xFF6B665E),
     textMuted: Color(0xFF8A857C),
-    primary: Color(0xFFC4A86A),
-    onPrimary: Color(0xFF1C1B19),
-    meterFill: Color(0xFF6B75A8),
-    meterTrack: Color(0xFFD8DCE8),
-    success: Color(0xFF4A8B62),
-    warning: Color(0xFFB8860B),
-    error: Color(0xFFB85C52),
-    focus: Color(0xFF6B75A8),
+    primary: Color(0xFF7C3AED),
+    onPrimary: Color(0xFFFFFFFF),
+    meterFill: Color(0xFF7C3AED),
+    meterTrack: Color(0xFFE4E2EA),
+    success: Color(0xFF16A34A),
+    warning: Color(0xFFCA8A04),
+    error: Color(0xFFDC2626),
+    focus: Color(0xFF7C3AED),
     buttonDisabled: Color(0xFFE8E4DC),
-    statusRefreshing: Color(0xFF8A857C),
+    statusRefreshing: Color(0xFF7C3AED),
     statusIdle: Color(0xFF8A857C),
   );
 

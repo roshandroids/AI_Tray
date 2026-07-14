@@ -27,6 +27,11 @@ flutter:
   assets:
     - assets/tray/tray_icon_32.png
     - assets/tray/tray_icon.ico
+    - assets/tray/tray_icon_live.png
+    - assets/tray/tray_icon_cached.png
+    - assets/tray/tray_icon_error.png
+    - assets/tray/tray_icon_refreshing.png
+    - assets/tray/tray_icon_waiting.png
   fonts:
     - family: IBMPlexMono
       fonts:

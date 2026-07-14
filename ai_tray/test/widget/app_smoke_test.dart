@@ -1,5 +1,6 @@
 import 'package:ai_tray/app.dart';
 import 'package:ai_tray/core/di/providers.dart';
+import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/core/result/result.dart';
@@ -20,7 +21,9 @@ void main() {
   testWidgets('foundation shell renders AI Tray title', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
-    final logger = ConsoleAppLogger(defaultName: 'test');
+    final logger = BufferedAppLogger(
+      delegate: ConsoleAppLogger(defaultName: 'test'),
+    );
     final runner = FakeProcessRunner(
       handler: (exe, args) => const Result.success(
         ProcessRunResult(
@@ -34,7 +37,7 @@ void main() {
 
     final container = ProviderContainer(
       overrides: [
-        appLoggerProvider.overrideWithValue(logger),
+        bufferedAppLoggerProvider.overrideWithValue(logger),
         sharedPreferencesProvider.overrideWithValue(prefs),
         processRunnerProvider.overrideWithValue(runner),
         usageRepositoryProvider.overrideWith((ref) {

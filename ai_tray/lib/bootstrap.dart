@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ai_tray/app.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
+import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
@@ -18,16 +19,18 @@ Future<void> bootstrap({
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final appLogger = logger ?? ConsoleAppLogger()
+  final bufferedLogger = logger is BufferedAppLogger
+      ? logger
+      : BufferedAppLogger(delegate: logger ?? ConsoleAppLogger())
     ..info('AI Tray starting', name: 'bootstrap');
 
-  await initializeDesktopShell(appLogger);
+  await initializeDesktopShell(bufferedLogger);
 
   final prefs = sharedPreferences ?? await SharedPreferences.getInstance();
 
   final container = ProviderContainer(
     overrides: [
-      appLoggerProvider.overrideWithValue(appLogger),
+      bufferedAppLoggerProvider.overrideWithValue(bufferedLogger),
       sharedPreferencesProvider.overrideWithValue(prefs),
     ],
   );
@@ -49,6 +52,6 @@ Future<void> bootstrap({
 
   // Release + Finder launches need the window shown after the first frame.
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(ensureDesktopWindowVisible(appLogger));
+    unawaited(ensureDesktopWindowVisible(bufferedLogger));
   });
 }

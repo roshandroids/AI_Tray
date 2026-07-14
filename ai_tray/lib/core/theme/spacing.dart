@@ -11,6 +11,6 @@ abstract final class Spacing {
   static const double radiusMd = 6;
   static const double radiusLg = 8;
 
-  static const double contentMaxWidth = 420;
-  static const double meterHeight = 8;
+  static const double contentMaxWidth = 460;
+  static const double meterHeight = 6;
 }

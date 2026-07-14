@@ -5,9 +5,11 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
 import 'package:ai_tray/features/tray/presentation/tray_menu_builder.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
+import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,7 +26,7 @@ Future<void> initializeDesktopShell(AppLogger logger) async {
 
   await windowManager.ensureInitialized();
   const options = WindowOptions(
-    size: Size(420, 560),
+    size: Size(460, 640),
     center: true,
     // Keep Dock presence so double-clicking the .app is discoverable.
     skipTaskbar: false,
@@ -80,6 +82,7 @@ final class TrayController with TrayListener, WindowListener {
   final VoidCallback onOpenSettings;
 
   bool _started = false;
+  String? _lastIconPath;
 
   Future<void> start() async {
     if (_started || kIsWeb) return;
@@ -89,21 +92,6 @@ final class TrayController with TrayListener, WindowListener {
     trayManager.addListener(this);
     windowManager.addListener(this);
 
-    try {
-      // Bundled Flutter assets (required for packaged Release builds).
-      if (Platform.isMacOS) {
-        await trayManager.setIcon(
-          'assets/tray/tray_icon_32.png',
-          isTemplate: false,
-        );
-      } else if (Platform.isWindows) {
-        await trayManager.setIcon('assets/tray/tray_icon.ico');
-      }
-    } on Exception catch (error) {
-      logger.warning('tray icon failed: $error', name: 'tray');
-    }
-
-    await trayManager.setToolTip('AI Tray');
     await _rebuildMenu(repository.status);
     repository.watchStatus().listen((status) {
       unawaited(_rebuildMenu(status));
@@ -111,13 +99,40 @@ final class TrayController with TrayListener, WindowListener {
     });
   }
 
+  Future<void> _applyIcon(RefreshStatus status) async {
+    final kind = UsageStatusMapper.kind(status);
+    try {
+      if (Platform.isMacOS) {
+        final path = TrayIconResolver.macOsAsset(kind);
+        if (path != _lastIconPath) {
+          await trayManager.setIcon(path, isTemplate: false);
+          _lastIconPath = path;
+        }
+      } else if (Platform.isWindows) {
+        // Windows uses a single .ico; status is reflected in tooltip / menu.
+        if (_lastIconPath != TrayIconResolver.windowsAsset) {
+          await trayManager.setIcon(TrayIconResolver.windowsAsset);
+          _lastIconPath = TrayIconResolver.windowsAsset;
+        }
+      }
+    } on Exception catch (error) {
+      logger.warning('tray icon failed: $error', name: 'tray');
+    }
+  }
+
   Future<void> _rebuildMenu(RefreshStatus status) async {
+    await _applyIcon(status);
     final snapshot = TrayMenuBuilder.fromStatus(status);
     await trayManager.setContextMenu(snapshot.buildMenu());
     await trayManager.setToolTip(snapshot.toolTip);
     if (Platform.isMacOS) {
       try {
-        await trayManager.setTitle(snapshot.iconTitle);
+        final kind = UsageStatusMapper.kind(status);
+        final prefix = TrayIconResolver.macOsTitlePrefix(kind);
+        final title = snapshot.iconTitle.isEmpty
+            ? prefix
+            : '$prefix ${snapshot.iconTitle}';
+        await trayManager.setTitle(title);
       } on Exception catch (error) {
         logger.warning('tray title failed: $error', name: 'tray');
       }

@@ -5,6 +5,13 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+### Added
+- Diagnostics page and in-app log viewer with export / copy (PD-020).
+- Dynamic macOS tray icons with status badges (live / cached / error / refreshing / waiting).
+
+### Changed
+- Terminal-inspired developer UX: ASCII separators, dense dashboard, developer settings (PD-020).
+- Status colors aligned to neon Live/Cached/Error/Refreshing palette.
 ## [1.0.0] — 2026-07-12
 
 ### Added

@@ -3,31 +3,82 @@ import 'dart:async';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/core/widgets/terminal_chrome.dart';
+import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/presentation/settings_page.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
+import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
+import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_empty_state.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_pill.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_usage_meter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Desktop usage window — visual shell only (PD-013 / PD-014).
-final class UsagePage extends ConsumerWidget {
+/// Terminal-inspired usage dashboard (PD-020).
+final class UsagePage extends ConsumerStatefulWidget {
   const UsagePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UsagePage> createState() => _UsagePageState();
+}
+
+final class _UsagePageState extends ConsumerState<UsagePage> {
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    final meta =
+        HardwareKeyboard.instance.isMetaPressed ||
+        HardwareKeyboard.instance.isControlPressed;
+    if (!meta) return false;
+
+    final repo = ref.read(usageRepositoryProvider);
+    if (event.logicalKey == LogicalKeyboardKey.keyR) {
+      unawaited(repo.refresh(manual: true));
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.comma) {
+      unawaited(_openSettings());
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _openSettings() {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+    );
+  }
+
+  Future<void> _openDiagnostics() {
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const DiagnosticsPage()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen<int>(settingsOpenRequestProvider, (previous, next) {
       if (previous == next) return;
-      unawaited(
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
-        ),
-      );
+      unawaited(_openSettings());
     });
 
     final repository = ref.watch(usageRepositoryProvider);
@@ -38,25 +89,26 @@ final class UsagePage extends ConsumerWidget {
       builder: (context, snapshot) {
         final status = snapshot.data ?? RefreshStatus.initial();
         final usage = status.lastResult?.usage;
-        final outcome = status.lastResult?.status;
         final error = status.lastResult?.error;
         final refreshing = status.phase == RefreshPhase.refreshing;
+        final kind = UsageStatusMapper.kind(status);
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('AI Tray'),
             actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: Spacing.sm),
+                child: Center(child: TrayStatusPill(kind: kind, compact: true)),
+              ),
               IconButton(
-                tooltip: 'Settings',
-                onPressed: () {
-                  unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SettingsPage(),
-                      ),
-                    ),
-                  );
-                },
+                tooltip: 'Diagnostics',
+                onPressed: () => unawaited(_openDiagnostics()),
+                icon: const Icon(Icons.terminal_outlined),
+              ),
+              IconButton(
+                tooltip: 'Settings (⌘,)',
+                onPressed: () => unawaited(_openSettings()),
                 icon: const Icon(Icons.settings_outlined),
               ),
             ],
@@ -68,10 +120,10 @@ final class UsagePage extends ConsumerWidget {
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  Spacing.xl,
                   Spacing.lg,
-                  Spacing.xl,
-                  Spacing.xl,
+                  Spacing.md,
+                  Spacing.lg,
+                  Spacing.md,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,35 +131,48 @@ final class UsagePage extends ConsumerWidget {
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 220),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
                         child: usage != null
-                            ? _UsageBody(
-                                key: ValueKey<String>(
-                                  usage.fetchedAt.toIso8601String(),
+                            ? _DashboardBody(
+                                key: ValueKey(
+                                  '${usage.fetchedAt.toIso8601String()}_$kind',
                                 ),
                                 usage: usage,
                                 status: status,
-                                outcome: outcome,
-                                errorMessage: error?.message,
+                                kind: kind,
                               )
                             : SingleChildScrollView(
-                                key: const ValueKey<String>('empty'),
+                                key: const ValueKey('empty'),
                                 child: TrayEmptyState(failure: error),
                               ),
                       ),
                     ),
-                    const SizedBox(height: Spacing.lg),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: FilledButton(
-                        onPressed: refreshing
-                            ? null
-                            : () => unawaited(
-                                repository.refresh(manual: true),
-                              ),
-                        child: Text(refreshing ? 'Refreshing…' : 'Refresh'),
-                      ),
+                    const AsciiSeparator(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '⌘R refresh  ·  ⌘, settings',
+                            style: context.typography.muted.copyWith(
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: refreshing
+                              ? null
+                              : () => unawaited(
+                                  repository.refresh(manual: true),
+                                ),
+                          child: Text(
+                            refreshing ? 'Refreshing…' : 'Refresh',
+                            style: context.typography.button.copyWith(
+                              color: refreshing
+                                  ? context.colors.textMuted
+                                  : context.colors.primary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -120,132 +185,133 @@ final class UsagePage extends ConsumerWidget {
   }
 }
 
-final class _UsageBody extends StatelessWidget {
-  const _UsageBody({
+final class _DashboardBody extends ConsumerWidget {
+  const _DashboardBody({
     required this.usage,
     required this.status,
-    required this.outcome,
-    required this.errorMessage,
+    required this.kind,
     super.key,
   });
 
   final UsageInfo usage;
   final RefreshStatus status;
-  final RefreshOutcome? outcome;
-  final String? errorMessage;
+  final TrayStatusKind kind;
 
   @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final outcome = status.lastResult?.status;
+    final error = status.lastResult?.error;
+    final parser = status.lastResult?.parserState;
+    final settingsFuture = ref.watch(usageRepositoryProvider).getSettings();
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TrayUsageMeter(
-            label: 'Current session',
-            percent: usage.sessionUsedPercent,
-            resetsAtRaw: usage.sessionResetsAtRaw,
-          ),
-          const SizedBox(height: Spacing.xl),
-          const _Hairline(),
-          const SizedBox(height: Spacing.xl),
-          for (var i = 0; i < usage.weekly.length; i++) ...[
-            TrayUsageMeter(
-              label: _weekLabel(usage.weekly[i].label),
-              percent: usage.weekly[i].usedPercent,
-              resetsAtRaw: usage.weekly[i].resetsAtRaw,
-            ),
-            if (i < usage.weekly.length - 1) ...[
-              const SizedBox(height: Spacing.xl),
-              const _Hairline(),
-              const SizedBox(height: Spacing.xl),
-            ],
-          ],
-          const SizedBox(height: Spacing.xl),
-          const _Hairline(),
-          const SizedBox(height: Spacing.xl),
-          Text('Status', style: type.sectionTitle),
-          const SizedBox(height: Spacing.md),
-          Wrap(
-            spacing: Spacing.sm,
-            runSpacing: Spacing.sm,
-            crossAxisAlignment: WrapCrossAlignment.center,
+    return FutureBuilder<AppSettings>(
+      future: settingsFuture,
+      builder: (context, settingsSnap) {
+        final settings = settingsSnap.data;
+        final mode = settings == null
+            ? '—'
+            : settings.autoRefreshEnabled
+            ? 'Auto ${settings.refreshInterval.inSeconds}s'
+            : 'Manual';
+
+        final parserOk = parser?.validation == ValidationStatus.valid;
+        final authOk = kind != TrayStatusKind.error;
+        final showStale = settings?.showStaleIndicator ?? true;
+        final displayKind = !showStale && kind == TrayStatusKind.cached
+            ? TrayStatusKind.live
+            : kind;
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TrayStatusBadge(kind: _badgeKind(status, usage, outcome)),
+              TrayUsageMeter(
+                label: 'Session',
+                percent: usage.sessionUsedPercent,
+                resetsAtRaw: usage.sessionResetsAtRaw,
+              ),
+              const AsciiSeparator(),
+              for (var i = 0; i < usage.weekly.length; i++) ...[
+                TrayUsageMeter(
+                  label: _weekLabel(usage.weekly[i].label),
+                  percent: usage.weekly[i].usedPercent,
+                  resetsAtRaw: usage.weekly[i].resetsAtRaw,
+                ),
+                if (i < usage.weekly.length - 1) const AsciiSeparator(),
+              ],
+              const AsciiSeparator(),
+              const TerminalSectionLabel('Usage status'),
+              const SizedBox(height: Spacing.sm),
+              TerminalKvRow(
+                label: 'Status',
+                value:
+                    '${UsageStatusMapper.emoji(displayKind)} '
+                    '${UsageStatusMapper.label(displayKind)}',
+              ),
+              TerminalKvRow(
+                label: 'Source',
+                value: UsageStatusMapper.sourceLabel(usage),
+              ),
+              TerminalKvRow(
+                label: 'Updated',
+                value: UsageStatusMapper.relativeUpdated(
+                  status.lastSuccessAt ?? usage.fetchedAt,
+                ),
+              ),
+              TerminalKvRow(label: 'Mode', value: mode),
+              if (outcome == RefreshOutcome.softFailure) ...[
+                const SizedBox(height: Spacing.sm),
+                Text(
+                  'Claude did not return limits; showing last known usage.',
+                  style: context.typography.bodySmall,
+                ),
+              ],
+              if (outcome == RefreshOutcome.failure && error != null) ...[
+                const SizedBox(height: Spacing.sm),
+                Text(error.message, style: context.typography.error),
+              ],
+              const AsciiSeparator(),
+              const TerminalSectionLabel('CLI health'),
+              const SizedBox(height: Spacing.sm),
+              TerminalKvRow(
+                label: 'Auth',
+                value: authOk ? '✓ OK' : '✗ Check',
+                valueColor: authOk
+                    ? context.colors.success
+                    : context.colors.error,
+              ),
+              TerminalKvRow(
+                label: 'Parser',
+                value: parser == null
+                    ? '—'
+                    : parserOk
+                    ? '✓ OK'
+                    : '✗ ${parser.validation.name}',
+                valueColor: parserOk
+                    ? context.colors.success
+                    : context.colors.warning,
+              ),
+              TerminalKvRow(
+                label: 'Cache',
+                value: usage.isFromCache ? 'Using LKG' : '✓ Fresh',
+              ),
+              TerminalKvRow(
+                label: 'Last error',
+                value: error?.message ?? 'None',
+                valueColor: error == null
+                    ? context.colors.textMuted
+                    : context.colors.error,
+              ),
             ],
           ),
-          const SizedBox(height: Spacing.md),
-          Text('Updated', style: type.muted),
-          const SizedBox(height: Spacing.xs),
-          Text(
-            _relativeUpdated(
-              status.lastSuccessAt ?? usage.fetchedAt,
-            ),
-            style: type.body,
-          ),
-          if (outcome == RefreshOutcome.softFailure) ...[
-            const SizedBox(height: Spacing.md),
-            Text(
-              'Claude did not return limits; showing last known usage.',
-              style: type.bodySmall,
-            ),
-          ],
-          if (outcome == RefreshOutcome.failure) ...[
-            const SizedBox(height: Spacing.md),
-            Text(
-              errorMessage ?? 'Refresh failed',
-              style: type.error,
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 
   static String _weekLabel(String raw) {
     final trimmed = raw.trim();
-    if (trimmed.isEmpty) return 'Current week';
-    return 'Current week ($trimmed)';
-  }
-
-  static TrayStatusKind _badgeKind(
-    RefreshStatus status,
-    UsageInfo usage,
-    RefreshOutcome? outcome,
-  ) {
-    if (status.phase == RefreshPhase.refreshing) {
-      return TrayStatusKind.refreshing;
-    }
-    if (outcome == RefreshOutcome.failure) {
-      return TrayStatusKind.error;
-    }
-    if (usage.isFromCache || outcome == RefreshOutcome.softFailure) {
-      return TrayStatusKind.cached;
-    }
-    return TrayStatusKind.live;
-  }
-
-  static String _relativeUpdated(DateTime at) {
-    final now = DateTime.now().toUtc();
-    final utc = at.isUtc ? at : at.toUtc();
-    final delta = now.difference(utc);
-    if (delta.inSeconds < 5) return 'just now';
-    if (delta.inSeconds < 60) return '${delta.inSeconds} sec ago';
-    if (delta.inMinutes < 60) return '${delta.inMinutes} min ago';
-    if (delta.inHours < 24) return '${delta.inHours} hr ago';
-    return '${delta.inDays} day${delta.inDays == 1 ? '' : 's'} ago';
-  }
-}
-
-final class _Hairline extends StatelessWidget {
-  const _Hairline();
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: context.colors.divider,
-      child: const SizedBox(height: 1, width: double.infinity),
-    );
+    if (trimmed.isEmpty) return 'Week';
+    return 'Week ($trimmed)';
   }
 }

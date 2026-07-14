@@ -102,7 +102,7 @@ void main() {
       ),
     );
     expect(snapshot.connectionLabel, contains('Refreshing'));
-    expect(snapshot.footerStatusLine, '🔄 Refreshing');
+    expect(snapshot.footerStatusLine, '🔵 Refreshing');
     expect(snapshot.iconTitle, isEmpty);
   });
 

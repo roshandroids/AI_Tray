@@ -201,7 +201,7 @@ abstract final class TrayMenuBuilder {
     required RefreshOutcome? outcome,
     required AppFailure? error,
   }) {
-    if (refreshing) return '🔄 Refreshing';
+    if (refreshing) return '🔵 Refreshing';
     if (outcome == RefreshOutcome.failure && error != null) {
       return '🔴 Error';
     }

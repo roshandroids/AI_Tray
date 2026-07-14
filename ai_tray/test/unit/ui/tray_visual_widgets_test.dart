@@ -39,9 +39,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Current session'), findsOneWidget);
-    expect(find.text('24% used'), findsOneWidget);
-    expect(find.text('Resets 10pm (America/Toronto)'), findsOneWidget);
+    expect(find.text('CURRENT SESSION'), findsOneWidget);
+    expect(find.text('24%'), findsOneWidget);
+    expect(find.text('Resets'), findsOneWidget);
+    expect(find.text('10pm (America/Toronto)'), findsOneWidget);
   });
 
   testWidgets('TrayStatusBadge shows Live label', (tester) async {

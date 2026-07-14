@@ -5,11 +5,15 @@ import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
+import 'package:ai_tray/core/widgets/terminal_chrome.dart';
+import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Developer-oriented settings panel (PD-020).
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -76,7 +80,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           return ListView(
             padding: const EdgeInsets.all(Spacing.lg),
             children: [
-              Text('Theme', style: context.typography.sectionTitle),
+              const TerminalSectionLabel('Appearance'),
               const SizedBox(height: Spacing.sm),
               SegmentedButton<AppThemePreference>(
                 segments: const [
@@ -99,10 +103,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   unawaited(_setTheme(selected.first));
                 },
               ),
-              const SizedBox(height: Spacing.lg),
-              const Divider(),
-              const SizedBox(height: Spacing.sm),
+              const AsciiSeparator(),
+              const TerminalSectionLabel('Refresh'),
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Auto refresh'),
                 value: settings.autoRefreshEnabled,
                 onChanged: (value) {
@@ -112,12 +116,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Refresh interval'),
                 subtitle: Text('${settings.refreshInterval.inSeconds}s'),
                 trailing: DropdownButton<int>(
                   value: settings.refreshInterval.inSeconds,
                   dropdownColor: context.colors.surfaceRaised,
                   style: context.typography.body,
+                  underline: const SizedBox.shrink(),
                   items: const [
                     DropdownMenuItem(value: 30, child: Text('30s')),
                     DropdownMenuItem(value: 45, child: Text('45s')),
@@ -135,8 +141,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   },
                 ),
               ),
+              const AsciiSeparator(),
+              const TerminalSectionLabel('Notifications'),
               SwitchListTile(
-                title: const Text('Notifications'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Enable notifications'),
                 value: settings.notificationsEnabled,
                 onChanged: (value) {
                   unawaited(
@@ -145,6 +154,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Notify at session %'),
                 subtitle: Text(
                   settings.notifyAtSessionPercent?.toStringAsFixed(0) ?? 'Off',
@@ -153,6 +163,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   value: settings.notifyAtSessionPercent,
                   dropdownColor: context.colors.surfaceRaised,
                   style: context.typography.body,
+                  underline: const SizedBox.shrink(),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Off')),
                     DropdownMenuItem(value: 50, child: Text('50%')),
@@ -177,7 +188,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   },
                 ),
               ),
+              const AsciiSeparator(),
+              const TerminalSectionLabel('App behavior'),
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Launch at login'),
                 value: settings.launchAtLogin,
                 onChanged: (value) {
@@ -185,7 +199,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
               SwitchListTile(
+                contentPadding: EdgeInsets.zero,
                 title: const Text('Show stale indicator'),
+                subtitle: const Text('Highlight Cached status in UI'),
                 value: settings.showStaleIndicator,
                 onChanged: (value) {
                   unawaited(
@@ -193,12 +209,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   );
                 },
               ),
-              const SizedBox(height: Spacing.md),
+              const AsciiSeparator(),
+              const TerminalSectionLabel('CLI'),
+              const SizedBox(height: Spacing.sm),
               TextField(
                 controller: _binaryController,
                 style: context.typography.body,
                 decoration: const InputDecoration(
                   labelText: 'Claude binary path (optional)',
+                  hintText: 'claude',
                 ),
                 onSubmitted: (value) {
                   unawaited(
@@ -218,6 +237,43 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ),
                   );
                 },
+              ),
+              const AsciiSeparator(),
+              const TerminalSectionLabel('Diagnostics'),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Open diagnostics'),
+                subtitle: const Text('Health, parser, cache, environment'),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () {
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DiagnosticsPage(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Open logs'),
+                subtitle: const Text('Ring-buffer viewer · copy · export'),
+                trailing: const Icon(Icons.chevron_right, size: 18),
+                onTap: () {
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const LogsPage(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const AsciiSeparator(),
+              Text(
+                'AI Tray · terminal companion for Claude Code',
+                style: context.typography.muted.copyWith(fontSize: 11),
               ),
             ],
           );

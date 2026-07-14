@@ -66,7 +66,7 @@ final class TrayStatusBadge extends StatelessWidget {
         label: 'Refreshing',
         color: colors.statusRefreshing,
       ),
-      TrayStatusKind.idle => (label: 'Idle', color: colors.statusIdle),
+      TrayStatusKind.idle => (label: 'Waiting', color: colors.statusIdle),
     };
   }
 }
