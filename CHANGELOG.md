@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-07-13
+
 ### Added
 - Official design system tokens and shared desktop components (PD-021).
 - Circular macOS tray usage ring; Settings left rail; redesigned Diagnostics/Logs.
