@@ -2,26 +2,58 @@
 
 Native desktop companion for **Claude Code** subscription usage (macOS menu bar / Windows system tray).
 
-**Status:** **v1.0.0-rc2** · dogfooding (PD-011) · **feature freeze**  
+**Status:** **v1.2.0** · design system (PD-021)  
 **Platforms:** **macOS supported** · **Windows Experimental** ([PD-010](docs/stabilization/PD-010-defer-windows.md))
+
+## Screenshots
+
+Dark dashboard with session / week rings and CLI health:
+
+![AI Tray dashboard (dark)](docs/assets/screenshots/dashboard-dark.png)
+
+Light theme:
+
+![AI Tray dashboard (light)](docs/assets/screenshots/dashboard-light.png)
+
+Settings with left navigation rail:
+
+![AI Tray settings](docs/assets/screenshots/settings-dark.png)
+
+Diagnostics · Logs · Menu bar tray rings:
+
+| Diagnostics | Logs |
+| --- | --- |
+| ![Diagnostics](docs/assets/screenshots/diagnostics-dark.png) | ![Logs](docs/assets/screenshots/logs-dark.png) |
+
+![Tray ring states](docs/assets/screenshots/tray-rings.png)
+
+*Tray (L→R): Live · Cached · Refreshing · Error*
 
 ## Quick links
 
 | | |
 |--|--|
 | App package | [ai_tray/](ai_tray/) · [ai_tray/README.md](ai_tray/README.md) |
+| Design system | [docs/design/DESIGN_SYSTEM.md](docs/design/DESIGN_SYSTEM.md) |
 | Docs index | [docs/README.md](docs/README.md) |
-| **RC2 release notes** | [docs/release/release-notes-v1.0.0-rc2.md](docs/release/release-notes-v1.0.0-rc2.md) |
+| Releases | [GitHub Releases](https://github.com/roshandroids/AI_Tray/releases) |
 | **CI/CD** | [docs/release/CI-CD.md](docs/release/CI-CD.md) |
-| **Dogfooding** | [docs/dogfood/README.md](docs/dogfood/README.md) · [daily log](docs/dogfood/daily-observation-log.md) |
-| PD-011 | [docs/release/PD-011-rc2-dogfooding.md](docs/release/PD-011-rc2-dogfooding.md) |
 | Install | [docs/guides/installation.md](docs/guides/installation.md) |
 | User guide | [docs/guides/user-guide.md](docs/guides/user-guide.md) |
 | Troubleshooting | [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) |
 | Known issues | [docs/release/known-issues.md](docs/release/known-issues.md) |
-| Phase 2 | [docs/stabilization/STABILIZATION_REPORT.md](docs/stabilization/STABILIZATION_REPORT.md) |
-| Postmortem | [docs/POSTMORTEM.md](docs/POSTMORTEM.md) |
-| ADRs | [docs/adr/README.md](docs/adr/README.md) |
+
+## Install
+
+See [installation guide](docs/guides/installation.md). Latest builds: [v1.2.0](https://github.com/roshandroids/AI_Tray/releases/tag/v1.2.0).
+
+## Run (macOS)
+
+```bash
+cd ai_tray
+flutter pub get
+flutter run -d macos
+```
 
 ## Product & process (historical)
 
@@ -31,4 +63,4 @@ Native desktop companion for **Claude Code** subscription usage (macOS menu bar 
 
 ## Dogfooding
 
-Use RC2 daily with Claude Code. Log observations in [docs/dogfood/daily-observation-log.md](docs/dogfood/daily-observation-log.md). No new features without evidence from use and Product Owner approval.
+Log observations in [docs/dogfood/daily-observation-log.md](docs/dogfood/daily-observation-log.md). No new features without evidence from use and Product Owner approval.

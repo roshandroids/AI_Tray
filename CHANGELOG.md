@@ -5,6 +5,9 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+### Added
+- README screenshots for dashboard, settings, diagnostics, logs, and tray rings.
+
 ## [1.2.0] — 2026-07-13
 
 ### Added

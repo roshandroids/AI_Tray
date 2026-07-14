@@ -93,7 +93,7 @@ jobs:
         run: flutter pub get
 
       - name: Test (unit + widget, excluding macOS goldens)
-        run: flutter test --exclude-tags golden
+        run: flutter test --exclude-tags golden,screenshot
 
   build-macos:
     name: Build macOS
