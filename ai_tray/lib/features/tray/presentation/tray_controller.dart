@@ -7,6 +7,7 @@ import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
 import 'package:ai_tray/features/tray/presentation/tray_menu_builder.dart';
+import 'package:ai_tray/features/tray/presentation/tray_ring_icon_renderer.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
@@ -26,7 +27,8 @@ Future<void> initializeDesktopShell(AppLogger logger) async {
 
   await windowManager.ensureInitialized();
   const options = WindowOptions(
-    size: Size(460, 640),
+    size: Size(720, 640),
+    minimumSize: Size(420, 480),
     center: true,
     // Keep Dock presence so double-clicking the .app is discoverable.
     skipTaskbar: false,
@@ -101,15 +103,33 @@ final class TrayController with TrayListener, WindowListener {
 
   Future<void> _applyIcon(RefreshStatus status) async {
     final kind = UsageStatusMapper.kind(status);
+    final sessionPct = status.lastResult?.usage?.sessionUsedPercent;
     try {
       if (Platform.isMacOS) {
+        // Prefer painted circular usage ring; fall back to static assets.
+        try {
+          final path = await TrayRingIconRenderer.render(
+            kind: kind,
+            sessionPercent: sessionPct,
+          );
+          if (path != _lastIconPath) {
+            await trayManager.setIcon(path, isTemplate: false);
+            _lastIconPath = path;
+          }
+          return;
+        } on Exception catch (error) {
+          logger.warning(
+            'tray ring render failed, using static asset: $error',
+            name: 'tray',
+          );
+        }
         final path = TrayIconResolver.macOsAsset(kind);
         if (path != _lastIconPath) {
           await trayManager.setIcon(path, isTemplate: false);
           _lastIconPath = path;
         }
       } else if (Platform.isWindows) {
-        // Windows uses a single .ico; status is reflected in tooltip / menu.
+        // Windows expects .ico; custom PNG rings are not used here.
         if (_lastIconPath != TrayIconResolver.windowsAsset) {
           await trayManager.setIcon(TrayIconResolver.windowsAsset);
           _lastIconPath = TrayIconResolver.windowsAsset;
@@ -127,12 +147,8 @@ final class TrayController with TrayListener, WindowListener {
     await trayManager.setToolTip(snapshot.toolTip);
     if (Platform.isMacOS) {
       try {
-        final kind = UsageStatusMapper.kind(status);
-        final prefix = TrayIconResolver.macOsTitlePrefix(kind);
-        final title = snapshot.iconTitle.isEmpty
-            ? prefix
-            : '$prefix ${snapshot.iconTitle}';
-        await trayManager.setTitle(title);
+        // Ring icon already encodes % — keep title empty to avoid duplication.
+        await trayManager.setTitle('');
       } on Exception catch (error) {
         logger.warning('tray title failed: $error', name: 'tray');
       }

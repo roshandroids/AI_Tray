@@ -14,6 +14,7 @@
 | [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
 | [dogfood/daily-observation-log.md](dogfood/daily-observation-log.md) | Daily running log |
 | [POSTMORTEM.md](POSTMORTEM.md) | Lessons learned |
+| [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Official UI design system (PD-021) |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
 | [release/README.md](release/README.md) | RC1 hardening & final deliverables |

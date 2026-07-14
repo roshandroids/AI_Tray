@@ -46,7 +46,10 @@ final class TrayStatusBadge extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: Spacing.sm),
-              Text(spec.label, style: context.typography.badge),
+              Text(
+                spec.label,
+                style: context.typography.badge.copyWith(color: spec.color),
+              ),
             ],
           ),
         ),

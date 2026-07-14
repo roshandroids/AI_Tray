@@ -1,10 +1,11 @@
 import 'package:ai_tray/core/theme/color_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// Bundled monospace stack (IBM Plex Mono).
+/// Font families — JetBrains Mono primary, IBM Plex Mono fallback (PD-021).
 abstract final class TrayFonts {
-  static const String monoFamily = 'IBMPlexMono';
+  static const String monoFamily = 'JetBrainsMono';
   static const List<String> monoFallbacks = [
+    'IBMPlexMono',
     'Menlo',
     'SF Mono',
     'Monaco',
@@ -15,22 +16,20 @@ abstract final class TrayFonts {
   ];
 }
 
-/// Typography scale derived from semantic colors (PD-014).
+/// Typography presets derived from semantic colors (PD-021).
 @immutable
 final class TrayTypography extends ThemeExtension<TrayTypography> {
   const TrayTypography({
     required this.display,
-    required this.heading,
-    required this.sectionTitle,
-    required this.appBarTitle,
+    required this.title,
+    required this.section,
+    required this.label,
     required this.body,
-    required this.bodySmall,
     required this.caption,
-    required this.muted,
-    required this.meterValue,
-    required this.badge,
+    required this.monoData,
+    required this.status,
+    required this.terminalOutput,
     required this.button,
-    required this.emptyTitle,
     required this.error,
   });
 
@@ -39,7 +38,7 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
       required double size,
       required Color color,
       FontWeight weight = FontWeight.w400,
-      double height = 1.35,
+      double height = 1.5,
       double? letterSpacing,
     }) {
       return TextStyle(
@@ -54,78 +53,119 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
     }
 
     return TrayTypography(
-      display: mono(size: 22, weight: FontWeight.w600, color: colors.title),
-      heading: mono(size: 16, weight: FontWeight.w600, color: colors.title),
-      sectionTitle: mono(
-        size: 13,
-        weight: FontWeight.w600,
-        color: colors.title,
+      display: mono(
+        size: 18,
+        weight: FontWeight.w700,
+        color: colors.textPrimary,
+        height: 28 / 18,
       ),
-      appBarTitle: mono(
-        size: 15,
-        weight: FontWeight.w600,
-        color: colors.title,
-        letterSpacing: 0.2,
+      title: mono(
+        size: 18,
+        weight: FontWeight.w700,
+        color: colors.textPrimary,
+        height: 28 / 18,
       ),
-      body: mono(size: 13, color: colors.textPrimary),
-      bodySmall: mono(size: 12, color: colors.textSecondary, height: 1.45),
-      caption: mono(size: 11, color: colors.textSecondary, height: 1.45),
-      muted: mono(size: 12, color: colors.textMuted, height: 1.45),
-      meterValue: mono(size: 12, color: colors.textPrimary),
-      badge: mono(size: 12, weight: FontWeight.w600, color: colors.textPrimary),
+      section: mono(
+        size: 14,
+        weight: FontWeight.w600,
+        color: colors.textPrimary,
+        height: 20 / 14,
+        letterSpacing: 0.4,
+      ),
+      label: mono(
+        size: 12,
+        weight: FontWeight.w500,
+        color: colors.textSecondary,
+        height: 18 / 12,
+      ),
+      body: mono(
+        size: 12,
+        color: colors.textPrimary,
+        height: 18 / 12,
+      ),
+      caption: mono(
+        size: 11,
+        color: colors.textMuted,
+        height: 16 / 11,
+      ),
+      monoData: mono(
+        size: 12,
+        weight: FontWeight.w500,
+        color: colors.textPrimary,
+        height: 18 / 12,
+      ),
+      status: mono(
+        size: 12,
+        weight: FontWeight.w600,
+        color: colors.textPrimary,
+        height: 18 / 12,
+      ),
+      terminalOutput: mono(
+        size: 12,
+        color: colors.textSecondary,
+        height: 18 / 12,
+      ),
       button: mono(
-        size: 13,
+        size: 12,
         weight: FontWeight.w600,
-        color: colors.onPrimary,
+        color: colors.onAccent,
+        height: 18 / 12,
       ),
-      emptyTitle: mono(size: 14, weight: FontWeight.w600, color: colors.title),
-      error: mono(size: 12, color: colors.error, height: 1.45),
+      error: mono(
+        size: 12,
+        color: colors.error,
+        height: 18 / 12,
+      ),
     );
   }
 
   final TextStyle display;
-  final TextStyle heading;
-  final TextStyle sectionTitle;
-  final TextStyle appBarTitle;
+  final TextStyle title;
+  final TextStyle section;
+  final TextStyle label;
   final TextStyle body;
-  final TextStyle bodySmall;
   final TextStyle caption;
-  final TextStyle muted;
-  final TextStyle meterValue;
-  final TextStyle badge;
+  final TextStyle monoData;
+  final TextStyle status;
+  final TextStyle terminalOutput;
   final TextStyle button;
-  final TextStyle emptyTitle;
   final TextStyle error;
+
+  // --- Compatibility aliases for older screens ---
+  TextStyle get heading => section;
+  TextStyle get sectionTitle => section;
+  TextStyle get appBarTitle => title;
+  TextStyle get bodySmall => caption;
+  TextStyle get muted => caption;
+  TextStyle get meterValue => monoData;
+  TextStyle get badge => status;
+  TextStyle get emptyTitle => section;
 
   @override
   TrayTypography copyWith({
     TextStyle? display,
-    TextStyle? heading,
-    TextStyle? sectionTitle,
-    TextStyle? appBarTitle,
+    TextStyle? title,
+    TextStyle? section,
+    TextStyle? label,
     TextStyle? body,
-    TextStyle? bodySmall,
     TextStyle? caption,
-    TextStyle? muted,
-    TextStyle? meterValue,
-    TextStyle? badge,
+    TextStyle? monoData,
+    TextStyle? status,
+    TextStyle? terminalOutput,
     TextStyle? button,
-    TextStyle? emptyTitle,
     TextStyle? error,
   }) {
     return TrayTypography(
       display: display ?? this.display,
-      heading: heading ?? this.heading,
-      sectionTitle: sectionTitle ?? this.sectionTitle,
-      appBarTitle: appBarTitle ?? this.appBarTitle,
+      title: title ?? this.title,
+      section: section ?? this.section,
+      label: label ?? this.label,
       body: body ?? this.body,
-      bodySmall: bodySmall ?? this.bodySmall,
       caption: caption ?? this.caption,
-      muted: muted ?? this.muted,
-      meterValue: meterValue ?? this.meterValue,
-      badge: badge ?? this.badge,
+      monoData: monoData ?? this.monoData,
+      status: status ?? this.status,
+      terminalOutput: terminalOutput ?? this.terminalOutput,
       button: button ?? this.button,
-      emptyTitle: emptyTitle ?? this.emptyTitle,
       error: error ?? this.error,
     );
   }
@@ -135,17 +175,15 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
     if (other is! TrayTypography) return this;
     return TrayTypography(
       display: TextStyle.lerp(display, other.display, t)!,
-      heading: TextStyle.lerp(heading, other.heading, t)!,
-      sectionTitle: TextStyle.lerp(sectionTitle, other.sectionTitle, t)!,
-      appBarTitle: TextStyle.lerp(appBarTitle, other.appBarTitle, t)!,
+      title: TextStyle.lerp(title, other.title, t)!,
+      section: TextStyle.lerp(section, other.section, t)!,
+      label: TextStyle.lerp(label, other.label, t)!,
       body: TextStyle.lerp(body, other.body, t)!,
-      bodySmall: TextStyle.lerp(bodySmall, other.bodySmall, t)!,
       caption: TextStyle.lerp(caption, other.caption, t)!,
-      muted: TextStyle.lerp(muted, other.muted, t)!,
-      meterValue: TextStyle.lerp(meterValue, other.meterValue, t)!,
-      badge: TextStyle.lerp(badge, other.badge, t)!,
+      monoData: TextStyle.lerp(monoData, other.monoData, t)!,
+      status: TextStyle.lerp(status, other.status, t)!,
+      terminalOutput: TextStyle.lerp(terminalOutput, other.terminalOutput, t)!,
       button: TextStyle.lerp(button, other.button, t)!,
-      emptyTitle: TextStyle.lerp(emptyTitle, other.emptyTitle, t)!,
       error: TextStyle.lerp(error, other.error, t)!,
     );
   }

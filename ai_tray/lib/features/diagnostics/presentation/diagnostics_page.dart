@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
@@ -8,23 +10,24 @@ import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
-import 'package:ai_tray/core/widgets/terminal_chrome.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
-import 'package:ai_tray/features/usage/presentation/widgets/tray_status_pill.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_notifier/local_notifier.dart';
 
-/// Developer diagnostics dashboard (PD-020).
+/// Live diagnostics dashboard aligned to the design system (PD-021).
 final class DiagnosticsPage extends ConsumerWidget {
   const DiagnosticsPage({super.key});
+
+  static const _appVersion = '1.1.0+4';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,12 +50,13 @@ final class DiagnosticsPage extends ConsumerWidget {
           future: repository.getSettings(),
           builder: (context, settingsSnap) {
             final settings = settingsSnap.data;
+            final themeLabel = (themePref ?? settings?.themeMode)?.label ?? '—';
 
             return Scaffold(
               appBar: AppBar(
                 title: const Text('Diagnostics'),
                 actions: [
-                  TrayStatusPill(kind: kind, compact: true),
+                  StatusBadge(kind: kind, compact: true),
                   const SizedBox(width: Spacing.sm),
                   IconButton(
                     tooltip: 'Open logs',
@@ -69,196 +73,265 @@ final class DiagnosticsPage extends ConsumerWidget {
                   ),
                 ],
               ),
-              body: ListView(
-                padding: const EdgeInsets.all(Spacing.lg),
-                children: [
-                  const TerminalSectionLabel('Application'),
-                  const SizedBox(height: Spacing.sm),
-                  const TerminalKvRow(label: 'Version', value: '1.0.0+3'),
-                  TerminalKvRow(
-                    label: 'Platform',
-                    value: _platformLabel(),
-                  ),
-                  TerminalKvRow(
-                    label: 'Architecture',
-                    value: _archLabel(),
-                  ),
-                  const TerminalKvRow(
-                    label: 'Build',
-                    value: kReleaseMode ? 'Release' : 'Debug',
-                  ),
-                  TerminalKvRow(
-                    label: 'Theme',
-                    value: (themePref ?? settings?.themeMode)?.label ?? '—',
-                  ),
-                  const AsciiSeparator(),
-                  const TerminalSectionLabel('Refresh'),
-                  const SizedBox(height: Spacing.sm),
-                  TerminalKvRow(
-                    label: 'Auto refresh',
-                    value: settings == null
-                        ? '—'
-                        : settings.autoRefreshEnabled
-                        ? 'On'
-                        : 'Off',
-                  ),
-                  TerminalKvRow(
-                    label: 'Interval',
-                    value: settings == null
-                        ? '—'
-                        : '${settings.refreshInterval.inSeconds}s',
-                  ),
-                  TerminalKvRow(
-                    label: 'Phase',
-                    value: status.phase.name,
-                  ),
-                  TerminalKvRow(
-                    label: 'Status',
-                    value:
-                        '${UsageStatusMapper.emoji(kind)} '
-                        '${UsageStatusMapper.label(kind)}',
-                  ),
-                  TerminalKvRow(
-                    label: 'Last success',
-                    value: UsageStatusMapper.relativeUpdated(
-                      status.lastSuccessAt,
-                    ),
-                  ),
-                  TerminalKvRow(
-                    label: 'Last failure',
-                    value: result?.status == RefreshOutcome.failure
-                        ? (error?.message ?? 'failure')
-                        : '—',
-                    valueColor: result?.status == RefreshOutcome.failure
-                        ? context.colors.error
-                        : null,
-                  ),
-                  TerminalKvRow(
-                    label: 'Duration',
-                    value: result == null
-                        ? '—'
-                        : '${result.duration.inMilliseconds}ms',
-                  ),
-                  TerminalKvRow(
-                    label: 'Soft failures',
-                    value: '${status.consecutiveSoftFailures}',
-                  ),
-                  TerminalKvRow(
-                    label: 'Hard failures',
-                    value: '${status.consecutiveHardFailures}',
-                  ),
-                  const AsciiSeparator(),
-                  const TerminalSectionLabel('Parser / cache'),
-                  const SizedBox(height: Spacing.sm),
-                  TerminalKvRow(
-                    label: 'Shape',
-                    value: parser?.shape.name ?? '—',
-                  ),
-                  TerminalKvRow(
-                    label: 'Validation',
-                    value: parser?.validation.name ?? '—',
-                  ),
-                  TerminalKvRow(
-                    label: 'Session line',
-                    value: parser == null
-                        ? '—'
-                        : parser.matchedSessionLine
-                        ? 'matched'
-                        : 'miss',
-                  ),
-                  TerminalKvRow(
-                    label: 'Week lines',
-                    value: parser == null
-                        ? '—'
-                        : '${parser.matchedWeekLineCount}',
-                  ),
-                  TerminalKvRow(
-                    label: 'Raw length',
-                    value: parser == null ? '—' : '${parser.rawTextLength}',
-                  ),
-                  TerminalKvRow(
-                    label: 'Cache',
-                    value: usage == null
-                        ? 'empty'
-                        : usage.isFromCache
-                        ? 'LKG'
-                        : 'live',
-                  ),
-                  TerminalKvRow(
-                    label: 'Exit code',
-                    value: result?.cliExitCode?.toString() ?? '—',
-                  ),
-                  TerminalKvRow(
-                    label: 'CLI binary',
-                    value: (settings?.claudeBinaryPath?.isNotEmpty ?? false)
-                        ? settings!.claudeBinaryPath!
-                        : 'claude (PATH)',
-                  ),
-                  const TerminalKvRow(
-                    label: 'CLI version',
-                    value: '— (not captured; see PD-020 notes)',
-                  ),
-                  const AsciiSeparator(),
-                  const TerminalSectionLabel('Advanced'),
-                  const SizedBox(height: Spacing.sm),
-                  Wrap(
-                    spacing: Spacing.sm,
-                    runSpacing: Spacing.sm,
-                    children: [
-                      _ToolButton(
-                        label: 'Force refresh',
-                        onPressed: status.phase == RefreshPhase.refreshing
-                            ? null
-                            : () => unawaited(
-                                repository.refresh(manual: true),
-                              ),
+              body: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 720;
+                  final panels = [
+                    TerminalPanel(
+                      title: 'Application',
+                      child: Column(
+                        children: [
+                          const InfoRow(
+                            label: 'App version',
+                            value: _appVersion,
+                          ),
+                          const InfoRow(
+                            label: 'Claude CLI',
+                            value: '—',
+                          ),
+                          InfoRow(label: 'Theme', value: themeLabel),
+                          InfoRow(
+                            label: 'Platform',
+                            value: _platformLabel(),
+                          ),
+                          InfoRow(
+                            label: 'Architecture',
+                            value: _archLabel(),
+                          ),
+                          const InfoRow(
+                            label: 'Build',
+                            value: kReleaseMode ? 'Release' : 'Debug',
+                          ),
+                          const InfoRow(
+                            label: 'Provider',
+                            value: 'Claude CLI',
+                          ),
+                        ],
                       ),
-                      _ToolButton(
-                        label: 'Open logs',
-                        onPressed: () {
-                          unawaited(
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) => const LogsPage(),
+                    ),
+                    TerminalPanel(
+                      title: 'Refresh',
+                      child: Column(
+                        children: [
+                          InfoRow(
+                            label: 'Mode',
+                            value: settings == null
+                                ? '—'
+                                : settings.autoRefreshEnabled
+                                ? 'Auto'
+                                : 'Manual',
+                          ),
+                          InfoRow(
+                            label: 'Interval',
+                            value: settings == null
+                                ? '—'
+                                : '${settings.refreshInterval.inSeconds}s',
+                          ),
+                          InfoRow(
+                            label: 'Phase',
+                            value: status.phase.name,
+                          ),
+                          InfoRow(
+                            label: 'Status',
+                            value: UsageStatusMapper.label(kind),
+                            valueColor: _statusColor(context, kind),
+                          ),
+                          InfoRow(
+                            label: 'Last success',
+                            value: UsageStatusMapper.relativeUpdated(
+                              status.lastSuccessAt,
+                            ),
+                          ),
+                          InfoRow(
+                            label: 'Last failure',
+                            value: result?.status == RefreshOutcome.failure
+                                ? (error?.message ?? 'failure')
+                                : '—',
+                            valueColor: result?.status == RefreshOutcome.failure
+                                ? context.colors.error
+                                : null,
+                          ),
+                          InfoRow(
+                            label: 'Duration',
+                            value: result == null
+                                ? '—'
+                                : '${result.duration.inMilliseconds}ms',
+                          ),
+                          InfoRow(
+                            label: 'Soft fails',
+                            value: '${status.consecutiveSoftFailures}',
+                          ),
+                          InfoRow(
+                            label: 'Hard fails',
+                            value: '${status.consecutiveHardFailures}',
+                          ),
+                        ],
+                      ),
+                    ),
+                    TerminalPanel(
+                      title: 'Parser / Cache',
+                      child: Column(
+                        children: [
+                          InfoRow(
+                            label: 'Parser',
+                            value: parser?.shape.name ?? '—',
+                          ),
+                          InfoRow(
+                            label: 'Validation',
+                            value: parser?.validation.name ?? '—',
+                          ),
+                          InfoRow(
+                            label: 'Session line',
+                            value: parser == null
+                                ? '—'
+                                : parser.matchedSessionLine
+                                ? 'matched'
+                                : 'miss',
+                          ),
+                          InfoRow(
+                            label: 'Week lines',
+                            value: parser == null
+                                ? '—'
+                                : '${parser.matchedWeekLineCount}',
+                          ),
+                          InfoRow(
+                            label: 'Cache',
+                            value: usage == null
+                                ? 'empty'
+                                : usage.isFromCache
+                                ? 'LKG'
+                                : 'live',
+                            valueColor: usage == null
+                                ? context.colors.textMuted
+                                : usage.isFromCache
+                                ? context.colors.warning
+                                : context.colors.success,
+                          ),
+                          InfoRow(
+                            label: 'Exit code',
+                            value: result?.cliExitCode?.toString() ?? '—',
+                          ),
+                          InfoRow(
+                            label: 'CLI binary',
+                            value:
+                                (settings?.claudeBinaryPath?.isNotEmpty ??
+                                    false)
+                                ? settings!.claudeBinaryPath!
+                                : 'claude (PATH)',
+                          ),
+                        ],
+                      ),
+                    ),
+                    TerminalPanel(
+                      title: 'Tools',
+                      child: Wrap(
+                        spacing: Spacing.sm,
+                        runSpacing: Spacing.sm,
+                        children: [
+                          _ToolButton(
+                            label: 'Force refresh',
+                            onPressed: status.phase == RefreshPhase.refreshing
+                                ? null
+                                : () => unawaited(
+                                    repository.refresh(manual: true),
+                                  ),
+                          ),
+                          _ToolButton(
+                            label: 'Open logs',
+                            onPressed: () {
+                              unawaited(
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const LogsPage(),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          _ToolButton(
+                            label: 'Copy diagnostics',
+                            onPressed: () => unawaited(
+                              _copyDiagnostics(
+                                context,
+                                status: status,
+                                settings: settings,
+                                theme: themePref,
+                                logger: logger,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                      _ToolButton(
-                        label: 'Copy diagnostics',
-                        onPressed: () => unawaited(
-                          _copyDiagnostics(
-                            context,
-                            status: status,
-                            settings: settings,
-                            theme: themePref,
-                            logger: logger,
                           ),
-                        ),
+                          _ToolButton(
+                            label: 'Export logs',
+                            onPressed: () =>
+                                unawaited(_exportLogs(context, logger)),
+                          ),
+                          _ToolButton(
+                            label: 'Test notification',
+                            onPressed: () =>
+                                unawaited(_testNotification(context)),
+                          ),
+                          _ToolButton(
+                            label: 'Show cache',
+                            onPressed: () =>
+                                unawaited(_showCache(context, ref)),
+                          ),
+                        ],
                       ),
-                      _ToolButton(
-                        label: 'Export logs',
-                        onPressed: () =>
-                            unawaited(_exportLogs(context, logger)),
-                      ),
-                      _ToolButton(
-                        label: 'Test notification',
-                        onPressed: () => unawaited(_testNotification(context)),
-                      ),
-                      _ToolButton(
-                        label: 'Show cache',
-                        onPressed: () => unawaited(_showCache(context, ref)),
-                      ),
+                    ),
+                  ];
+
+                  return ListView(
+                    padding: const EdgeInsets.all(Spacing.md),
+                    children: [
+                      if (wide)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: panels[0]),
+                            const SizedBox(width: Spacing.md),
+                            Expanded(child: panels[1]),
+                          ],
+                        )
+                      else ...[
+                        panels[0],
+                        const SizedBox(height: Spacing.md),
+                        panels[1],
+                      ],
+                      const SizedBox(height: Spacing.md),
+                      if (wide)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: panels[2]),
+                            const SizedBox(width: Spacing.md),
+                            Expanded(child: panels[3]),
+                          ],
+                        )
+                      else ...[
+                        panels[2],
+                        const SizedBox(height: Spacing.md),
+                        panels[3],
+                      ],
                     ],
-                  ),
-                ],
+                  );
+                },
               ),
             );
           },
         );
       },
     );
+  }
+
+  static Color? _statusColor(BuildContext context, TrayStatusKind kind) {
+    final colors = context.colors;
+    return switch (kind) {
+      TrayStatusKind.live => colors.success,
+      TrayStatusKind.cached => colors.warning,
+      TrayStatusKind.error => colors.error,
+      TrayStatusKind.refreshing => colors.info,
+      TrayStatusKind.idle => colors.textMuted,
+    };
   }
 
   static String _platformLabel() {
@@ -270,7 +343,9 @@ final class DiagnosticsPage extends ConsumerWidget {
   }
 
   static String _archLabel() {
-    return Platform.operatingSystemVersion;
+    return Platform.localHostname.isEmpty
+        ? Platform.operatingSystemVersion
+        : '${Platform.operatingSystem} · ${Platform.operatingSystemVersion}';
   }
 
   static Future<void> _copyDiagnostics(
@@ -284,7 +359,7 @@ final class DiagnosticsPage extends ConsumerWidget {
     final result = status.lastResult;
     final buffer = StringBuffer()
       ..writeln('AI Tray Diagnostics')
-      ..writeln('version=1.0.0+3')
+      ..writeln('version=$_appVersion')
       ..writeln('platform=${_platformLabel()}')
       ..writeln('build=${kReleaseMode ? 'release' : 'debug'}')
       ..writeln('theme=${theme?.label ?? settings?.themeMode.label}')
@@ -386,7 +461,7 @@ final class _ToolButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         foregroundColor: context.colors.textPrimary,
-        side: BorderSide(color: context.colors.divider),
+        side: BorderSide(color: context.colors.border),
         padding: const EdgeInsets.symmetric(
           horizontal: Spacing.md,
           vertical: Spacing.sm,

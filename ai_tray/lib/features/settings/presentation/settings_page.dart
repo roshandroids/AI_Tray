@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
-import 'package:ai_tray/core/widgets/terminal_chrome.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
@@ -13,7 +13,7 @@ import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Developer-oriented settings panel (PD-020).
+/// Settings with left navigation rail (PD-021).
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -24,6 +24,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   late Future<AppSettings> _future;
   late TextEditingController _binaryController;
+  SettingsSection _section = SettingsSection.appearance;
 
   @override
   void initState() {
@@ -77,149 +78,189 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           final settings = snapshot.data!;
           final selectedTheme = themePref ?? settings.themeMode;
 
-          return ListView(
-            padding: const EdgeInsets.all(Spacing.lg),
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const TerminalSectionLabel('Appearance'),
-              const SizedBox(height: Spacing.sm),
-              SegmentedButton<AppThemePreference>(
-                segments: const [
-                  ButtonSegment(
-                    value: AppThemePreference.system,
-                    label: Text('System'),
-                  ),
-                  ButtonSegment(
-                    value: AppThemePreference.dark,
-                    label: Text('Dark'),
-                  ),
-                  ButtonSegment(
-                    value: AppThemePreference.light,
-                    label: Text('Light'),
-                  ),
-                ],
-                selected: {selectedTheme},
-                onSelectionChanged: (selected) {
-                  if (selected.isEmpty) return;
-                  unawaited(_setTheme(selected.first));
-                },
-              ),
-              const AsciiSeparator(),
-              const TerminalSectionLabel('Refresh'),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Auto refresh'),
-                value: settings.autoRefreshEnabled,
-                onChanged: (value) {
-                  unawaited(
-                    _save(settings.copyWith(autoRefreshEnabled: value)),
-                  );
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Refresh interval'),
-                subtitle: Text('${settings.refreshInterval.inSeconds}s'),
-                trailing: DropdownButton<int>(
-                  value: settings.refreshInterval.inSeconds,
-                  dropdownColor: context.colors.surfaceRaised,
-                  style: context.typography.body,
-                  underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(value: 30, child: Text('30s')),
-                    DropdownMenuItem(value: 45, child: Text('45s')),
-                    DropdownMenuItem(value: 60, child: Text('60s')),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
+              SettingsNavRail(
+                selected: _section,
+                onSelect: (section) {
+                  if (section == SettingsSection.diagnostics) {
                     unawaited(
-                      _save(
-                        settings.copyWith(
-                          refreshInterval: Duration(seconds: value),
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DiagnosticsPage(),
                         ),
                       ),
                     );
-                  },
-                ),
-              ),
-              const AsciiSeparator(),
-              const TerminalSectionLabel('Notifications'),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Enable notifications'),
-                value: settings.notificationsEnabled,
-                onChanged: (value) {
-                  unawaited(
-                    _save(settings.copyWith(notificationsEnabled: value)),
-                  );
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Notify at session %'),
-                subtitle: Text(
-                  settings.notifyAtSessionPercent?.toStringAsFixed(0) ?? 'Off',
-                ),
-                trailing: DropdownButton<double?>(
-                  value: settings.notifyAtSessionPercent,
-                  dropdownColor: context.colors.surfaceRaised,
-                  style: context.typography.body,
-                  underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(value: null, child: Text('Off')),
-                    DropdownMenuItem(value: 50, child: Text('50%')),
-                    DropdownMenuItem(value: 75, child: Text('75%')),
-                    DropdownMenuItem(value: 90, child: Text('90%')),
-                  ],
-                  onChanged: (value) {
+                    return;
+                  }
+                  if (section == SettingsSection.logs) {
                     unawaited(
-                      _save(
-                        AppSettings(
-                          autoRefreshEnabled: settings.autoRefreshEnabled,
-                          refreshInterval: settings.refreshInterval,
-                          notificationsEnabled: settings.notificationsEnabled,
-                          launchAtLogin: settings.launchAtLogin,
-                          showStaleIndicator: settings.showStaleIndicator,
-                          notifyAtSessionPercent: value,
-                          claudeBinaryPath: settings.claudeBinaryPath,
-                          themeMode: settings.themeMode,
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LogsPage(),
                         ),
                       ),
                     );
-                  },
+                    return;
+                  }
+                  setState(() => _section = section);
+                },
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.all(Spacing.md),
+                  children: [
+                    Text(
+                      _section.label,
+                      style: context.typography.title,
+                    ),
+                    const SizedBox(height: Spacing.md),
+                    ..._buildSection(settings, selectedTheme),
+                  ],
                 ),
               ),
-              const AsciiSeparator(),
-              const TerminalSectionLabel('App behavior'),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Launch at login'),
-                value: settings.launchAtLogin,
-                onChanged: (value) {
-                  unawaited(_save(settings.copyWith(launchAtLogin: value)));
-                },
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Show stale indicator'),
-                subtitle: const Text('Highlight Cached status in UI'),
-                value: settings.showStaleIndicator,
-                onChanged: (value) {
-                  unawaited(
-                    _save(settings.copyWith(showStaleIndicator: value)),
-                  );
-                },
-              ),
-              const AsciiSeparator(),
-              const TerminalSectionLabel('CLI'),
-              const SizedBox(height: Spacing.sm),
-              TextField(
-                controller: _binaryController,
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  List<Widget> _buildSection(
+    AppSettings settings,
+    AppThemePreference selectedTheme,
+  ) {
+    return switch (_section) {
+      SettingsSection.appearance => [
+        SettingsGroup(
+          title: 'Theme',
+          children: [
+            SegmentedButton<AppThemePreference>(
+              segments: const [
+                ButtonSegment(
+                  value: AppThemePreference.system,
+                  label: Text('System'),
+                ),
+                ButtonSegment(
+                  value: AppThemePreference.dark,
+                  label: Text('Dark'),
+                ),
+                ButtonSegment(
+                  value: AppThemePreference.light,
+                  label: Text('Light'),
+                ),
+              ],
+              selected: {selectedTheme},
+              onSelectionChanged: (selected) {
+                if (selected.isEmpty) return;
+                unawaited(_setTheme(selected.first));
+              },
+            ),
+            const SizedBox(height: Spacing.sm),
+            Text('Accent', style: context.typography.label),
+            const SizedBox(height: Spacing.sm),
+            Wrap(
+              spacing: Spacing.sm,
+              children: [
+                for (final color in [
+                  context.colors.success,
+                  context.colors.warning,
+                  context.colors.highUsage,
+                  context.colors.error,
+                  context.colors.info,
+                  context.colors.purpleAccent,
+                  context.colors.cyanAccent,
+                ])
+                  Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: context.colors.border),
+                    ),
+                  ),
+              ],
+            ),
+            Text(
+              'Accent swatches are status palette (fixed in PD-021).',
+              style: context.typography.caption,
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.refresh => [
+        SettingsGroup(
+          title: 'Refresh',
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Auto refresh'),
+              value: settings.autoRefreshEnabled,
+              onChanged: (value) {
+                unawaited(
+                  _save(settings.copyWith(autoRefreshEnabled: value)),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Refresh interval'),
+              trailing: DropdownButton<int>(
+                value: settings.refreshInterval.inSeconds,
+                underline: const SizedBox.shrink(),
+                dropdownColor: context.colors.surfaceAlt,
                 style: context.typography.body,
-                decoration: const InputDecoration(
-                  labelText: 'Claude binary path (optional)',
-                  hintText: 'claude',
-                ),
-                onSubmitted: (value) {
+                items: const [
+                  DropdownMenuItem(value: 30, child: Text('30s')),
+                  DropdownMenuItem(value: 45, child: Text('45s')),
+                  DropdownMenuItem(value: 60, child: Text('60s')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  unawaited(
+                    _save(
+                      settings.copyWith(
+                        refreshInterval: Duration(seconds: value),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.notifications => [
+        SettingsGroup(
+          title: 'Notifications',
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Enable notifications'),
+              value: settings.notificationsEnabled,
+              onChanged: (value) {
+                unawaited(
+                  _save(settings.copyWith(notificationsEnabled: value)),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Notify at session %'),
+              trailing: DropdownButton<double?>(
+                value: settings.notifyAtSessionPercent,
+                underline: const SizedBox.shrink(),
+                dropdownColor: context.colors.surfaceAlt,
+                style: context.typography.body,
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Off')),
+                  DropdownMenuItem(value: 50, child: Text('50%')),
+                  DropdownMenuItem(value: 75, child: Text('75%')),
+                  DropdownMenuItem(value: 90, child: Text('90%')),
+                ],
+                onChanged: (value) {
                   unawaited(
                     _save(
                       AppSettings(
@@ -228,57 +269,136 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         notificationsEnabled: settings.notificationsEnabled,
                         launchAtLogin: settings.launchAtLogin,
                         showStaleIndicator: settings.showStaleIndicator,
-                        notifyAtSessionPercent: settings.notifyAtSessionPercent,
-                        claudeBinaryPath: value.trim().isEmpty
-                            ? null
-                            : value.trim(),
+                        notifyAtSessionPercent: value,
+                        claudeBinaryPath: settings.claudeBinaryPath,
                         themeMode: settings.themeMode,
                       ),
                     ),
                   );
                 },
               ),
-              const AsciiSeparator(),
-              const TerminalSectionLabel('Diagnostics'),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Open diagnostics'),
-                subtitle: const Text('Health, parser, cache, environment'),
-                trailing: const Icon(Icons.chevron_right, size: 18),
-                onTap: () {
-                  unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const DiagnosticsPage(),
-                      ),
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.behavior => [
+        SettingsGroup(
+          title: 'App behavior',
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Launch at login'),
+              value: settings.launchAtLogin,
+              onChanged: (value) {
+                unawaited(_save(settings.copyWith(launchAtLogin: value)));
+              },
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Show stale indicator'),
+              subtitle: const Text('Highlight Cached status'),
+              value: settings.showStaleIndicator,
+              onChanged: (value) {
+                unawaited(
+                  _save(settings.copyWith(showStaleIndicator: value)),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.cli => [
+        SettingsGroup(
+          title: 'Claude CLI',
+          children: [
+            TextField(
+              controller: _binaryController,
+              style: context.typography.body,
+              decoration: const InputDecoration(
+                labelText: 'Binary path (optional)',
+                hintText: 'claude',
+              ),
+              onSubmitted: (value) {
+                unawaited(
+                  _save(
+                    AppSettings(
+                      autoRefreshEnabled: settings.autoRefreshEnabled,
+                      refreshInterval: settings.refreshInterval,
+                      notificationsEnabled: settings.notificationsEnabled,
+                      launchAtLogin: settings.launchAtLogin,
+                      showStaleIndicator: settings.showStaleIndicator,
+                      notifyAtSessionPercent: settings.notifyAtSessionPercent,
+                      claudeBinaryPath: value.trim().isEmpty
+                          ? null
+                          : value.trim(),
+                      themeMode: settings.themeMode,
                     ),
-                  );
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Open logs'),
-                subtitle: const Text('Ring-buffer viewer · copy · export'),
-                trailing: const Icon(Icons.chevron_right, size: 18),
-                onTap: () {
-                  unawaited(
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const LogsPage(),
-                      ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.advanced => [
+        SettingsGroup(
+          title: 'Advanced',
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Force refresh'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  ref.read(usageRepositoryProvider).refresh(manual: true),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Open diagnostics'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const DiagnosticsPage(),
                     ),
-                  );
-                },
-              ),
-              const AsciiSeparator(),
-              Text(
-                'AI Tray · terminal companion for Claude Code',
-                style: context.typography.muted.copyWith(fontSize: 11),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Open logs'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const LogsPage(),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.about => [
+        SettingsGroup(
+          title: 'About',
+          children: [
+            Text('AI Tray 1.1.0', style: context.typography.monoData),
+            const SizedBox(height: Spacing.sm),
+            Text(
+              'Terminal-inspired desktop companion for Claude Code.',
+              style: context.typography.caption,
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.diagnostics || SettingsSection.logs => const [],
+    };
   }
 }

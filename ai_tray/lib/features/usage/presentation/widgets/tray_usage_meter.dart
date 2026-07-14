@@ -1,8 +1,9 @@
+import 'package:ai_tray/core/components/usage_progress_bar.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
 
-/// Terminal-style usage meter with animated lavender fill (PD-020).
+/// Compact labeled usage meter for legacy layouts / goldens (PD-021).
 final class TrayUsageMeter extends StatelessWidget {
   const TrayUsageMeter({
     required this.percent,
@@ -17,7 +18,6 @@ final class TrayUsageMeter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final type = context.typography;
     final clamped = percent.clamp(0.0, 100.0);
     final shown = clamped.round();
@@ -30,52 +30,29 @@ final class TrayUsageMeter extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
-            style: type.sectionTitle.copyWith(
+            style: type.section.copyWith(
               letterSpacing: 1.1,
               fontSize: 11,
             ),
           ),
           const SizedBox(height: Spacing.sm),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: SizedBox(
-                  height: Spacing.meterHeight,
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0, end: clamped / 100),
-                    duration: const Duration(milliseconds: 420),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, _) {
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ColoredBox(color: colors.meterTrack),
-                          FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: value.clamp(0.0, 1.0),
-                            child: ColoredBox(color: colors.meterFill),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
+              Expanded(child: UsageProgressBar(percent: clamped)),
               const SizedBox(width: Spacing.md),
               SizedBox(
                 width: 48,
                 child: Text(
                   '$shown%',
                   textAlign: TextAlign.right,
-                  style: type.meterValue.copyWith(fontWeight: FontWeight.w600),
+                  style: type.monoData.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
           ),
           if (resetsAtRaw != null && resetsAtRaw!.trim().isNotEmpty) ...[
             const SizedBox(height: Spacing.sm),
-            Text('Resets', style: type.muted),
+            Text('Resets', style: type.caption),
             const SizedBox(height: 2),
             Text(resetsAtRaw!.trim(), style: type.body),
           ],

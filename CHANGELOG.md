@@ -5,6 +5,13 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+### Added
+- Official design system tokens and shared desktop components (PD-021).
+- Circular macOS tray usage ring; Settings left rail; redesigned Diagnostics/Logs.
+
+### Changed
+- JetBrains Mono typography and GitHub-dark / intentional light palettes throughout.
+
 ## [1.1.0] — 2026-07-13
 
 ### Added

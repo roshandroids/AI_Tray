@@ -1,168 +1,176 @@
 import 'package:flutter/material.dart';
 
-/// Semantic color tokens exposed via [ThemeExtension] (PD-014 / PD-020).
+/// Semantic color tokens — GitHub/terminal dark & intentional light (PD-021).
 @immutable
 final class TrayColorTokens extends ThemeExtension<TrayColorTokens> {
   const TrayColorTokens({
     required this.background,
     required this.surface,
-    required this.surfaceRaised,
-    required this.divider,
-    required this.title,
+    required this.surfaceAlt,
+    required this.border,
     required this.textPrimary,
     required this.textSecondary,
     required this.textMuted,
-    required this.primary,
-    required this.onPrimary,
-    required this.meterFill,
-    required this.meterTrack,
     required this.success,
     required this.warning,
+    required this.highUsage,
     required this.error,
+    required this.info,
+    required this.purpleAccent,
+    required this.cyanAccent,
     required this.focus,
+    required this.onAccent,
     required this.buttonDisabled,
-    required this.statusRefreshing,
-    required this.statusIdle,
+    required this.meterTrack,
   });
 
   final Color background;
   final Color surface;
-  final Color surfaceRaised;
-  final Color divider;
-  final Color title;
+  final Color surfaceAlt;
+  final Color border;
   final Color textPrimary;
   final Color textSecondary;
   final Color textMuted;
-  final Color primary;
-  final Color onPrimary;
-  final Color meterFill;
-  final Color meterTrack;
   final Color success;
   final Color warning;
+  final Color highUsage;
   final Color error;
+  final Color info;
+  final Color purpleAccent;
+  final Color cyanAccent;
   final Color focus;
+  final Color onAccent;
   final Color buttonDisabled;
-  final Color statusRefreshing;
-  final Color statusIdle;
+  final Color meterTrack;
 
-  /// Terminal dark palette — neon status colors (PD-020).
+  // --- Compatibility aliases used by existing call sites ---
+  Color get surfaceRaised => surfaceAlt;
+  Color get divider => border;
+  Color get title => textPrimary;
+  Color get primary => purpleAccent;
+  Color get onPrimary => onAccent;
+  Color get meterFill => purpleAccent;
+  Color get statusRefreshing => info;
+  Color get statusIdle => textMuted;
+
+  /// Usage-band color for progress rings (0–100).
+  Color usageBand(double percent) {
+    final p = percent.clamp(0.0, 100.0);
+    if (p < 50) return success;
+    if (p < 80) return warning;
+    if (p < 95) return highUsage;
+    return error;
+  }
+
   static const dark = TrayColorTokens(
-    background: Color(0xFF111113),
-    surface: Color(0xFF161618),
-    surfaceRaised: Color(0xFF1C1C1F),
-    divider: Color(0xFF2A2A2E),
-    title: Color(0xFFE8E6E1),
-    textPrimary: Color(0xFFD4D2CC),
-    textSecondary: Color(0xFF8B8A86),
-    textMuted: Color(0xFF6B6A66),
-    primary: Color(0xFFA78BFA),
-    onPrimary: Color(0xFF111113),
-    meterFill: Color(0xFFA78BFA),
-    meterTrack: Color(0xFF2A2A30),
+    background: Color(0xFF0D1117),
+    surface: Color(0xFF161B22),
+    surfaceAlt: Color(0xFF21262D),
+    border: Color(0xFF30363D),
+    textPrimary: Color(0xFFE6EDF3),
+    textSecondary: Color(0xFF8B949E),
+    textMuted: Color(0xFF6E7681),
     success: Color(0xFF22C55E),
     warning: Color(0xFFEAB308),
+    highUsage: Color(0xFFF97316),
     error: Color(0xFFEF4444),
-    focus: Color(0xFFA78BFA),
-    buttonDisabled: Color(0xFF2A2A2E),
-    statusRefreshing: Color(0xFF7C3AED),
-    statusIdle: Color(0xFF6B6A66),
+    info: Color(0xFF3B82F6),
+    purpleAccent: Color(0xFFA855F7),
+    cyanAccent: Color(0xFF06B6D4),
+    focus: Color(0xFFA855F7),
+    onAccent: Color(0xFF0D1117),
+    buttonDisabled: Color(0xFF30363D),
+    meterTrack: Color(0xFF21262D),
   );
 
-  /// Light terminal companion — same semantic accents on paper.
+  /// Intentional light palette (not a simple invert).
   static const light = TrayColorTokens(
-    background: Color(0xFFF4F3F0),
-    surface: Color(0xFFFAFAF8),
-    surfaceRaised: Color(0xFFFFFFFF),
-    divider: Color(0xFFD8D6D0),
-    title: Color(0xFF1A1A1C),
-    textPrimary: Color(0xFF2C2A26),
-    textSecondary: Color(0xFF6B665E),
-    textMuted: Color(0xFF8A857C),
-    primary: Color(0xFF7C3AED),
-    onPrimary: Color(0xFFFFFFFF),
-    meterFill: Color(0xFF7C3AED),
-    meterTrack: Color(0xFFE4E2EA),
-    success: Color(0xFF16A34A),
-    warning: Color(0xFFCA8A04),
-    error: Color(0xFFDC2626),
-    focus: Color(0xFF7C3AED),
-    buttonDisabled: Color(0xFFE8E4DC),
-    statusRefreshing: Color(0xFF7C3AED),
-    statusIdle: Color(0xFF8A857C),
+    background: Color(0xFFF6F8FA),
+    surface: Color(0xFFFFFFFF),
+    surfaceAlt: Color(0xFFEFF2F5),
+    border: Color(0xFFD0D7DE),
+    textPrimary: Color(0xFF1F2328),
+    textSecondary: Color(0xFF656D76),
+    textMuted: Color(0xFF8B949E),
+    success: Color(0xFF1A7F37),
+    warning: Color(0xFF9A6700),
+    highUsage: Color(0xFFBC4C00),
+    error: Color(0xFFCF222E),
+    info: Color(0xFF0969DA),
+    purpleAccent: Color(0xFF8250DF),
+    cyanAccent: Color(0xFF0550AE),
+    focus: Color(0xFF8250DF),
+    onAccent: Color(0xFFFFFFFF),
+    buttonDisabled: Color(0xFFD0D7DE),
+    meterTrack: Color(0xFFEFF2F5),
   );
 
   @override
   TrayColorTokens copyWith({
     Color? background,
     Color? surface,
-    Color? surfaceRaised,
-    Color? divider,
-    Color? title,
+    Color? surfaceAlt,
+    Color? border,
     Color? textPrimary,
     Color? textSecondary,
     Color? textMuted,
-    Color? primary,
-    Color? onPrimary,
-    Color? meterFill,
-    Color? meterTrack,
     Color? success,
     Color? warning,
+    Color? highUsage,
     Color? error,
+    Color? info,
+    Color? purpleAccent,
+    Color? cyanAccent,
     Color? focus,
+    Color? onAccent,
     Color? buttonDisabled,
-    Color? statusRefreshing,
-    Color? statusIdle,
+    Color? meterTrack,
   }) {
     return TrayColorTokens(
       background: background ?? this.background,
       surface: surface ?? this.surface,
-      surfaceRaised: surfaceRaised ?? this.surfaceRaised,
-      divider: divider ?? this.divider,
-      title: title ?? this.title,
+      surfaceAlt: surfaceAlt ?? this.surfaceAlt,
+      border: border ?? this.border,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
       textMuted: textMuted ?? this.textMuted,
-      primary: primary ?? this.primary,
-      onPrimary: onPrimary ?? this.onPrimary,
-      meterFill: meterFill ?? this.meterFill,
-      meterTrack: meterTrack ?? this.meterTrack,
       success: success ?? this.success,
       warning: warning ?? this.warning,
+      highUsage: highUsage ?? this.highUsage,
       error: error ?? this.error,
+      info: info ?? this.info,
+      purpleAccent: purpleAccent ?? this.purpleAccent,
+      cyanAccent: cyanAccent ?? this.cyanAccent,
       focus: focus ?? this.focus,
+      onAccent: onAccent ?? this.onAccent,
       buttonDisabled: buttonDisabled ?? this.buttonDisabled,
-      statusRefreshing: statusRefreshing ?? this.statusRefreshing,
-      statusIdle: statusIdle ?? this.statusIdle,
+      meterTrack: meterTrack ?? this.meterTrack,
     );
   }
 
   @override
   TrayColorTokens lerp(ThemeExtension<TrayColorTokens>? other, double t) {
     if (other is! TrayColorTokens) return this;
+    Color l(Color a, Color b) => Color.lerp(a, b, t)!;
     return TrayColorTokens(
-      background: Color.lerp(background, other.background, t)!,
-      surface: Color.lerp(surface, other.surface, t)!,
-      surfaceRaised: Color.lerp(surfaceRaised, other.surfaceRaised, t)!,
-      divider: Color.lerp(divider, other.divider, t)!,
-      title: Color.lerp(title, other.title, t)!,
-      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
-      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
-      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
-      primary: Color.lerp(primary, other.primary, t)!,
-      onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
-      meterFill: Color.lerp(meterFill, other.meterFill, t)!,
-      meterTrack: Color.lerp(meterTrack, other.meterTrack, t)!,
-      success: Color.lerp(success, other.success, t)!,
-      warning: Color.lerp(warning, other.warning, t)!,
-      error: Color.lerp(error, other.error, t)!,
-      focus: Color.lerp(focus, other.focus, t)!,
-      buttonDisabled: Color.lerp(buttonDisabled, other.buttonDisabled, t)!,
-      statusRefreshing: Color.lerp(
-        statusRefreshing,
-        other.statusRefreshing,
-        t,
-      )!,
-      statusIdle: Color.lerp(statusIdle, other.statusIdle, t)!,
+      background: l(background, other.background),
+      surface: l(surface, other.surface),
+      surfaceAlt: l(surfaceAlt, other.surfaceAlt),
+      border: l(border, other.border),
+      textPrimary: l(textPrimary, other.textPrimary),
+      textSecondary: l(textSecondary, other.textSecondary),
+      textMuted: l(textMuted, other.textMuted),
+      success: l(success, other.success),
+      warning: l(warning, other.warning),
+      highUsage: l(highUsage, other.highUsage),
+      error: l(error, other.error),
+      info: l(info, other.info),
+      purpleAccent: l(purpleAccent, other.purpleAccent),
+      cyanAccent: l(cyanAccent, other.cyanAccent),
+      focus: l(focus, other.focus),
+      onAccent: l(onAccent, other.onAccent),
+      buttonDisabled: l(buttonDisabled, other.buttonDisabled),
+      meterTrack: l(meterTrack, other.meterTrack),
     );
   }
 }

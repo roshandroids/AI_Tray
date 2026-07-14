@@ -5,12 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Future<void> _loadPlex() async {
-  final loader = FontLoader('IBMPlexMono')
+Future<void> _loadFonts() async {
+  final jetbrains = FontLoader('JetBrainsMono')
+    ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-Regular.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-Medium.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-SemiBold.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/JetBrainsMono-Bold.ttf'));
+  await jetbrains.load();
+
+  final plex = FontLoader('IBMPlexMono')
     ..addFont(rootBundle.load('assets/fonts/IBMPlexMono-Regular.otf'))
     ..addFont(rootBundle.load('assets/fonts/IBMPlexMono-Medium.otf'))
     ..addFont(rootBundle.load('assets/fonts/IBMPlexMono-SemiBold.otf'));
-  await loader.load();
+  await plex.load();
 }
 
 /// Visual snapshot for PD-013 review (update with `--update-goldens`).
@@ -18,7 +25,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('pd013 usage composition golden', (tester) async {
-    await _loadPlex();
+    await _loadFonts();
     await tester.binding.setSurfaceSize(const Size(420, 560));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
