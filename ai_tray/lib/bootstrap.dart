@@ -19,10 +19,11 @@ Future<void> bootstrap({
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final bufferedLogger = logger is BufferedAppLogger
-      ? logger
-      : BufferedAppLogger(delegate: logger ?? ConsoleAppLogger())
-    ..info('AI Tray starting', name: 'bootstrap');
+  final bufferedLogger =
+      logger is BufferedAppLogger
+            ? logger
+            : BufferedAppLogger(delegate: logger ?? ConsoleAppLogger())
+        ..info('AI Tray starting', name: 'bootstrap');
 
   await initializeDesktopShell(bufferedLogger);
 
