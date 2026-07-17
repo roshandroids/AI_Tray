@@ -1,4 +1,5 @@
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_usage_metric.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_source.dart';
 import 'package:ai_tray/features/usage/domain/models/weekly_usage.dart';
 import 'package:meta/meta.dart';
@@ -15,7 +16,20 @@ final class UsageInfo {
     DateTime? sessionResetsAt,
     String? sessionResetsAtRaw,
     List<WeeklyUsage> weekly = const [],
+    List<ProviderUsageMetric> metrics = const [],
   }) {
+    final normalizedMetrics = metrics.isEmpty
+        ? [
+            ProviderUsageMetric(
+              key: '${providerId.value}-session',
+              label: 'Current session',
+              usedPercent: sessionUsedPercent,
+              primary: true,
+              resetsAt: sessionResetsAt,
+              resetsAtRaw: sessionResetsAtRaw,
+            ),
+          ]
+        : List<ProviderUsageMetric>.unmodifiable(metrics);
     return UsageInfo._(
       sessionUsedPercent: _requirePercent(
         sessionUsedPercent,
@@ -24,6 +38,7 @@ final class UsageInfo {
       sessionResetsAt: sessionResetsAt,
       sessionResetsAtRaw: sessionResetsAtRaw,
       weekly: List<WeeklyUsage>.unmodifiable(weekly),
+      metrics: normalizedMetrics,
       fetchedAt: fetchedAt,
       source: source,
       isFromCache: isFromCache,
@@ -36,6 +51,7 @@ final class UsageInfo {
     required this.sessionResetsAt,
     required this.sessionResetsAtRaw,
     required this.weekly,
+    required this.metrics,
     required this.fetchedAt,
     required this.source,
     required this.isFromCache,
@@ -46,6 +62,7 @@ final class UsageInfo {
   final DateTime? sessionResetsAt;
   final String? sessionResetsAtRaw;
   final List<WeeklyUsage> weekly;
+  final List<ProviderUsageMetric> metrics;
   final DateTime fetchedAt;
   final UsageSource source;
   final bool isFromCache;
@@ -56,6 +73,7 @@ final class UsageInfo {
     DateTime? sessionResetsAt,
     String? sessionResetsAtRaw,
     List<WeeklyUsage>? weekly,
+    List<ProviderUsageMetric>? metrics,
     DateTime? fetchedAt,
     UsageSource? source,
     bool? isFromCache,
@@ -66,6 +84,7 @@ final class UsageInfo {
       sessionResetsAt: sessionResetsAt ?? this.sessionResetsAt,
       sessionResetsAtRaw: sessionResetsAtRaw ?? this.sessionResetsAtRaw,
       weekly: weekly ?? this.weekly,
+      metrics: metrics ?? this.metrics,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       source: source ?? this.source,
       isFromCache: isFromCache ?? this.isFromCache,
@@ -83,11 +102,15 @@ final class UsageInfo {
         other.source != source ||
         other.isFromCache != isFromCache ||
         other.providerId != providerId ||
-        other.weekly.length != weekly.length) {
+        other.weekly.length != weekly.length ||
+        other.metrics.length != metrics.length) {
       return false;
     }
     for (var i = 0; i < weekly.length; i++) {
       if (other.weekly[i] != weekly[i]) return false;
+    }
+    for (var i = 0; i < metrics.length; i++) {
+      if (other.metrics[i] != metrics[i]) return false;
     }
     return true;
   }
@@ -98,6 +121,7 @@ final class UsageInfo {
     sessionResetsAt,
     sessionResetsAtRaw,
     Object.hashAll(weekly),
+    Object.hashAll(metrics),
     fetchedAt,
     source,
     isFromCache,

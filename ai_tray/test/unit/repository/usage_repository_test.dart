@@ -58,9 +58,10 @@ void main() {
     ).readAsStringSync();
 
     final logger = ConsoleAppLogger(defaultName: 'repo_test');
+    final provider = ClaudeCliAdapter(processRunner: runner, logger: logger);
     repository = UsageRepositoryImpl(
       refreshService: RefreshService(
-        provider: ClaudeCliAdapter(processRunner: runner, logger: logger),
+        provider: provider,
         parser: const UsageParser(),
         validator: UsageValidator(),
         cache: cache,
@@ -71,6 +72,7 @@ void main() {
       cache: cache,
       settingsRepository: settingsRepo,
       logger: logger,
+      providerResolver: () => provider,
     );
   });
 

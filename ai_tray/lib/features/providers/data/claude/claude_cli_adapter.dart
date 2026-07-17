@@ -7,6 +7,7 @@ import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/providers/domain/models/auth_health.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_capabilities.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_execution_config.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
@@ -56,8 +57,10 @@ final class ClaudeCliAdapter implements AIProvider {
   }
 
   @override
-  Future<Result<UsageRawFetch>> fetchUsageRaw({String? binaryPath}) async {
-    final binary = _resolveBinary(binaryPath);
+  Future<Result<UsageRawFetch>> fetchUsageRaw({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
+    final binary = _resolveBinary(config.executablePath);
     final result = await _processRunner.run(
       binary,
       const ['-p', '/usage', '--output-format', 'json'],
@@ -117,8 +120,10 @@ final class ClaudeCliAdapter implements AIProvider {
   }
 
   @override
-  Future<Result<AuthHealth>> healthCheck({String? binaryPath}) async {
-    final binary = _resolveBinary(binaryPath);
+  Future<Result<AuthHealth>> healthCheck({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
+    final binary = _resolveBinary(config.executablePath);
     final which = await _processRunner.run(binary, const ['--version']);
     final missing = which.when(
       success: (_) => false,

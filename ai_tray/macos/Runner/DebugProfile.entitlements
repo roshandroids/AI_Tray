@@ -18,11 +18,15 @@
 		<string>/usr/local/</string>
 		<string>/usr/bin/</string>
 	</array>
-	<!-- Claude stores auth/session under ~/.claude. -->
+	<!-- Provider CLIs store auth/session in these scoped home directories. -->
 	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
 	<array>
 		<string>.claude/</string>
 		<string>.config/claude/</string>
+		<string>.config/gh/</string>
+		<string>.config/github-copilot/</string>
+		<string>.copilot/</string>
+		<string>.local/share/github-copilot/</string>
 	</array>
 </dict>
 </plist>

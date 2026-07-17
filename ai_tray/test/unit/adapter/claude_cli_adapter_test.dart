@@ -7,6 +7,7 @@ import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/features/providers/data/claude/claude_cli_adapter.dart';
 import 'package:ai_tray/features/providers/data/process/fake_process_runner.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_execution_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -56,7 +57,11 @@ void main() {
       );
     };
 
-    await adapter.fetchUsageRaw(binaryPath: '/opt/homebrew/bin/claude');
+    await adapter.fetchUsageRaw(
+      config: const ProviderExecutionConfig(
+        executablePath: '/opt/homebrew/bin/claude',
+      ),
+    );
   });
 
   test('non-zero exit maps to processNonZeroExit', () async {

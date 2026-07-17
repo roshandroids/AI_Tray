@@ -1,4 +1,5 @@
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_usage_metric.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_source.dart';
@@ -50,6 +51,54 @@ void main() {
 
     await cache.clear();
     expect((await cache.read()).valueOrNull, isNull);
+  });
+
+  test('cache isolates providers and preserves normalized metrics', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final cache = SharedPreferencesUsageCache(prefs);
+    await cache.write(
+      UsageInfo(
+        sessionUsedPercent: 20,
+        fetchedAt: DateTime.utc(2026, 7, 16),
+        source: UsageSource.cli,
+        isFromCache: false,
+        providerId: ProviderId.claude,
+      ),
+    );
+    await cache.write(
+      UsageInfo(
+        sessionUsedPercent: 10,
+        metrics: [
+          ProviderUsageMetric(
+            key: 'premium',
+            label: 'Premium requests',
+            usedPercent: 10,
+            primary: true,
+            value: 30,
+            total: 300,
+            unit: 'requests',
+            remainingPercent: 90,
+          ),
+        ],
+        fetchedAt: DateTime.utc(2026, 7, 16),
+        source: UsageSource.cli,
+        isFromCache: false,
+        providerId: ProviderId.copilot,
+      ),
+    );
+
+    expect(
+      (await cache.read(
+        providerId: ProviderId.claude,
+      )).valueOrNull?.sessionUsedPercent,
+      20,
+    );
+    final copilot = (await cache.read(
+      providerId: ProviderId.copilot,
+    )).valueOrNull!;
+    expect(copilot.sessionUsedPercent, 10);
+    expect(copilot.metrics.single.remaining, 270);
   });
 
   test('SharedPreferencesUsageCache rejects corrupt JSON', () async {
