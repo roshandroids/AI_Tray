@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-/// Claude auth probe snapshot (optional MVP support type).
+/// Provider authentication probe snapshot.
 @immutable
 final class AuthHealth {
   const AuthHealth({

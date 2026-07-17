@@ -47,7 +47,7 @@ void main() {
                 processRunner: runner,
                 logger: logger,
               ),
-              parser: UsageParser(),
+              parser: const UsageParser(),
               validator: UsageValidator(),
               cache: InMemoryUsageCache(),
               logger: logger,

@@ -2,20 +2,23 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:flutter/material.dart';
 
 /// Polished empty / error guidance for the usage window (PD-013 / PD-014).
 final class TrayEmptyState extends StatelessWidget {
   const TrayEmptyState({
     required this.failure,
+    required this.provider,
     super.key,
   });
 
   final AppFailure? failure;
+  final AIProvider provider;
 
   @override
   Widget build(BuildContext context) {
-    final copy = _copyFor(failure);
+    final copy = _copyFor(failure, provider);
     final type = context.typography;
 
     return Semantics(
@@ -38,47 +41,52 @@ final class TrayEmptyState extends StatelessWidget {
 
   static ({String title, String body, String? hint}) _copyFor(
     AppFailure? failure,
+    AIProvider provider,
   ) {
     if (failure == null) {
       return (
         title: 'No usage data yet',
         body:
             'Press Refresh to fetch the latest session and weekly limits '
-            'from Claude Code.',
-        hint: 'Tip: keep Claude signed in (`claude auth status`).',
+            'from ${provider.displayName}.',
+        hint: 'Tip: keep ${provider.displayName} signed in.',
       );
     }
 
     return switch (failure.code) {
       FailureCode.cliNotInstalled => (
-        title: 'Claude CLI not found',
-        body: 'AI Tray needs the Claude Code CLI on this Mac.',
-        hint: 'Install Claude Code, or set the binary path in Settings.',
+        title: '${provider.sourceLabel} not found',
+        body: 'AI Tray could not find ${provider.sourceLabel} on this device.',
+        hint: provider.capabilities.customExecutable
+            ? 'Install it, or set the binary path in Settings.'
+            : 'Install or configure ${provider.displayName}, then Refresh.',
       ),
       FailureCode.notAuthenticated => (
         title: 'Authentication expired',
-        body: 'Claude is installed but not signed in.',
-        hint: 'Run `claude auth login` in Terminal, then Refresh.',
+        body: '${provider.displayName} is available but not signed in.',
+        hint: 'Sign in to ${provider.displayName}, then Refresh.',
       ),
       FailureCode.timeout => (
         title: 'Refresh timed out',
-        body: 'Claude took too long to respond.',
+        body: '${provider.displayName} took too long to respond.',
         hint: 'Try again. If this persists, increase the refresh interval.',
       ),
       FailureCode.processLaunchFailed => (
-        title: 'Could not start Claude',
+        title: 'Could not start ${provider.displayName}',
         body: failure.message,
-        hint: 'Check the binary path in Settings and macOS permissions.',
+        hint: provider.capabilities.customExecutable
+            ? 'Check the binary path in Settings and system permissions.'
+            : 'Check provider configuration and system permissions.',
       ),
       FailureCode.processNonZeroExit => (
-        title: 'Claude exited with an error',
+        title: '${provider.displayName} exited with an error',
         body: failure.message,
-        hint: "Verify `claude -p '/usage' --output-format json` in Terminal.",
+        hint: 'Verify ${provider.sourceLabel} independently, then Refresh.',
       ),
       FailureCode.parserFailure ||
       FailureCode.unknownCliOutput ||
       FailureCode.incompleteOutput => (
-        title: 'Unexpected Claude output',
+        title: 'Unexpected ${provider.displayName} output',
         body:
             'Limits were not present in this response. Cached values are '
             'kept when available — percentages are never invented.',
@@ -87,7 +95,7 @@ final class TrayEmptyState extends StatelessWidget {
       FailureCode.cacheUnavailable => (
         title: 'No cached usage',
         body: 'A refresh failed and there is no previous snapshot to show.',
-        hint: 'Fix the Claude CLI issue above, then Refresh.',
+        hint: 'Fix the provider issue above, then Refresh.',
       ),
       FailureCode.cancelled => (
         title: 'Refresh cancelled',

@@ -41,7 +41,7 @@ void main() {
         processRunner: runner,
         logger: ConsoleAppLogger(defaultName: 'test'),
       ),
-      parser: UsageParser(),
+      parser: const UsageParser(),
       validator: UsageValidator(),
       cache: cache,
       logger: ConsoleAppLogger(defaultName: 'test'),

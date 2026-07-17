@@ -2,7 +2,7 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
-import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_usage_candidate.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_shape.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_source.dart';
@@ -11,7 +11,7 @@ import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
 /// Validates parsed usage candidates into domain [UsageInfo] or failures.
 final class UsageValidator {
   Result<UsageInfo> validate(
-    ParsedUsageCandidate candidate, {
+    ProviderUsageCandidate candidate, {
     required DateTime fetchedAt,
     bool isFromCache = false,
     ProviderId providerId = ProviderId.claude,
@@ -33,7 +33,7 @@ final class UsageValidator {
       return const Result.failure(
         AppFailure(
           code: FailureCode.unknownCliOutput,
-          message: "Couldn't read Claude usage format",
+          message: "Couldn't read provider usage format",
         ),
       );
     }

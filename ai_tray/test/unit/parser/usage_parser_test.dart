@@ -8,7 +8,7 @@ import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  final parser = UsageParser();
+  const parser = UsageParser();
   final validator = UsageValidator();
 
   String fixture(String name) =>

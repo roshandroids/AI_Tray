@@ -7,6 +7,12 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ### Added
 - README screenshots for dashboard, settings, diagnostics, logs, and tray rings.
+- Multi-provider registry, capability/status models, provider selector, and
+  disabled GitHub Copilot scaffold.
+
+### Changed
+- Dashboard, settings, diagnostics, tray, and empty states now consume provider
+  metadata and capability-driven shared models.
 
 ## [1.2.0] — 2026-07-13
 

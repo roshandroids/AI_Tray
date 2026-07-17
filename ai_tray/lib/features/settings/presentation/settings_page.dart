@@ -8,6 +8,7 @@ import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final themePref = ref.watch(themeControllerProvider).value;
+    final selectedProvider = ref.watch(selectedAIProviderProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -116,7 +118,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       style: context.typography.title,
                     ),
                     const SizedBox(height: Spacing.md),
-                    ..._buildSection(settings, selectedTheme),
+                    ..._buildSection(
+                      settings,
+                      selectedTheme,
+                      selectedProvider,
+                    ),
                   ],
                 ),
               ),
@@ -130,6 +136,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<Widget> _buildSection(
     AppSettings settings,
     AppThemePreference selectedTheme,
+    AIProvider selectedProvider,
   ) {
     return switch (_section) {
       SettingsSection.appearance => [
@@ -308,37 +315,45 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       ],
       SettingsSection.cli => [
-        SettingsGroup(
-          title: 'Claude CLI',
-          children: [
-            TextField(
-              controller: _binaryController,
-              style: context.typography.body,
-              decoration: const InputDecoration(
-                labelText: 'Binary path (optional)',
-                hintText: 'claude',
-              ),
-              onSubmitted: (value) {
-                unawaited(
-                  _save(
-                    AppSettings(
-                      autoRefreshEnabled: settings.autoRefreshEnabled,
-                      refreshInterval: settings.refreshInterval,
-                      notificationsEnabled: settings.notificationsEnabled,
-                      launchAtLogin: settings.launchAtLogin,
-                      showStaleIndicator: settings.showStaleIndicator,
-                      notifyAtSessionPercent: settings.notifyAtSessionPercent,
-                      claudeBinaryPath: value.trim().isEmpty
-                          ? null
-                          : value.trim(),
-                      themeMode: settings.themeMode,
+        if (selectedProvider.capabilities.customExecutable)
+          SettingsGroup(
+            title: '${selectedProvider.displayName} CLI',
+            children: [
+              TextField(
+                controller: _binaryController,
+                style: context.typography.body,
+                decoration: InputDecoration(
+                  labelText: 'Binary path (optional)',
+                  hintText: selectedProvider.providerId.value,
+                ),
+                onSubmitted: (value) {
+                  unawaited(
+                    _save(
+                      AppSettings(
+                        autoRefreshEnabled: settings.autoRefreshEnabled,
+                        refreshInterval: settings.refreshInterval,
+                        notificationsEnabled: settings.notificationsEnabled,
+                        launchAtLogin: settings.launchAtLogin,
+                        showStaleIndicator: settings.showStaleIndicator,
+                        notifyAtSessionPercent: settings.notifyAtSessionPercent,
+                        claudeBinaryPath: value.trim().isEmpty
+                            ? null
+                            : value.trim(),
+                        themeMode: settings.themeMode,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
+                  );
+                },
+              ),
+            ],
+          )
+        else
+          SettingsGroup(
+            title: selectedProvider.displayName,
+            children: const [
+              Text('No executable configuration is required.'),
+            ],
+          ),
       ],
       SettingsSection.advanced => [
         SettingsGroup(
@@ -392,7 +407,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             Text('AI Tray 1.1.0', style: context.typography.monoData),
             const SizedBox(height: Spacing.sm),
             Text(
-              'Terminal-inspired desktop companion for Claude Code.',
+              'Terminal-inspired desktop companion for AI coding providers.',
               style: context.typography.caption,
             ),
           ],

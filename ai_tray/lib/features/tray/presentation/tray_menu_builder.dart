@@ -81,7 +81,11 @@ final class TrayMenuSnapshot {
 abstract final class TrayMenuBuilder {
   static const _barWidth = 10;
 
-  static TrayMenuSnapshot fromStatus(RefreshStatus status) {
+  static TrayMenuSnapshot fromStatus(
+    RefreshStatus status, {
+    String providerDisplayName = 'Claude',
+    String providerSourceLabel = 'Claude CLI',
+  }) {
     final usage = status.lastResult?.usage;
     final outcome = status.lastResult?.status;
     final error = status.lastResult?.error;
@@ -94,6 +98,8 @@ abstract final class TrayMenuBuilder {
       refreshing: refreshing,
       usage: usage,
       error: error,
+      providerDisplayName: providerDisplayName,
+      providerSourceLabel: providerSourceLabel,
     );
     final badge = _statusBadge(
       refreshing: refreshing,
@@ -179,19 +185,21 @@ abstract final class TrayMenuBuilder {
     required bool refreshing,
     required UsageInfo? usage,
     required AppFailure? error,
+    required String providerDisplayName,
+    required String providerSourceLabel,
   }) {
     if (refreshing) return '🔄 Refreshing…';
     if (error != null) {
       return switch (error.code) {
-        FailureCode.cliNotInstalled => '🔴 Claude CLI not found',
+        FailureCode.cliNotInstalled => '🔴 $providerSourceLabel not found',
         FailureCode.notAuthenticated => '🔴 Not authenticated',
         FailureCode.timeout => '🔴 Refresh timed out',
-        FailureCode.processLaunchFailed ||
-        FailureCode.processNonZeroExit => '🔴 Could not reach Claude',
+        FailureCode.processLaunchFailed || FailureCode.processNonZeroExit =>
+          '🔴 Could not reach $providerDisplayName',
         _ => '🔴 Connection error',
       };
     }
-    if (usage != null) return '🟢 Claude connected';
+    if (usage != null) return '🟢 $providerDisplayName connected';
     return '⚪ Waiting for usage data';
   }
 

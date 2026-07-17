@@ -37,7 +37,7 @@ void main() {
         processRunner: runner,
         logger: ConsoleAppLogger(defaultName: 'stability'),
       ),
-      parser: UsageParser(),
+      parser: const UsageParser(),
       validator: UsageValidator(),
       cache: cache,
       logger: ConsoleAppLogger(defaultName: 'stability'),

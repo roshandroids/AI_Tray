@@ -6,11 +6,20 @@ import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/providers/domain/models/auth_health.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_capabilities.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
+import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
+import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 
-/// Claude Code CLI adapter (ADR-001). Never uses `--bare` for usage polls.
-final class ClaudeCliAdapter implements AiProviderPort {
+/// Claude Code provider implementation. Never uses `--bare` for usage polls.
+///
+/// Data Flow:
+/// - Fetches the unchanged Claude CLI JSON envelope.
+/// - Exposes the existing parser through the generic provider contract.
+/// - Supplies metadata and capabilities to shared UI.
+final class ClaudeCliAdapter implements AIProvider {
   ClaudeCliAdapter({
     required ProcessRunner processRunner,
     required AppLogger logger,
@@ -25,6 +34,26 @@ final class ClaudeCliAdapter implements AiProviderPort {
 
   @override
   ProviderId get providerId => ProviderId.claude;
+
+  @override
+  String get displayName => 'Claude';
+
+  @override
+  String get sourceLabel => 'Claude CLI';
+
+  @override
+  bool get enabled => true;
+
+  @override
+  ProviderCapabilities get capabilities => ProviderCapabilities.claude;
+
+  @override
+  ProviderUsageParser get parser => const UsageParser();
+
+  @override
+  String get limitsUnavailableMessage {
+    return 'Claude did not return limits; showing last known usage.';
+  }
 
   @override
   Future<Result<UsageRawFetch>> fetchUsageRaw({String? binaryPath}) async {

@@ -2,8 +2,8 @@
 
 Flutter desktop companion for Claude Code subscription usage (macOS menu bar / Windows system tray).
 
-**Status:** **v1.0.0-rc.2** (`1.0.0-rc.2+2`) · dogfooding · feature freeze (PD-011)  
-**Docs:** [../docs/README.md](../docs/README.md) · [RC2 notes](../docs/release/release-notes-v1.0.0-rc2.md) · [Install](../docs/guides/installation.md)
+**Status:** Provider framework through PD-021
+**Docs:** [../docs/README.md](../docs/README.md) · [Provider architecture](../docs/architecture/provider-platform.md) · [Install](../docs/guides/installation.md)
 
 ## Prerequisites
 
@@ -42,8 +42,11 @@ Windows: `flutter build windows --release` on a Windows host. See [packaging](..
 
 Feature-first Clean Architecture under `lib/`. See [folder structure](../docs/architecture/folder-structure.md) and [architecture overview](../docs/guides/architecture-overview.md).
 
-## Scope (RC1)
+## Scope
 
-Included: Claude CLI usage pipeline, tray shell, settings (interval, auto-refresh, notifications threshold, launch at login, CLI path), LKG cache, Shape A/B handling.
+Included: provider registry and capabilities, Claude CLI usage pipeline, disabled
+Copilot scaffold, capability-driven dashboard, tray shell, settings, LKG cache,
+and Shape A/B handling.
 
-Not authorized without PO approval: analytics, charts, multi-provider, multi-account, UI redesigns, new settings, architecture refactors.
+Copilot parsing, authentication, and activation remain intentionally out of
+scope. See [known limitations](../docs/guides/known-limitations.md).

@@ -1,7 +1,6 @@
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
-import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 
 /// Shared status derivation for dashboard, settings, tray (PD-020).
@@ -53,10 +52,5 @@ abstract final class UsageStatusMapper {
     if (delta.inMinutes < 60) return '${delta.inMinutes}m ago';
     if (delta.inHours < 24) return '${delta.inHours}h ago';
     return '${delta.inDays}d ago';
-  }
-
-  static String sourceLabel(UsageInfo? usage) {
-    if (usage == null) return '—';
-    return usage.isFromCache ? 'Cache (LKG)' : 'Claude CLI';
   }
 }

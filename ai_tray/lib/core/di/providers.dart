@@ -1,13 +1,11 @@
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
-import 'package:ai_tray/features/providers/data/claude/claude_cli_adapter.dart';
-import 'package:ai_tray/features/providers/data/process/io_process_runner.dart';
-import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
+import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
+import 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart';
 import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
-import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 import 'package:ai_tray/features/usage/data/repositories/usage_repository_impl.dart';
 import 'package:ai_tray/features/usage/data/services/refresh_service.dart';
 import 'package:ai_tray/features/usage/data/validators/usage_validator.dart';
@@ -15,24 +13,26 @@ import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+export 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart'
+    show selectedAIProviderProvider, selectedProviderIdProvider;
+export 'package:ai_tray/features/providers/provider_providers.dart'
+    show processRunnerProvider, providerRegistryProvider;
+
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError(
     'sharedPreferencesProvider must be overridden in bootstrap',
   );
 });
 
-final processRunnerProvider = Provider<ProcessRunner>((ref) {
-  return IoProcessRunner(logger: ref.watch(appLoggerProvider));
-});
-
+/// Compatibility alias retained for existing provider-port consumers.
 final aiProviderPortProvider = Provider<AiProviderPort>((ref) {
-  return ClaudeCliAdapter(
-    processRunner: ref.watch(processRunnerProvider),
-    logger: ref.watch(appLoggerProvider),
-  );
+  return ref.watch(selectedAIProviderProvider);
 });
 
-final usageParserProvider = Provider<UsageParser>((ref) => UsageParser());
+/// Parser resolved from the active provider registration.
+final usageParserProvider = Provider<ProviderUsageParser>((ref) {
+  return ref.watch(selectedAIProviderProvider).parser;
+});
 
 final usageValidatorProvider = Provider<UsageValidator>(
   (ref) => UsageValidator(),
@@ -50,8 +50,8 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 
 final refreshServiceProvider = Provider<RefreshService>((ref) {
   return RefreshService(
-    provider: ref.watch(aiProviderPortProvider),
-    parser: ref.watch(usageParserProvider),
+    provider: ref.read(selectedAIProviderProvider),
+    providerResolver: () => ref.read(selectedAIProviderProvider),
     validator: ref.watch(usageValidatorProvider),
     cache: ref.watch(usageCacheProvider),
     logger: ref.watch(appLoggerProvider),

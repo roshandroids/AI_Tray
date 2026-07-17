@@ -1,8 +1,7 @@
-# Flutter Folder Structure — MVP Proposal
+# Flutter Folder Structure
 
-**Phase:** Lightweight Planning · Task 0002  
-**Principles:** Clean Architecture · Feature-first · Provider-extensible  
-**Note:** Structure only. No source files are created in this phase.
+**Phase:** Current through PD-021
+**Principles:** Clean Architecture · Feature-first · Provider-extensible
 
 ---
 
@@ -111,6 +110,45 @@ ai_tray/
                     ├── claude_cli_adapter.dart
                     └── claude_auth_probe.dart
 ```
+
+---
+
+## PD-021 provider platform
+
+The provider feature now contains the runtime registry, capability/status
+models, provider-owned parser contract, and shared selection UI:
+
+```text
+features/providers/
+├── data/
+│   ├── claude/claude_cli_adapter.dart
+│   ├── copilot/
+│   │   ├── copilot_adapter.dart
+│   │   ├── copilot_provider.dart
+│   │   └── copilot_usage_parser.dart
+│   └── process/
+├── domain/
+│   ├── models/
+│   │   ├── provider_capabilities.dart
+│   │   ├── provider_id.dart
+│   │   ├── provider_status.dart
+│   │   └── provider_usage_candidate.dart
+│   ├── ports/
+│   │   ├── ai_provider.dart
+│   │   ├── ai_provider_port.dart
+│   │   └── provider_usage_parser.dart
+│   └── services/provider_registry.dart
+└── presentation/
+    ├── provider_selection_controller.dart
+    └── widgets/provider_selector.dart
+
+features/usage/domain/
+├── models/dashboard_data.dart
+└── services/dashboard_data_mapper.dart
+```
+
+See [Provider Platform Architecture](provider-platform.md) and
+[ADR-003](../adr/ADR-003-provider-platform.md).
 
 ---
 

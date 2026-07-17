@@ -8,6 +8,8 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
+import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/presentation/settings_page.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
@@ -16,6 +18,7 @@ import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
+import 'package:ai_tray/features/usage/domain/services/dashboard_data_mapper.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_empty_state.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
@@ -86,6 +89,8 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
     });
 
     final repository = ref.watch(usageRepositoryProvider);
+    final registry = ref.watch(providerRegistryProvider);
+    final selectedProvider = ref.watch(selectedAIProviderProvider);
 
     return StreamBuilder<RefreshStatus>(
       stream: repository.watchStatus(),
@@ -101,6 +106,14 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
           appBar: AppBar(
             title: const Text('AI Tray'),
             actions: [
+              ProviderSelector(
+                providers: registry.enabledProviders.toList(),
+                selectedId: selectedProvider.providerId,
+                onSelected: ref
+                    .read(selectedProviderIdProvider.notifier)
+                    .select,
+              ),
+              const SizedBox(width: Spacing.sm),
               Padding(
                 padding: const EdgeInsets.only(right: Spacing.sm),
                 child: Center(child: StatusBadge(kind: kind, compact: true)),
@@ -140,12 +153,16 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
                     Expanded(
                       child: usage == null
                           ? SingleChildScrollView(
-                              child: TrayEmptyState(failure: error),
+                              child: TrayEmptyState(
+                                failure: error,
+                                provider: selectedProvider,
+                              ),
                             )
                           : _DashboardBody(
                               usage: usage,
                               status: status,
                               kind: kind,
+                              provider: selectedProvider,
                             ),
                     ),
                     const SectionDivider(),
@@ -190,11 +207,13 @@ final class _DashboardBody extends ConsumerWidget {
     required this.usage,
     required this.status,
     required this.kind,
+    required this.provider,
   });
 
   final UsageInfo usage;
   final RefreshStatus status;
   final TrayStatusKind kind;
+  final AIProvider provider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -203,6 +222,11 @@ final class _DashboardBody extends ConsumerWidget {
     final parser = status.lastResult?.parserState;
     final width = MediaQuery.sizeOf(context).width;
     final wide = width >= 560;
+    final dashboardData = DashboardDataMapper.map(
+      provider: provider,
+      usage: usage,
+      refreshStatus: status,
+    );
 
     return FutureBuilder<AppSettings>(
       future: ref.watch(usageRepositoryProvider).getSettings(),
@@ -220,21 +244,17 @@ final class _DashboardBody extends ConsumerWidget {
         final parserOk = parser?.validation == ValidationStatus.valid;
         final authOk = kind != TrayStatusKind.error;
 
-        final sessionCard = MetricCard(
-          label: 'Session',
-          percent: usage.sessionUsedPercent,
-          resetsAtRaw: usage.sessionResetsAtRaw,
-          sparklineValues: _sparkFromPercent(usage.sessionUsedPercent),
-        );
-        final weekCards = [
-          for (final week in usage.weekly)
+        final metricCards = [
+          for (final metric in dashboardData.metrics)
             MetricCard(
-              label: week.label.trim().isEmpty ? 'Week' : week.label,
-              percent: week.usedPercent,
-              resetsAtRaw: week.resetsAtRaw,
-              sparklineValues: _sparkFromPercent(week.usedPercent),
+              key: ValueKey(metric.key),
+              label: metric.label,
+              percent: metric.usedPercent,
+              resetsAtRaw: metric.resetsAtRaw,
+              sparklineValues: _sparkFromPercent(metric.usedPercent),
             ),
         ];
+        final primaryMetricCards = metricCards.take(2).toList();
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -247,27 +267,34 @@ final class _DashboardBody extends ConsumerWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(child: sessionCard),
-                          const SizedBox(width: Spacing.sm),
-                          Expanded(
-                            child: weekCards.isEmpty
-                                ? const SizedBox.shrink()
-                                : weekCards.first,
-                          ),
+                          for (
+                            var index = 0;
+                            index < primaryMetricCards.length;
+                            index++
+                          ) ...[
+                            if (index > 0) const SizedBox(width: Spacing.sm),
+                            Expanded(child: primaryMetricCards[index]),
+                          ],
                         ],
                       ),
                     )
                   else ...[
-                    sessionCard,
-                    const SizedBox(height: Spacing.sm),
-                    if (weekCards.isNotEmpty) weekCards.first,
+                    for (
+                      var index = 0;
+                      index < primaryMetricCards.length;
+                      index++
+                    ) ...[
+                      primaryMetricCards[index],
+                      if (index < primaryMetricCards.length - 1)
+                        const SizedBox(height: Spacing.sm),
+                    ],
                   ],
-                  if (weekCards.length > 1) ...[
+                  if (metricCards.length > 2) ...[
                     const SizedBox(height: Spacing.sm),
                     ...[
-                      for (var i = 1; i < weekCards.length; i++) ...[
-                        weekCards[i],
-                        if (i < weekCards.length - 1)
+                      for (var i = 2; i < metricCards.length; i++) ...[
+                        metricCards[i],
+                        if (i < metricCards.length - 1)
                           const SizedBox(height: Spacing.sm),
                       ],
                     ],
@@ -292,7 +319,7 @@ final class _DashboardBody extends ConsumerWidget {
                                 ),
                                 InfoRow(
                                   label: 'Source',
-                                  value: UsageStatusMapper.sourceLabel(usage),
+                                  value: dashboardData.status.sourceLabel,
                                 ),
                                 InfoRow(
                                   label: 'Updated',
@@ -308,10 +335,11 @@ final class _DashboardBody extends ConsumerWidget {
                         const SizedBox(width: Spacing.sm),
                         Expanded(
                           child: TerminalPanel(
-                            title: 'CLI Health',
+                            title: 'Provider Health',
                             child: Column(
                               children: [
-                                HealthIndicator(label: 'Auth', ok: authOk),
+                                if (dashboardData.capabilities.healthCheck)
+                                  HealthIndicator(label: 'Auth', ok: authOk),
                                 HealthIndicator(
                                   label: 'Parser',
                                   ok: parserOk,
@@ -352,7 +380,7 @@ final class _DashboardBody extends ConsumerWidget {
                           ),
                           InfoRow(
                             label: 'Source',
-                            value: UsageStatusMapper.sourceLabel(usage),
+                            value: dashboardData.status.sourceLabel,
                           ),
                           InfoRow(
                             label: 'Updated',
@@ -366,10 +394,11 @@ final class _DashboardBody extends ConsumerWidget {
                     ),
                     const SizedBox(height: Spacing.sm),
                     TerminalPanel(
-                      title: 'CLI Health',
+                      title: 'Provider Health',
                       child: Column(
                         children: [
-                          HealthIndicator(label: 'Auth', ok: authOk),
+                          if (dashboardData.capabilities.healthCheck)
+                            HealthIndicator(label: 'Auth', ok: authOk),
                           HealthIndicator(label: 'Parser', ok: parserOk),
                           HealthIndicator(
                             label: 'Cache',
@@ -383,7 +412,7 @@ final class _DashboardBody extends ConsumerWidget {
                   if (outcome == RefreshOutcome.softFailure) ...[
                     const SizedBox(height: Spacing.sm),
                     Text(
-                      'Claude did not return limits; showing last known usage.',
+                      dashboardData.limitsUnavailableMessage,
                       style: context.typography.caption,
                     ),
                   ],

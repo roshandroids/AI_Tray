@@ -1,7 +1,9 @@
-# Known Limitations — AI Tray (v1.0.0-rc.1)
+# Known Limitations — AI Tray
 
-1. **Claude-only.** No other providers.
-2. **CLI-dependent.** No direct Anthropic HTTP usage API in MVP (ADR-001).
+1. **Claude is the only enabled provider.** The provider registry and Copilot
+   scaffold exist, but Copilot parsing/auth/usage contracts are not implemented
+   and the provider is intentionally disabled (ADR-003).
+2. **Claude is CLI-dependent.** No direct Anthropic HTTP usage API (ADR-001).
 3. **Shape B intermittency.** `/usage` sometimes returns analytics-only text; app soft-fails and keeps cache.
 4. **Free-text parser.** Format churn from Claude Code can break parsing until fixtures/parser update.
 5. **Windows is Experimental (PD-010).** macOS is the officially validated platform for v1.0.0; Windows validation is deferred to **S-001A**.

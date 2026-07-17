@@ -16,6 +16,9 @@ final class ProviderId {
   /// Claude Code / Claude.ai subscription usage (MVP).
   static const claude = ProviderId._('claude');
 
+  /// GitHub Copilot placeholder; disabled until parsing is implemented.
+  static const copilot = ProviderId._('copilot');
+
   final String value;
 
   @override

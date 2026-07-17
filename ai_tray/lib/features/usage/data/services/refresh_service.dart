@@ -2,10 +2,11 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
+import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
-import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 import 'package:ai_tray/features/usage/data/validators/usage_validator.dart';
 import 'package:ai_tray/features/usage/domain/models/parser_state.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
@@ -16,21 +17,22 @@ import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 /// Coordinates adapter → parse → validate → cache with ADR-002 policy.
 final class RefreshService {
   RefreshService({
-    required AiProviderPort provider,
-    required UsageParser parser,
+    required AIProvider provider,
     required UsageValidator validator,
     required UsageCache cache,
     required AppLogger logger,
+    ProviderUsageParser? parser,
+    AIProvider Function()? providerResolver,
     this.softRetryDelay = const Duration(seconds: 3),
     this.hardRetryDelay = const Duration(seconds: 2),
-  }) : _provider = provider,
-       _parser = parser,
+  }) : _providerResolver = providerResolver ?? (() => provider),
+       _parserOverride = parser,
        _validator = validator,
        _cache = cache,
        _logger = logger;
 
-  final AiProviderPort _provider;
-  final UsageParser _parser;
+  final AIProvider Function() _providerResolver;
+  final ProviderUsageParser? _parserOverride;
   final UsageValidator _validator;
   final UsageCache _cache;
   final AppLogger _logger;
@@ -63,17 +65,24 @@ final class RefreshService {
     required RefreshStatus currentStatus,
   }) async {
     final started = DateTime.now().toUtc();
+    final provider = _providerResolver();
+    final parser = _parserOverride ?? provider.parser;
     _logger.info('refresh started', name: 'refresh');
 
-    var rawResult = await _provider.fetchUsageRaw(
+    var rawResult = await provider.fetchUsageRaw(
       binaryPath: settings.claudeBinaryPath,
     );
 
-    rawResult = await _maybeRetryRaw(first: rawResult, settings: settings);
+    rawResult = await _maybeRetryRaw(
+      first: rawResult,
+      settings: settings,
+      provider: provider,
+      parser: parser,
+    );
 
     return rawResult.when(
       success: (raw) async {
-        final candidate = _parser.parse(
+        final candidate = parser.parse(
           rawText: raw.stdout,
           envelopeJson: raw.envelopeJson,
         );
@@ -81,6 +90,7 @@ final class RefreshService {
         final validated = _validator.validate(
           candidate,
           fetchedAt: fetchedAt,
+          providerId: provider.providerId,
         );
 
         return validated.when(
@@ -131,7 +141,7 @@ final class RefreshService {
       onFailure: (failure) async {
         var effective = failure;
         if (_shouldProbeAuth(failure, currentStatus)) {
-          final health = await _provider.healthCheck(
+          final health = await provider.healthCheck(
             binaryPath: settings.claudeBinaryPath,
           );
           final probed = health.failureOrNull;
@@ -161,10 +171,12 @@ final class RefreshService {
   Future<Result<UsageRawFetch>> _maybeRetryRaw({
     required Result<UsageRawFetch> first,
     required AppSettings settings,
+    required AIProvider provider,
+    required ProviderUsageParser parser,
   }) async {
     return first.when(
       success: (raw) async {
-        final candidate = _parser.parse(
+        final candidate = parser.parse(
           rawText: raw.stdout,
           envelopeJson: raw.envelopeJson,
         );
@@ -172,7 +184,7 @@ final class RefreshService {
           return first;
         }
         await Future<void>.delayed(softRetryDelay);
-        return _provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
+        return provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
       },
       onFailure: (failure) async {
         final retryable =
@@ -183,7 +195,7 @@ final class RefreshService {
           return first;
         }
         await Future<void>.delayed(hardRetryDelay);
-        return _provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
+        return provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
       },
     );
   }

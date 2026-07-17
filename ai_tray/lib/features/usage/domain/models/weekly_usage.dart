@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-/// One weekly (or scoped) usage bucket from Claude `/usage`.
+/// One provider-supplied weekly or scoped usage bucket.
 @immutable
 final class WeeklyUsage {
   factory WeeklyUsage({

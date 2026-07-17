@@ -1,6 +1,6 @@
 /// Where a usage snapshot originated.
 enum UsageSource {
-  /// Installed Claude Code CLI (`claude -p /usage`).
+  /// Installed provider CLI.
   cli,
 
   /// Reserved for a future structured OAuth/API source.

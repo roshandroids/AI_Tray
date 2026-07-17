@@ -34,6 +34,7 @@ final class DiagnosticsPage extends ConsumerWidget {
     final repository = ref.watch(usageRepositoryProvider);
     final logger = ref.watch(bufferedAppLoggerProvider);
     final themePref = ref.watch(themeControllerProvider).value;
+    final selectedProvider = ref.watch(selectedAIProviderProvider);
 
     return StreamBuilder<RefreshStatus>(
       stream: repository.watchStatus(),
@@ -85,8 +86,8 @@ final class DiagnosticsPage extends ConsumerWidget {
                             label: 'App version',
                             value: _appVersion,
                           ),
-                          const InfoRow(
-                            label: 'Claude CLI',
+                          InfoRow(
+                            label: '${selectedProvider.displayName} CLI',
                             value: '—',
                           ),
                           InfoRow(label: 'Theme', value: themeLabel),
@@ -102,9 +103,9 @@ final class DiagnosticsPage extends ConsumerWidget {
                             label: 'Build',
                             value: kReleaseMode ? 'Release' : 'Debug',
                           ),
-                          const InfoRow(
+                          InfoRow(
                             label: 'Provider',
-                            value: 'Claude CLI',
+                            value: selectedProvider.sourceLabel,
                           ),
                         ],
                       ),

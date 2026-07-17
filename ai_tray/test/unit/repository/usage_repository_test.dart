@@ -61,7 +61,7 @@ void main() {
     repository = UsageRepositoryImpl(
       refreshService: RefreshService(
         provider: ClaudeCliAdapter(processRunner: runner, logger: logger),
-        parser: UsageParser(),
+        parser: const UsageParser(),
         validator: UsageValidator(),
         cache: cache,
         logger: logger,

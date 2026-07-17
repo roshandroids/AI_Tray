@@ -102,9 +102,9 @@ final class IoProcessRunner implements ProcessRunner {
               ? FailureCode.cliNotInstalled
               : FailureCode.processLaunchFailed,
           message: notFound
-              ? 'Claude CLI was not found'
+              ? 'CLI executable was not found'
               : denied
-              ? 'macOS blocked launching Claude CLI'
+              ? 'macOS blocked launching the CLI executable'
               : 'Could not start $resolved',
           detail: error.message,
         ),

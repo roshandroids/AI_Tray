@@ -1,27 +1,14 @@
+import 'package:ai_tray/features/providers/domain/models/provider_usage_candidate.dart';
+import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
 import 'package:ai_tray/features/usage/domain/models/parser_state.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_shape.dart';
 import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
 import 'package:ai_tray/features/usage/domain/models/weekly_usage.dart';
 
-/// Intermediate parse candidate before validation.
-final class ParsedUsageCandidate {
-  const ParsedUsageCandidate({
-    required this.parserState,
-    required this.rawText,
-    this.sessionUsedPercent,
-    this.sessionResetsAtRaw,
-    this.weekly = const [],
-  });
-
-  final ParserState parserState;
-  final String rawText;
-  final double? sessionUsedPercent;
-  final String? sessionResetsAtRaw;
-  final List<WeeklyUsage> weekly;
-}
-
 /// Parses Claude `/usage` free-text (and JSON envelope `result`).
-final class UsageParser {
+final class UsageParser implements ProviderUsageParser {
+  const UsageParser();
+
   static final _sessionRe = RegExp(
     r'Current session:\s*(\d+(?:\.\d+)?)%\s*used\s*[·\.]\s*resets\s+(.+)',
     caseSensitive: false,
@@ -32,7 +19,8 @@ final class UsageParser {
     caseSensitive: false,
   );
 
-  ParsedUsageCandidate parse({
+  @override
+  ProviderUsageCandidate parse({
     required String rawText,
     Map<String, dynamic>? envelopeJson,
   }) {
@@ -74,7 +62,7 @@ final class UsageParser {
       UsageShape.unknown => ValidationStatus.invalid,
     };
 
-    return ParsedUsageCandidate(
+    return ProviderUsageCandidate(
       rawText: text,
       sessionUsedPercent: session == null
           ? null

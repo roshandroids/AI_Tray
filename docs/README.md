@@ -33,6 +33,7 @@
 | Doc | Description |
 |--|--|
 | [guides/architecture-overview.md](guides/architecture-overview.md) | Current architecture overview |
+| [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider framework, migration, and regression results |
 | [architecture/system-architecture.md](architecture/system-architecture.md) | Planning-era system architecture |
 | [architecture/domain-model.md](architecture/domain-model.md) | Domain model |
 | [architecture/folder-structure.md](architecture/folder-structure.md) | Folder structure |

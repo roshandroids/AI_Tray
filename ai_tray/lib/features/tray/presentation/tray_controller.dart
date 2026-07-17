@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
 import 'package:ai_tray/features/tray/presentation/tray_menu_builder.dart';
@@ -75,11 +76,13 @@ Future<void> ensureDesktopWindowVisible(AppLogger logger) async {
 final class TrayController with TrayListener, WindowListener {
   TrayController({
     required this.repository,
+    required this.provider,
     required this.logger,
     required this.onOpenSettings,
   });
 
   final UsageRepository repository;
+  final AIProvider provider;
   final AppLogger logger;
   final VoidCallback onOpenSettings;
 
@@ -142,7 +145,11 @@ final class TrayController with TrayListener, WindowListener {
 
   Future<void> _rebuildMenu(RefreshStatus status) async {
     await _applyIcon(status);
-    final snapshot = TrayMenuBuilder.fromStatus(status);
+    final snapshot = TrayMenuBuilder.fromStatus(
+      status,
+      providerDisplayName: provider.displayName,
+      providerSourceLabel: provider.sourceLabel,
+    );
     await trayManager.setContextMenu(snapshot.buildMenu());
     await trayManager.setToolTip(snapshot.toolTip);
     if (Platform.isMacOS) {
@@ -244,6 +251,7 @@ final NotifierProvider<SettingsOpenRequest, int> settingsOpenRequestProvider =
 final trayControllerProvider = Provider<TrayController>((ref) {
   return TrayController(
     repository: ref.watch(usageRepositoryProvider),
+    provider: ref.watch(selectedAIProviderProvider),
     logger: ref.watch(appLoggerProvider),
     onOpenSettings: () {
       ref.read(settingsOpenRequestProvider.notifier).open();
