@@ -20,6 +20,8 @@ concurrency:
 
 env:
   FLUTTER_VERSION: "3.38.9"
+  NODE_VERSION: "22.17.0"
+  NPM_VERSION: "10.9.2"
   WORKING_DIRECTORY: ai_tray
 
 jobs:
@@ -89,6 +91,20 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up pinned Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and test Copilot bridge
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          test "$(npm --version)" = "${{ env.NPM_VERSION }}"
+          npm ci
+          npm run check
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -114,6 +130,23 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up pinned Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: arm64
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and assemble Copilot sidecar
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          test "$(npm --version)" = "${{ env.NPM_VERSION }}"
+          npm ci
+          npm run check
+          node scripts/assemble_sidecar.mjs --target macos-arm64
+          node scripts/verify_payload.mjs ../../build/copilot_sdk/macos-arm64
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -122,6 +155,11 @@ jobs:
 
       - name: Build macOS (release)
         run: flutter build macos --release
+
+      - name: Verify packaged Copilot sidecar
+        run: >-
+          node tool/copilot_sdk_bridge/scripts/verify_payload.mjs
+          "build/macos/Build/Products/Release/AI Tray.app/Contents/Resources/copilot_sdk"
 
       - name: Upload macOS build artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

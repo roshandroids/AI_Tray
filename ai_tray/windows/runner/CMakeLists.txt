@@ -38,3 +38,20 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
 # Run the Flutter tool portions of the build. This must not be removed.
 add_dependencies(${BINARY_NAME} flutter_assemble)
+
+# The sidecar is assembled before CMake configuration. Copying it beside the
+# executable keeps release startup fully local and independent of PATH/npm.
+set(COPILOT_SIDECAR_SOURCE
+  "${CMAKE_SOURCE_DIR}/../build/copilot_sdk/windows-x64")
+if(EXISTS "${COPILOT_SIDECAR_SOURCE}/payload-manifest.json")
+  add_custom_command(TARGET ${BINARY_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+      "$<TARGET_FILE_DIR:${BINARY_NAME}>/copilot_sdk"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${COPILOT_SIDECAR_SOURCE}"
+      "$<TARGET_FILE_DIR:${BINARY_NAME}>/copilot_sdk"
+    COMMENT "Bundling pinned Copilot SDK sidecar")
+else()
+  message(WARNING
+    "Copilot sidecar payload is missing; release packaging must assemble it first")
+endif()

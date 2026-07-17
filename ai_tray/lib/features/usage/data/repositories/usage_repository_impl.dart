@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
@@ -20,10 +21,12 @@ final class UsageRepositoryImpl implements UsageRepository {
     required UsageCache cache,
     required SettingsRepository settingsRepository,
     required AppLogger logger,
+    AIProvider Function()? providerResolver,
   }) : _refreshService = refreshService,
        _cache = cache,
        _settingsRepository = settingsRepository,
        _logger = logger,
+       _providerResolver = providerResolver,
        _statusController = StreamController<RefreshStatus>.broadcast() {
     _status = RefreshStatus.initial();
   }
@@ -32,6 +35,7 @@ final class UsageRepositoryImpl implements UsageRepository {
   final UsageCache _cache;
   final SettingsRepository _settingsRepository;
   final AppLogger _logger;
+  final AIProvider Function()? _providerResolver;
   final StreamController<RefreshStatus> _statusController;
 
   late RefreshStatus _status;
@@ -45,7 +49,9 @@ final class UsageRepositoryImpl implements UsageRepository {
   Stream<RefreshStatus> watchStatus() => _statusController.stream;
 
   @override
-  Future<Result<UsageInfo?>> getCachedUsage() => _cache.read();
+  Future<Result<UsageInfo?>> getCachedUsage() {
+    return _cache.read(providerId: _providerResolver?.call().providerId);
+  }
 
   @override
   Future<AppSettings> getSettings() => _settingsRepository.read();
@@ -78,12 +84,24 @@ final class UsageRepositoryImpl implements UsageRepository {
     }
 
     final settings = await _settingsRepository.read();
+    final requestedProviderId = _providerResolver?.call().providerId;
     _emit(_status.copyWith(phase: RefreshPhase.refreshing));
 
     final result = await _refreshService.refresh(
       settings: settings,
       currentStatus: _status,
     );
+
+    if (requestedProviderId != null &&
+        (_providerResolver?.call().providerId != requestedProviderId ||
+            result.providerId != requestedProviderId)) {
+      _logger.debug(
+        'operation=refresh status=stale_ignored '
+        'provider=${result.providerId?.value ?? 'unknown'}',
+        name: 'usage_repository',
+      );
+      return result;
+    }
 
     if (result.status == RefreshOutcome.failure) {
       final code = result.error?.code;

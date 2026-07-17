@@ -38,7 +38,13 @@ final class UsageValidator {
       );
     }
 
-    final percent = candidate.sessionUsedPercent;
+    final primaryMetric = candidate.metrics.isEmpty
+        ? null
+        : candidate.metrics.firstWhere(
+            (metric) => metric.primary,
+            orElse: () => candidate.metrics.first,
+          );
+    final percent = candidate.sessionUsedPercent ?? primaryMetric?.usedPercent;
     if (percent == null || percent.isNaN || percent < 0 || percent > 100) {
       return const Result.failure(
         AppFailure(
@@ -51,8 +57,11 @@ final class UsageValidator {
     return Result.success(
       UsageInfo(
         sessionUsedPercent: percent,
-        sessionResetsAtRaw: candidate.sessionResetsAtRaw,
+        sessionResetsAt: primaryMetric?.resetsAt,
+        sessionResetsAtRaw:
+            candidate.sessionResetsAtRaw ?? primaryMetric?.resetsAtRaw,
         weekly: candidate.weekly,
+        metrics: candidate.metrics,
         fetchedAt: fetchedAt,
         source: UsageSource.cli,
         isFromCache: isFromCache,

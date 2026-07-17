@@ -1,4 +1,5 @@
 import 'package:ai_tray/core/errors/app_failure.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/usage/domain/models/parser_state.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
@@ -14,6 +15,7 @@ final class RefreshResult {
     UsageInfo? usage,
     AppFailure? error,
     int? cliExitCode,
+    ProviderId? providerId,
   }) {
     if (duration.isNegative) {
       throw ArgumentError.value(duration, 'duration', 'must not be negative');
@@ -25,6 +27,7 @@ final class RefreshResult {
       error: error,
       duration: duration,
       cliExitCode: cliExitCode,
+      providerId: providerId ?? usage?.providerId,
     );
   }
 
@@ -35,6 +38,7 @@ final class RefreshResult {
     required this.error,
     required this.duration,
     required this.cliExitCode,
+    required this.providerId,
   });
 
   final RefreshOutcome status;
@@ -43,6 +47,7 @@ final class RefreshResult {
   final AppFailure? error;
   final Duration duration;
   final int? cliExitCode;
+  final ProviderId? providerId;
 
   RefreshResult copyWith({
     RefreshOutcome? status,
@@ -51,6 +56,7 @@ final class RefreshResult {
     AppFailure? error,
     Duration? duration,
     int? cliExitCode,
+    ProviderId? providerId,
   }) {
     return RefreshResult(
       status: status ?? this.status,
@@ -59,6 +65,7 @@ final class RefreshResult {
       error: error ?? this.error,
       duration: duration ?? this.duration,
       cliExitCode: cliExitCode ?? this.cliExitCode,
+      providerId: providerId ?? this.providerId,
     );
   }
 
@@ -70,7 +77,8 @@ final class RefreshResult {
         other.parserState == parserState &&
         other.error == error &&
         other.duration == duration &&
-        other.cliExitCode == cliExitCode;
+        other.cliExitCode == cliExitCode &&
+        other.providerId == providerId;
   }
 
   @override
@@ -81,5 +89,6 @@ final class RefreshResult {
     error,
     duration,
     cliExitCode,
+    providerId,
   );
 }

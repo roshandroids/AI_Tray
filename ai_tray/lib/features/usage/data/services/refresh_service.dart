@@ -2,6 +2,8 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_execution_config.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
 import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
@@ -39,39 +41,52 @@ final class RefreshService {
   final Duration softRetryDelay;
   final Duration hardRetryDelay;
 
-  Future<RefreshResult>? _inFlight;
+  final Map<ProviderId, Future<RefreshResult>> _inFlight = {};
 
   Future<RefreshResult> refresh({
     required AppSettings settings,
     required RefreshStatus currentStatus,
   }) {
-    final existing = _inFlight;
+    final provider = _providerResolver();
+    final providerId = provider.providerId;
+    final existing = _inFlight[providerId];
     if (existing != null) {
-      _logger.debug('refresh coalesced (single-flight)', name: 'refresh');
+      _logger.debug(
+        'operation=refresh status=coalesced provider=${providerId.value}',
+        name: 'refresh',
+      );
       return existing;
     }
 
-    final future = _run(settings: settings, currentStatus: currentStatus);
-    _inFlight = future;
-    return future.whenComplete(() {
-      if (identical(_inFlight, future)) {
-        _inFlight = null;
-      }
-    });
+    late final Future<RefreshResult> tracked;
+    tracked =
+        _run(
+          settings: settings,
+          currentStatus: currentStatus,
+          provider: provider,
+        ).whenComplete(() {
+          if (identical(_inFlight[providerId], tracked)) {
+            _inFlight.remove(providerId);
+          }
+        });
+    _inFlight[providerId] = tracked;
+    return tracked;
   }
 
   Future<RefreshResult> _run({
     required AppSettings settings,
     required RefreshStatus currentStatus,
+    required AIProvider provider,
   }) async {
     final started = DateTime.now().toUtc();
-    final provider = _providerResolver();
     final parser = _parserOverride ?? provider.parser;
-    _logger.info('refresh started', name: 'refresh');
-
-    var rawResult = await provider.fetchUsageRaw(
-      binaryPath: settings.claudeBinaryPath,
+    final config = _configFor(provider, settings);
+    _logger.info(
+      'operation=refresh status=started provider=${provider.providerId.value}',
+      name: 'refresh',
     );
+
+    var rawResult = await provider.fetchUsageRaw(config: config);
 
     rawResult = await _maybeRetryRaw(
       first: rawResult,
@@ -102,6 +117,7 @@ final class RefreshService {
               parserState: candidate.parserState,
               duration: DateTime.now().toUtc().difference(started),
               cliExitCode: raw.exitCode,
+              providerId: provider.providerId,
             );
             _logger.info(
               'refresh success durationMs=${result.duration.inMilliseconds}',
@@ -110,7 +126,7 @@ final class RefreshService {
             return result;
           },
           onFailure: (failure) async {
-            final cached = await _readCache();
+            final cached = await _readCache(provider.providerId);
             final soft = failure.code == FailureCode.incompleteOutput;
             final result = RefreshResult(
               status: soft
@@ -121,6 +137,7 @@ final class RefreshService {
               error: failure,
               duration: DateTime.now().toUtc().difference(started),
               cliExitCode: raw.exitCode,
+              providerId: provider.providerId,
             );
             if (soft) {
               _logger.warning(
@@ -142,7 +159,7 @@ final class RefreshService {
         var effective = failure;
         if (_shouldProbeAuth(failure, currentStatus)) {
           final health = await provider.healthCheck(
-            binaryPath: settings.claudeBinaryPath,
+            config: config,
           );
           final probed = health.failureOrNull;
           if (probed != null) {
@@ -150,13 +167,14 @@ final class RefreshService {
           }
         }
 
-        final cached = await _readCache();
+        final cached = await _readCache(provider.providerId);
         final result = RefreshResult(
           status: RefreshOutcome.failure,
           usage: cached,
           parserState: ParserState.empty(),
           error: effective,
           duration: DateTime.now().toUtc().difference(started),
+          providerId: provider.providerId,
         );
         _logger.error(
           'refresh hard failure',
@@ -184,7 +202,7 @@ final class RefreshService {
           return first;
         }
         await Future<void>.delayed(softRetryDelay);
-        return provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
+        return provider.fetchUsageRaw(config: _configFor(provider, settings));
       },
       onFailure: (failure) async {
         final retryable =
@@ -195,7 +213,7 @@ final class RefreshService {
           return first;
         }
         await Future<void>.delayed(hardRetryDelay);
-        return provider.fetchUsageRaw(binaryPath: settings.claudeBinaryPath);
+        return provider.fetchUsageRaw(config: _configFor(provider, settings));
       },
     );
   }
@@ -208,8 +226,19 @@ final class RefreshService {
     return status.consecutiveHardFailures >= 1;
   }
 
-  Future<UsageInfo?> _readCache() async {
-    final cached = await _cache.read();
+  Future<UsageInfo?> _readCache(ProviderId providerId) async {
+    final cached = await _cache.read(providerId: providerId);
     return cached.valueOrNull;
+  }
+
+  ProviderExecutionConfig _configFor(
+    AIProvider provider,
+    AppSettings settings,
+  ) {
+    return ProviderExecutionConfig(
+      executablePath: provider.capabilities.customExecutable
+          ? settings.claudeBinaryPath
+          : null,
+    );
   }
 }

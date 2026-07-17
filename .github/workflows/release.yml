@@ -21,6 +21,8 @@ concurrency:
 
 env:
   FLUTTER_VERSION: "3.38.9"
+  NODE_VERSION: "22.17.0"
+  NPM_VERSION: "10.9.2"
   WORKING_DIRECTORY: ai_tray
   APP_NAME: "AI Tray"
 
@@ -89,6 +91,23 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up pinned Node arm64
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: arm64
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and assemble Copilot sidecar arm64
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          test "$(npm --version)" = "${{ env.NPM_VERSION }}"
+          npm ci
+          npm run check
+          node scripts/assemble_sidecar.mjs --target macos-arm64
+          node scripts/verify_payload.mjs ../../build/copilot_sdk/macos-arm64
+
       - name: Install dependencies
         working-directory: ai_tray
         run: flutter pub get
@@ -96,6 +115,11 @@ jobs:
       - name: Build macOS arm64 (release)
         working-directory: ai_tray
         run: flutter build macos --release
+
+      - name: Verify packaged Copilot sidecar arm64
+        run: >-
+          node ai_tray/tool/copilot_sdk_bridge/scripts/verify_payload.mjs
+          "ai_tray/build/macos/Build/Products/Release/AI Tray.app/Contents/Resources/copilot_sdk"
 
       - name: Package macOS arm64
         run: |
@@ -128,6 +152,23 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up pinned Node x64
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: x64
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and assemble Copilot sidecar x64 under Rosetta
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          test "$(arch -x86_64 npm --version)" = "${{ env.NPM_VERSION }}"
+          arch -x86_64 npm ci
+          arch -x86_64 npm run check
+          arch -x86_64 node scripts/assemble_sidecar.mjs --target macos-x64
+          arch -x86_64 node scripts/verify_payload.mjs ../../build/copilot_sdk/macos-x64
+
       - name: Install dependencies
         working-directory: ai_tray
         run: flutter pub get
@@ -136,6 +177,11 @@ jobs:
       - name: Build macOS x64 (release)
         working-directory: ai_tray
         run: arch -x86_64 flutter build macos --release
+
+      - name: Verify packaged Copilot sidecar x64
+        run: >-
+          arch -x86_64 node ai_tray/tool/copilot_sdk_bridge/scripts/verify_payload.mjs
+          "ai_tray/build/macos/Build/Products/Release/AI Tray.app/Contents/Resources/copilot_sdk"
 
       - name: Package macOS x64
         run: |
@@ -168,6 +214,26 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Set up pinned Node x64
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: x64
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and assemble Copilot sidecar x64
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        shell: pwsh
+        run: |
+          if ((npm --version) -ne "${{ env.NPM_VERSION }}") {
+            throw "Unexpected npm version"
+          }
+          npm ci
+          npm run check
+          node scripts/assemble_sidecar.mjs --target windows-x64
+          node scripts/verify_payload.mjs ../../build/copilot_sdk/windows-x64
+
       - name: Install dependencies
         working-directory: ai_tray
         run: flutter pub get
@@ -175,6 +241,12 @@ jobs:
       - name: Build Windows (release)
         working-directory: ai_tray
         run: flutter build windows --release
+
+      - name: Verify packaged Copilot sidecar x64
+        shell: pwsh
+        run: >-
+          node ai_tray/tool/copilot_sdk_bridge/scripts/verify_payload.mjs
+          "ai_tray/build/windows/x64/runner/Release/copilot_sdk"
 
       - name: Package Windows x64
         shell: pwsh

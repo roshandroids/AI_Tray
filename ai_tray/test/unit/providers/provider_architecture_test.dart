@@ -3,11 +3,18 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/providers/copilot/adapter/copilot_adapter.dart';
+import 'package:ai_tray/features/providers/copilot/sdk/copilot_sdk.dart';
 import 'package:ai_tray/features/providers/data/copilot/copilot_provider.dart';
 import 'package:ai_tray/features/providers/domain/models/auth_health.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_capabilities.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_execution_config.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_health.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_status.dart';
+import 'package:ai_tray/features/providers/domain/models/quota_snapshot.dart';
+import 'package:ai_tray/features/providers/domain/models/session_usage.dart';
+import 'package:ai_tray/features/providers/domain/models/version_info.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
 import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
@@ -32,27 +39,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ProviderRegistry', () {
-    test('exposes enabled providers and keeps Copilot disabled', () {
+    test('exposes Claude and Copilot as enabled providers', () {
       const claude = _FakeProvider(
         id: ProviderId.claude,
         enabled: true,
         capabilities: ProviderCapabilities.claude,
       );
       final registry = ProviderRegistry(
-        providers: [claude, const CopilotProvider()],
+        providers: [claude, _copilotProvider()],
         defaultProviderId: ProviderId.claude,
       );
 
       expect(registry.defaultProvider, same(claude));
       expect(
         registry.enabledProviders.map((provider) => provider.providerId),
-        [ProviderId.claude],
+        [ProviderId.claude, ProviderId.copilot],
       );
       expect(registry.find(ProviderId.copilot), isA<CopilotProvider>());
-      expect(
-        () => registry.requireEnabled(ProviderId.copilot),
-        throwsStateError,
-      );
+      expect(registry.requireEnabled(ProviderId.copilot).enabled, isTrue);
     });
 
     test('rejects duplicate identifiers', () {
@@ -77,7 +81,7 @@ void main() {
     });
   });
 
-  test('selection notifier rejects disabled providers', () {
+  test('selection notifier accepts enabled Copilot provider', () {
     final registry = ProviderRegistry(
       providers: [
         const _FakeProvider(
@@ -85,7 +89,7 @@ void main() {
           enabled: true,
           capabilities: ProviderCapabilities.claude,
         ),
-        const CopilotProvider(),
+        _copilotProvider(),
       ],
       defaultProviderId: ProviderId.claude,
     );
@@ -95,13 +99,10 @@ void main() {
     addTearDown(container.dispose);
 
     expect(container.read(selectedProviderIdProvider), ProviderId.claude);
-    expect(
-      () => container
-          .read(selectedProviderIdProvider.notifier)
-          .select(ProviderId.copilot),
-      throwsStateError,
-    );
-    expect(container.read(selectedProviderIdProvider), ProviderId.claude);
+    container
+        .read(selectedProviderIdProvider.notifier)
+        .select(ProviderId.copilot);
+    expect(container.read(selectedProviderIdProvider), ProviderId.copilot);
   });
 
   test('dashboard metrics are derived only from capabilities', () {
@@ -183,23 +184,12 @@ void main() {
     expect(copilotResult.usage?.sessionUsedPercent, 33);
   });
 
-  test('Copilot scaffold performs no usage or health work', () async {
-    const provider = CopilotProvider();
+  test('Copilot provider exposes production metadata', () {
+    final provider = _copilotProvider();
 
-    expect(provider.enabled, isFalse);
-    expect(provider.capabilities.sessionUsage, isFalse);
-    expect(
-      (await provider.fetchUsageRaw()).failureOrNull?.code,
-      FailureCode.unknown,
-    );
-    expect(
-      (await provider.healthCheck()).failureOrNull?.code,
-      FailureCode.unknown,
-    );
-    expect(
-      provider.parser.parse(rawText: 'not implemented').parserState.messages,
-      contains('copilot_parser_not_implemented'),
-    );
+    expect(provider.enabled, isTrue);
+    expect(provider.capabilities, ProviderCapabilities.copilot);
+    expect(provider.sourceLabel, 'Copilot SDK');
   });
 }
 
@@ -234,7 +224,9 @@ final class _FakeProvider implements AIProvider {
   String get limitsUnavailableMessage => 'Limits unavailable.';
 
   @override
-  Future<Result<UsageRawFetch>> fetchUsageRaw({String? binaryPath}) async {
+  Future<Result<UsageRawFetch>> fetchUsageRaw({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
     return const Result.failure(
       AppFailure(
         code: FailureCode.unknown,
@@ -244,7 +236,9 @@ final class _FakeProvider implements AIProvider {
   }
 
   @override
-  Future<Result<AuthHealth>> healthCheck({String? binaryPath}) async {
+  Future<Result<AuthHealth>> healthCheck({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
     return const Result.failure(
       AppFailure(
         code: FailureCode.unknown,
@@ -283,7 +277,9 @@ final class _UsageProvider implements AIProvider {
   String get limitsUnavailableMessage => 'Limits unavailable.';
 
   @override
-  Future<Result<UsageRawFetch>> fetchUsageRaw({String? binaryPath}) async {
+  Future<Result<UsageRawFetch>> fetchUsageRaw({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
     return Result.success(
       UsageRawFetch(
         stdout: 'Current session: $percent% used · resets tomorrow',
@@ -295,9 +291,52 @@ final class _UsageProvider implements AIProvider {
   }
 
   @override
-  Future<Result<AuthHealth>> healthCheck({String? binaryPath}) async {
+  Future<Result<AuthHealth>> healthCheck({
+    ProviderExecutionConfig config = const ProviderExecutionConfig(),
+  }) async {
     return Result.success(
       AuthHealth(loggedIn: true, checkedAt: DateTime.utc(2026, 7, 16)),
     );
   }
+}
+
+CopilotProvider _copilotProvider() {
+  return CopilotProvider.active(
+    adapter: CopilotSdkAdapter(
+      sdk: const _UnavailableCopilotSdk(),
+      logger: ConsoleAppLogger(defaultName: 'test'),
+      retryPolicy: const CopilotRetryPolicy(maxAttempts: 1),
+    ),
+  );
+}
+
+final class _UnavailableCopilotSdk implements CopilotSdk {
+  const _UnavailableCopilotSdk();
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<QuotaSnapshot> getQuota({
+    CopilotSdkCancellationToken? cancellationToken,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<ProviderHealth> getHealth({
+    CopilotSdkCancellationToken? cancellationToken,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<SessionUsage> getSessionUsage(
+    String sessionId, {
+    CopilotSdkCancellationToken? cancellationToken,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<VersionInfo> getVersion({
+    CopilotSdkCancellationToken? cancellationToken,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> shutdown() async {}
 }

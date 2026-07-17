@@ -64,6 +64,7 @@ final usageRepositoryProvider = Provider<UsageRepository>((ref) {
     cache: ref.watch(usageCacheProvider),
     settingsRepository: ref.watch(settingsRepositoryProvider),
     logger: ref.watch(appLoggerProvider),
+    providerResolver: () => ref.read(selectedAIProviderProvider),
   );
   ref.onDispose(repository.dispose);
   return repository;
