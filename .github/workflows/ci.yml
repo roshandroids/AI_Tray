@@ -2,7 +2,8 @@ name: CI
 
 # Protected-main workflow (CELPIP / MBO house convention):
 #   feature/* → Pull Request → Format / Analyze / Test (+ Build macOS)
-#   push to main → same checks (build verification, no deploy)
+#   push to main → Format / Analyze / Test only (no artifact build)
+#   Publish / desktop artifacts → Release workflow (version tags or workflow_dispatch)
 #
 # STABLE CHECK CONTEXTS (branch protection / rulesets):
 #   Format | Analyze | Test | Build macOS
@@ -113,6 +114,8 @@ jobs:
 
   build-macos:
     name: Build macOS
+    # Skip expensive release-style builds on push to main; publish via release.yml.
+    if: github.event_name == 'pull_request'
     needs: [format, analyze, test]
     runs-on: macos-latest
     timeout-minutes: 45
@@ -161,11 +164,3 @@ jobs:
           node tool/copilot_sdk_bridge/scripts/verify_payload.mjs
           "build/macos/Build/Products/Release/AI Tray.app/Contents/Resources/copilot_sdk"
 
-      - name: Upload macOS build artifact
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-arm64-build
-          path: ai_tray/build/macos/Build/Products/Release/AI Tray.app
-          retention-days: 7
-          if-no-files-found: error
