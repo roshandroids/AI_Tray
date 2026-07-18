@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.3.1] — 2026-07-17
+
 ### Fixed
 - Windows release assembly now stages Copilot sidecar payloads on the output
   volume, preventing cross-drive `EXDEV` rename failures in GitHub Actions.
