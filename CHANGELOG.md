@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-07-17
+
 ### Added
 - GitHub Copilot provider foundation with official SDK sidecar, quota mapping,
   health/diagnostics, and provider-scoped refresh/cache isolation (EP-002).
