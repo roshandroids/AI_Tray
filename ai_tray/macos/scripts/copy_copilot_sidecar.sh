@@ -9,21 +9,35 @@ if [ "${CONFIGURATION:-}" != "Release" ]; then
   exit 0
 fi
 
-ARCH="${CURRENT_ARCH:-}"
-if [ -z "$ARCH" ] || [ "$ARCH" = "undefined_arch" ]; then
-  ARCH="${ARCHS%% *}"
+TARGET_NAME="${COPILOT_SIDECAR_TARGET:-}"
+if [ -z "$TARGET_NAME" ]; then
+  ARCH="${CURRENT_ARCH:-}"
+  if [ -z "$ARCH" ] || [ "$ARCH" = "undefined_arch" ]; then
+    ARCH="${ARCHS%% *}"
+  fi
+  case "$ARCH" in
+    arm64)
+      TARGET_NAME="macos-arm64"
+      ;;
+    x86_64)
+      TARGET_NAME="macos-x64"
+      ;;
+    *)
+      echo "error: unsupported Copilot sidecar architecture: $ARCH" >&2
+      exit 1
+      ;;
+  esac
 fi
-case "$ARCH" in
-  arm64)
-    TARGET_NAME="macos-arm64"
+
+case "$TARGET_NAME" in
+  macos-arm64)
     CLI_PACKAGE="copilot-darwin-arm64"
     ;;
-  x86_64)
-    TARGET_NAME="macos-x64"
+  macos-x64)
     CLI_PACKAGE="copilot-darwin-x64"
     ;;
   *)
-    echo "error: unsupported Copilot sidecar architecture: $ARCH" >&2
+    echo "error: unsupported Copilot sidecar target: $TARGET_NAME" >&2
     exit 1
     ;;
 esac

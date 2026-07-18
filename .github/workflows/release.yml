@@ -114,6 +114,8 @@ jobs:
 
       - name: Build macOS arm64 (release)
         working-directory: ai_tray
+        env:
+          COPILOT_SIDECAR_TARGET: macos-arm64
         run: flutter build macos --release
 
       - name: Verify packaged Copilot sidecar arm64
@@ -176,6 +178,8 @@ jobs:
       # GitHub macOS runners are Apple Silicon; Rosetta builds an x64 .app.
       - name: Build macOS x64 (release)
         working-directory: ai_tray
+        env:
+          COPILOT_SIDECAR_TARGET: macos-x64
         run: arch -x86_64 flutter build macos --release
 
       - name: Verify packaged Copilot sidecar x64
