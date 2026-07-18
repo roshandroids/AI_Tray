@@ -113,10 +113,19 @@ void main() {
       final stale = repository.refresh();
       await Future<void>.delayed(Duration.zero);
       selected = _FakeProvider(id: ProviderId.copilot, percent: 70);
+      final current = repository.refresh();
+      await current;
       gate.complete();
       await stale;
 
-      expect(repository.status.lastResult, isNull);
+      expect(
+        repository.status.lastResult?.providerId,
+        ProviderId.copilot,
+      );
+      expect(
+        repository.status.lastResult?.usage?.sessionUsedPercent,
+        70,
+      );
     },
   );
 }

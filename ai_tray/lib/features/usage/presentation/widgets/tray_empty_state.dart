@@ -2,6 +2,7 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/features/providers/core/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:flutter/material.dart';
 
@@ -43,6 +44,13 @@ final class TrayEmptyState extends StatelessWidget {
     AppFailure? failure,
     AIProvider provider,
   ) {
+    if (!provider.enabled) {
+      return (
+        title: '${provider.displayName} is disabled',
+        body: 'This provider is not currently available for usage refreshes.',
+        hint: 'Enable ${provider.displayName} in Settings, then Refresh.',
+      );
+    }
     if (failure == null) {
       return (
         title: 'No usage data yet',
@@ -51,6 +59,41 @@ final class TrayEmptyState extends StatelessWidget {
             'from ${provider.displayName}.',
         hint: 'Tip: keep ${provider.displayName} signed in.',
       );
+    }
+
+    final detail = '${failure.message} ${failure.detail ?? ''}'.toLowerCase();
+    if (provider.providerId == ProviderId.copilot) {
+      if (detail.contains('experimental')) {
+        return (
+          title: 'Experimental Copilot API unavailable',
+          body:
+              'The session-scoped quota API is unavailable in this Copilot '
+              'version.',
+          hint:
+              'Update Copilot, review Diagnostics, then retry. Existing data '
+              'is never estimated.',
+        );
+      }
+      if (detail.contains('quota') || detail.contains('rpc')) {
+        return (
+          title: 'Copilot quota unavailable',
+          body:
+              'Copilot responded, but did not provide a usable quota '
+              'snapshot.',
+          hint: 'Open Diagnostics to check Quota RPC, then Refresh.',
+        );
+      }
+      if (failure.code == FailureCode.cliNotInstalled) {
+        return (
+          title: 'Copilot SDK is missing',
+          body:
+              'AI Tray could not start the bundled Copilot SDK sidecar on '
+              'this device.',
+          hint:
+              'Reinstall or update AI Tray, then verify SDK and CLI versions '
+              'in Diagnostics.',
+        );
+      }
     }
 
     return switch (failure.code) {

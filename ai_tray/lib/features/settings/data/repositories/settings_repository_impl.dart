@@ -2,6 +2,7 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
@@ -38,9 +39,16 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
           '${_prefix}notifyAtSessionPercent',
         ),
         claudeBinaryPath: _prefs.getString('${_prefix}claudeBinaryPath'),
+        selectedProviderId: ProviderId(
+          _prefs.getString('${_prefix}selectedProviderId') ??
+              defaults.selectedProviderId.value,
+        ),
         themeMode: AppThemePreference.fromStorage(
           _prefs.getString('${_prefix}themeMode'),
         ),
+        copilotEnabled:
+            _prefs.getBool('${_prefix}copilotEnabled') ??
+            defaults.copilotEnabled,
       );
     } on Exception {
       return AppSettings.defaults();
@@ -50,45 +58,75 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
   @override
   Future<Result<Unit>> write(AppSettings settings) async {
     try {
-      await _prefs.setBool(
-        '${_prefix}autoRefreshEnabled',
-        settings.autoRefreshEnabled,
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}autoRefreshEnabled',
+          settings.autoRefreshEnabled,
+        ),
       );
-      await _prefs.setInt(
-        '${_prefix}refreshIntervalSeconds',
-        settings.refreshInterval.inSeconds,
+      await _requireSaved(
+        _prefs.setInt(
+          '${_prefix}refreshIntervalSeconds',
+          settings.refreshInterval.inSeconds,
+        ),
       );
-      await _prefs.setBool(
-        '${_prefix}notificationsEnabled',
-        settings.notificationsEnabled,
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}notificationsEnabled',
+          settings.notificationsEnabled,
+        ),
       );
-      await _prefs.setBool(
-        '${_prefix}launchAtLogin',
-        settings.launchAtLogin,
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}launchAtLogin',
+          settings.launchAtLogin,
+        ),
       );
-      await _prefs.setBool(
-        '${_prefix}showStaleIndicator',
-        settings.showStaleIndicator,
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}showStaleIndicator',
+          settings.showStaleIndicator,
+        ),
       );
       if (settings.notifyAtSessionPercent == null) {
-        await _prefs.remove('${_prefix}notifyAtSessionPercent');
+        await _requireSaved(
+          _prefs.remove('${_prefix}notifyAtSessionPercent'),
+        );
       } else {
-        await _prefs.setDouble(
-          '${_prefix}notifyAtSessionPercent',
-          settings.notifyAtSessionPercent!,
+        await _requireSaved(
+          _prefs.setDouble(
+            '${_prefix}notifyAtSessionPercent',
+            settings.notifyAtSessionPercent!,
+          ),
         );
       }
       if (settings.claudeBinaryPath == null) {
-        await _prefs.remove('${_prefix}claudeBinaryPath');
+        await _requireSaved(_prefs.remove('${_prefix}claudeBinaryPath'));
       } else {
-        await _prefs.setString(
-          '${_prefix}claudeBinaryPath',
-          settings.claudeBinaryPath!,
+        await _requireSaved(
+          _prefs.setString(
+            '${_prefix}claudeBinaryPath',
+            settings.claudeBinaryPath!,
+          ),
         );
       }
-      await _prefs.setString(
-        '${_prefix}themeMode',
-        settings.themeMode.storageValue,
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}themeMode',
+          settings.themeMode.storageValue,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}selectedProviderId',
+          settings.selectedProviderId.value,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}copilotEnabled',
+          settings.copilotEnabled,
+        ),
       );
       return const Result.success(Unit.unit);
     } on Exception {
@@ -99,6 +137,12 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         ),
       );
     }
+  }
+}
+
+Future<void> _requireSaved(Future<bool> operation) async {
+  if (!await operation) {
+    throw StateError('SharedPreferences rejected a settings write');
   }
 }
 

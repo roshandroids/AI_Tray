@@ -3,26 +3,23 @@ import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
 import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
 import 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart';
-import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
-import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
+import 'package:ai_tray/features/settings/settings_providers.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
 import 'package:ai_tray/features/usage/data/repositories/usage_repository_impl.dart';
 import 'package:ai_tray/features/usage/data/services/refresh_service.dart';
 import 'package:ai_tray/features/usage/data/validators/usage_validator.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 export 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart'
-    show selectedAIProviderProvider, selectedProviderIdProvider;
+    show
+        selectableAIProvidersProvider,
+        selectedAIProviderProvider,
+        selectedProviderIdProvider;
 export 'package:ai_tray/features/providers/provider_providers.dart'
     show processRunnerProvider, providerRegistryProvider;
-
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError(
-    'sharedPreferencesProvider must be overridden in bootstrap',
-  );
-});
+export 'package:ai_tray/features/settings/settings_providers.dart'
+    show settingsRepositoryProvider, sharedPreferencesProvider;
 
 /// Compatibility alias retained for existing provider-port consumers.
 final aiProviderPortProvider = Provider<AiProviderPort>((ref) {
@@ -40,12 +37,6 @@ final usageValidatorProvider = Provider<UsageValidator>(
 
 final usageCacheProvider = Provider<UsageCache>((ref) {
   return SharedPreferencesUsageCache(ref.watch(sharedPreferencesProvider));
-});
-
-final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
-  return SharedPreferencesSettingsRepository(
-    ref.watch(sharedPreferencesProvider),
-  );
 });
 
 final refreshServiceProvider = Provider<RefreshService>((ref) {

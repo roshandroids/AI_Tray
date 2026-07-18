@@ -1,17 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/di/providers.dart';
+import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
+import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
-import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
+import 'package:ai_tray/features/settings/presentation/settings_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Settings with left navigation rail (PD-021).
@@ -23,18 +27,14 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  late Future<AppSettings> _future;
   late TextEditingController _binaryController;
   SettingsSection _section = SettingsSection.appearance;
+  bool _binaryInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _binaryController = TextEditingController();
-    _future = ref.read(usageRepositoryProvider).getSettings().then((settings) {
-      _binaryController.text = settings.claudeBinaryPath ?? '';
-      return settings;
-    });
   }
 
   @override
@@ -43,93 +43,121 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     super.dispose();
   }
 
-  Future<void> _reload() async {
-    setState(() {
-      _future = ref.read(usageRepositoryProvider).getSettings().then((s) {
-        _binaryController.text = s.claudeBinaryPath ?? '';
-        return s;
-      });
-    });
-  }
-
   Future<void> _save(AppSettings settings) async {
-    final repo = ref.read(usageRepositoryProvider);
-    await repo.updateSettings(settings);
-    await ref.read(trayControllerProvider).applyLaunchAtLogin(settings);
-    await _reload();
+    final saved = await ref
+        .read(settingsControllerProvider.notifier)
+        .save(settings);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            saved
+                ? 'Settings saved'
+                : _settingsErrorMessage(
+                    ref.read(settingsControllerProvider).error,
+                  ),
+          ),
+        ),
+      );
   }
 
   Future<void> _setTheme(AppThemePreference mode) async {
     await ref.read(themeControllerProvider.notifier).setPreference(mode);
-    await _reload();
   }
 
   @override
   Widget build(BuildContext context) {
     final themePref = ref.watch(themeControllerProvider).value;
     final selectedProvider = ref.watch(selectedAIProviderProvider);
+    final settingsState = ref.watch(settingsControllerProvider);
+    final settings =
+        settingsState.value ??
+        ref.read(settingsControllerProvider.notifier).lastSettings;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: FutureBuilder<AppSettings>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final settings = snapshot.data!;
-          final selectedTheme = themePref ?? settings.themeMode;
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SettingsNavRail(
-                selected: _section,
-                onSelect: (section) {
-                  if (section == SettingsSection.diagnostics) {
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const DiagnosticsPage(),
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-                  if (section == SettingsSection.logs) {
-                    unawaited(
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const LogsPage(),
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-                  setState(() => _section = section);
-                },
+      body: settings == null
+          ? _SettingsLoadState(
+              loading: settingsState.isLoading,
+              message: _settingsErrorMessage(settingsState.error),
+              onRetry: () => unawaited(
+                ref.read(settingsControllerProvider.notifier).retry(),
               ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(Spacing.md),
+            )
+          : Builder(
+              builder: (context) {
+                if (!_binaryInitialized) {
+                  _binaryController.text = settings.claudeBinaryPath ?? '';
+                  _binaryInitialized = true;
+                }
+                final selectedTheme = themePref ?? settings.themeMode;
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      _section.label,
-                      style: context.typography.title,
+                    SettingsNavRail(
+                      selected: _section,
+                      onSelect: (section) {
+                        if (section == SettingsSection.diagnostics) {
+                          unawaited(
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DiagnosticsPage(),
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        if (section == SettingsSection.logs) {
+                          unawaited(
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const LogsPage(),
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+                        setState(() => _section = section);
+                      },
                     ),
-                    const SizedBox(height: Spacing.md),
-                    ..._buildSection(
-                      settings,
-                      selectedTheme,
-                      selectedProvider,
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.all(Spacing.md),
+                        children: [
+                          if (settingsState.hasError) ...[
+                            _InlineError(
+                              message: _settingsErrorMessage(
+                                settingsState.error,
+                              ),
+                              onRetry: () => unawaited(
+                                ref
+                                    .read(settingsControllerProvider.notifier)
+                                    .retry(),
+                              ),
+                            ),
+                            const SizedBox(height: Spacing.md),
+                          ],
+                          Text(
+                            _section.label,
+                            style: context.typography.title,
+                          ),
+                          const SizedBox(height: Spacing.md),
+                          ..._buildSection(
+                            settings,
+                            selectedTheme,
+                            selectedProvider,
+                            settingsState.isLoading,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+                );
+              },
+            ),
     );
   }
 
@@ -137,6 +165,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     AppSettings settings,
     AppThemePreference selectedTheme,
     AIProvider selectedProvider,
+    bool saving,
   ) {
     return switch (_section) {
       SettingsSection.appearance => [
@@ -205,11 +234,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Auto refresh'),
               value: settings.autoRefreshEnabled,
-              onChanged: (value) {
-                unawaited(
-                  _save(settings.copyWith(autoRefreshEnabled: value)),
-                );
-              },
+              onChanged: saving
+                  ? null
+                  : (value) {
+                      unawaited(
+                        _save(settings.copyWith(autoRefreshEnabled: value)),
+                      );
+                    },
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -224,16 +255,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   DropdownMenuItem(value: 45, child: Text('45s')),
                   DropdownMenuItem(value: 60, child: Text('60s')),
                 ],
-                onChanged: (value) {
-                  if (value == null) return;
-                  unawaited(
-                    _save(
-                      settings.copyWith(
-                        refreshInterval: Duration(seconds: value),
-                      ),
-                    ),
-                  );
-                },
+                onChanged: saving
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        unawaited(
+                          _save(
+                            settings.copyWith(
+                              refreshInterval: Duration(seconds: value),
+                            ),
+                          ),
+                        );
+                      },
               ),
             ),
           ],
@@ -247,11 +280,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Enable notifications'),
               value: settings.notificationsEnabled,
-              onChanged: (value) {
-                unawaited(
-                  _save(settings.copyWith(notificationsEnabled: value)),
-                );
-              },
+              onChanged: saving
+                  ? null
+                  : (value) {
+                      unawaited(
+                        _save(settings.copyWith(notificationsEnabled: value)),
+                      );
+                    },
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -267,22 +302,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   DropdownMenuItem(value: 75, child: Text('75%')),
                   DropdownMenuItem(value: 90, child: Text('90%')),
                 ],
-                onChanged: (value) {
-                  unawaited(
-                    _save(
-                      AppSettings(
-                        autoRefreshEnabled: settings.autoRefreshEnabled,
-                        refreshInterval: settings.refreshInterval,
-                        notificationsEnabled: settings.notificationsEnabled,
-                        launchAtLogin: settings.launchAtLogin,
-                        showStaleIndicator: settings.showStaleIndicator,
-                        notifyAtSessionPercent: value,
-                        claudeBinaryPath: settings.claudeBinaryPath,
-                        themeMode: settings.themeMode,
-                      ),
-                    ),
-                  );
-                },
+                onChanged: saving
+                    ? null
+                    : (value) {
+                        unawaited(
+                          _save(
+                            AppSettings(
+                              autoRefreshEnabled: settings.autoRefreshEnabled,
+                              refreshInterval: settings.refreshInterval,
+                              notificationsEnabled:
+                                  settings.notificationsEnabled,
+                              launchAtLogin: settings.launchAtLogin,
+                              showStaleIndicator: settings.showStaleIndicator,
+                              notifyAtSessionPercent: value,
+                              claudeBinaryPath: settings.claudeBinaryPath,
+                              selectedProviderId: settings.selectedProviderId,
+                              themeMode: settings.themeMode,
+                              copilotEnabled: settings.copilotEnabled,
+                            ),
+                          ),
+                        );
+                      },
               ),
             ),
           ],
@@ -296,20 +336,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Launch at login'),
               value: settings.launchAtLogin,
-              onChanged: (value) {
-                unawaited(_save(settings.copyWith(launchAtLogin: value)));
-              },
+              onChanged: saving
+                  ? null
+                  : (value) {
+                      unawaited(_save(settings.copyWith(launchAtLogin: value)));
+                    },
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Show stale indicator'),
               subtitle: const Text('Highlight Cached status'),
               value: settings.showStaleIndicator,
-              onChanged: (value) {
-                unawaited(
-                  _save(settings.copyWith(showStaleIndicator: value)),
-                );
-              },
+              onChanged: saving
+                  ? null
+                  : (value) {
+                      unawaited(
+                        _save(settings.copyWith(showStaleIndicator: value)),
+                      );
+                    },
             ),
           ],
         ),
@@ -326,24 +370,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   labelText: 'Binary path (optional)',
                   hintText: selectedProvider.providerId.value,
                 ),
-                onSubmitted: (value) {
-                  unawaited(
-                    _save(
-                      AppSettings(
-                        autoRefreshEnabled: settings.autoRefreshEnabled,
-                        refreshInterval: settings.refreshInterval,
-                        notificationsEnabled: settings.notificationsEnabled,
-                        launchAtLogin: settings.launchAtLogin,
-                        showStaleIndicator: settings.showStaleIndicator,
-                        notifyAtSessionPercent: settings.notifyAtSessionPercent,
-                        claudeBinaryPath: value.trim().isEmpty
-                            ? null
-                            : value.trim(),
-                        themeMode: settings.themeMode,
-                      ),
-                    ),
-                  );
-                },
+                onSubmitted: saving
+                    ? null
+                    : (value) {
+                        unawaited(
+                          _save(
+                            AppSettings(
+                              autoRefreshEnabled: settings.autoRefreshEnabled,
+                              refreshInterval: settings.refreshInterval,
+                              notificationsEnabled:
+                                  settings.notificationsEnabled,
+                              launchAtLogin: settings.launchAtLogin,
+                              showStaleIndicator: settings.showStaleIndicator,
+                              notifyAtSessionPercent:
+                                  settings.notifyAtSessionPercent,
+                              claudeBinaryPath: value.trim().isEmpty
+                                  ? null
+                                  : value.trim(),
+                              selectedProviderId: settings.selectedProviderId,
+                              themeMode: settings.themeMode,
+                              copilotEnabled: settings.copilotEnabled,
+                            ),
+                          ),
+                        );
+                      },
               ),
             ],
           )
@@ -356,6 +406,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
       ],
       SettingsSection.advanced => [
+        _buildCopilotSettings(settings, saving),
+        const SizedBox(height: Spacing.md),
         SettingsGroup(
           title: 'Advanced',
           children: [
@@ -416,4 +468,196 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       SettingsSection.diagnostics || SettingsSection.logs => const [],
     };
   }
+
+  Widget _buildCopilotSettings(AppSettings settings, bool saving) {
+    final diagnosticsState = ref.watch(copilotDiagnosticsProvider);
+    final diagnostics = diagnosticsState.value;
+    final diagnosticsError = diagnosticsState.error;
+
+    return SettingsGroup(
+      title: 'GitHub Copilot (Experimental)',
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Enable GitHub Copilot'),
+          subtitle: const Text(
+            'Uses the bundled SDK sidecar and session-scoped quota RPC.',
+          ),
+          value: settings.copilotEnabled,
+          onChanged: saving
+              ? null
+              : (enabled) {
+                  unawaited(
+                    _save(settings.copyWith(copilotEnabled: enabled)),
+                  );
+                },
+        ),
+        if (!settings.copilotEnabled)
+          const Text(
+            'Copilot is disabled. Enable it to run SDK, authentication, '
+            'version, and quota diagnostics.',
+          )
+        else if (diagnosticsState.isLoading && diagnostics == null)
+          const Row(
+            children: [
+              SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: Spacing.sm),
+              Text('Checking Copilot integration…'),
+            ],
+          )
+        else if (diagnosticsError != null && diagnostics == null)
+          _InlineError(
+            message: _diagnosticsErrorMessage(diagnosticsError),
+            onRetry: () => unawaited(
+              ref.read(copilotDiagnosticsProvider.notifier).retry(),
+            ),
+          )
+        else if (diagnostics != null) ...[
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('SDK / CLI version'),
+            subtitle: Text(
+              '${diagnostics.sdkVersion} / ${diagnostics.cliVersion}',
+            ),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Authentication'),
+            trailing: Text(diagnostics.authStatus),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Quota RPC'),
+            trailing: Text(diagnostics.quotaRpcStatus),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Experimental API'),
+            trailing: Text(diagnostics.experimentalStatus),
+          ),
+        ],
+        Wrap(
+          spacing: Spacing.sm,
+          runSpacing: Spacing.sm,
+          children: [
+            OutlinedButton(
+              onPressed: diagnosticsState.isLoading
+                  ? null
+                  : () => unawaited(
+                      ref.read(copilotDiagnosticsProvider.notifier).retry(),
+                    ),
+              child: const Text('Retry diagnostics'),
+            ),
+            OutlinedButton(
+              onPressed: () => unawaited(_openCopilotSettings()),
+              child: const Text('Open Copilot settings'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openCopilotSettings() async {
+    const url = 'https://github.com/settings/copilot';
+    try {
+      final command = Platform.isMacOS
+          ? ('open', <String>[url])
+          : Platform.isWindows
+          ? ('cmd', <String>['/c', 'start', '', url])
+          : ('xdg-open', <String>[url]);
+      final result = await Process.run(
+        command.$1,
+        command.$2,
+      ).timeout(const Duration(seconds: 5));
+      if (result.exitCode != 0) {
+        throw StateError('External settings could not be opened');
+      }
+    } on Object catch (_) {
+      await Clipboard.setData(const ClipboardData(text: url));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not open Copilot settings. The URL was copied.',
+            ),
+          ),
+        );
+    }
+  }
+}
+
+final class _SettingsLoadState extends StatelessWidget {
+  const _SettingsLoadState({
+    required this.loading,
+    required this.message,
+    required this.onRetry,
+  });
+
+  final bool loading;
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(message, textAlign: TextAlign.center),
+            const SizedBox(height: Spacing.md),
+            FilledButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: context.colors.error),
+          const SizedBox(width: Spacing.sm),
+          Expanded(child: Text(message)),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+}
+
+String _settingsErrorMessage(Object? error) {
+  if (error is AppFailure) return error.message;
+  if (error is TimeoutException) {
+    return 'Loading settings timed out. Please retry.';
+  }
+  if (error is StateError) return error.message;
+  return 'Settings could not be loaded or saved. Please retry.';
+}
+
+String _diagnosticsErrorMessage(Object error) {
+  if (error is TimeoutException) {
+    return 'Copilot diagnostics timed out. Check the SDK and retry.';
+  }
+  return 'Copilot diagnostics failed safely. No secrets were included.';
 }

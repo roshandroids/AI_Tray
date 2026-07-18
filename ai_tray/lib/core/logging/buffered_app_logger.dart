@@ -41,6 +41,8 @@ final class BufferedAppLogger implements AppLogger {
     String? name,
     Object? error,
     StackTrace? stackTrace,
+    String? provider,
+    String? category,
   }) {
     _record(
       LogLevel.debug,
@@ -48,6 +50,8 @@ final class BufferedAppLogger implements AppLogger {
       name: name,
       error: error,
       stackTrace: stackTrace,
+      provider: provider,
+      category: category,
     );
     delegate?.debug(
       message,
@@ -63,6 +67,8 @@ final class BufferedAppLogger implements AppLogger {
     String? name,
     Object? error,
     StackTrace? stackTrace,
+    String? provider,
+    String? category,
   }) {
     _record(
       LogLevel.info,
@@ -70,6 +76,8 @@ final class BufferedAppLogger implements AppLogger {
       name: name,
       error: error,
       stackTrace: stackTrace,
+      provider: provider,
+      category: category,
     );
     delegate?.info(
       message,
@@ -85,6 +93,8 @@ final class BufferedAppLogger implements AppLogger {
     String? name,
     Object? error,
     StackTrace? stackTrace,
+    String? provider,
+    String? category,
   }) {
     _record(
       LogLevel.warning,
@@ -92,6 +102,8 @@ final class BufferedAppLogger implements AppLogger {
       name: name,
       error: error,
       stackTrace: stackTrace,
+      provider: provider,
+      category: category,
     );
     delegate?.warning(
       message,
@@ -108,6 +120,8 @@ final class BufferedAppLogger implements AppLogger {
     Object? error,
     StackTrace? stackTrace,
     AppFailure? failure,
+    String? provider,
+    String? category,
   }) {
     final buffer = StringBuffer(message);
     String? recovery;
@@ -125,6 +139,8 @@ final class BufferedAppLogger implements AppLogger {
       error: error,
       stackTrace: stackTrace,
       recoveryHint: recovery,
+      provider: provider,
+      category: category,
     );
     delegate?.error(
       message,
@@ -143,6 +159,8 @@ final class BufferedAppLogger implements AppLogger {
     String? name,
     Object? error,
     StackTrace? stackTrace,
+    String? provider,
+    String? category,
   }) {
     _record(
       LogLevel.success,
@@ -150,6 +168,8 @@ final class BufferedAppLogger implements AppLogger {
       name: name,
       error: error,
       stackTrace: stackTrace,
+      provider: provider,
+      category: category,
     );
     delegate?.info(
       message,
@@ -166,6 +186,8 @@ final class BufferedAppLogger implements AppLogger {
     Object? error,
     StackTrace? stackTrace,
     String? recoveryHint,
+    String? provider,
+    String? category,
   }) {
     _entries.addLast(
       LogEntry(
@@ -176,6 +198,8 @@ final class BufferedAppLogger implements AppLogger {
         error: error,
         stackTrace: stackTrace,
         recoveryHint: recoveryHint,
+        provider: provider ?? _providerFor(name, message),
+        category: category ?? _categoryFor(name),
       ),
     );
     while (_entries.length > capacity) {
@@ -201,6 +225,35 @@ final class BufferedAppLogger implements AppLogger {
       'parseFailed' => 'Wait for next refresh or check CLI output shape.',
       _ => 'Open Logs for detail; try Refresh Now.',
     };
+  }
+
+  static String? _providerFor(String? component, String message) {
+    final normalized = '${component ?? ''} $message'.toLowerCase();
+    if (normalized.contains('provider=copilot') ||
+        normalized.contains('copilot')) {
+      return 'copilot';
+    }
+    if (normalized.contains('provider=claude') ||
+        normalized.contains('claude')) {
+      return 'claude';
+    }
+    return null;
+  }
+
+  static String? _categoryFor(String? component) {
+    final normalized = component?.toLowerCase() ?? '';
+    if (normalized.contains('diagnostic')) return 'diagnostics';
+    if (normalized.contains('sdk') || normalized.contains('sidecar')) {
+      return 'sdk';
+    }
+    if (normalized.contains('refresh') || normalized.contains('usage')) {
+      return 'usage';
+    }
+    if (normalized.contains('provider') || normalized.contains('adapter')) {
+      return 'provider';
+    }
+    if (normalized.isEmpty || normalized == 'ai_tray') return null;
+    return normalized;
   }
 
   Future<void> dispose() async {

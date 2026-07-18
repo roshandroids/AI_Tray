@@ -8,6 +8,7 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
@@ -89,7 +90,7 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
     });
 
     final repository = ref.watch(usageRepositoryProvider);
-    final registry = ref.watch(providerRegistryProvider);
+    final selectableProviders = ref.watch(selectableAIProvidersProvider);
     final selectedProvider = ref.watch(selectedAIProviderProvider);
 
     return StreamBuilder<RefreshStatus>(
@@ -97,8 +98,12 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
       initialData: repository.status,
       builder: (context, snapshot) {
         final status = snapshot.data ?? RefreshStatus.initial();
-        final usage = status.lastResult?.usage;
-        final error = status.lastResult?.error;
+        final visibleResult =
+            status.lastResult?.providerId == selectedProvider.providerId
+            ? status.lastResult
+            : null;
+        final usage = visibleResult?.usage;
+        final error = visibleResult?.error;
         final refreshing = status.phase == RefreshPhase.refreshing;
         final kind = UsageStatusMapper.kind(status);
 
@@ -107,11 +112,16 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
             title: const Text('AI Tray'),
             actions: [
               ProviderSelector(
-                providers: registry.enabledProviders.toList(),
+                providers: selectableProviders,
                 selectedId: selectedProvider.providerId,
-                onSelected: ref
-                    .read(selectedProviderIdProvider.notifier)
-                    .select,
+                onSelected: (providerId) async {
+                  final changed = await ref
+                      .read(selectedProviderIdProvider.notifier)
+                      .select(providerId);
+                  if (changed) {
+                    await repository.refresh(manual: true);
+                  }
+                },
               ),
               const SizedBox(width: Spacing.sm),
               Padding(
@@ -150,20 +160,52 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
                 ),
                 child: Column(
                   children: [
+                    _ProviderHeader(
+                      key: ValueKey(
+                        'provider-header-${selectedProvider.providerId.value}',
+                      ),
+                      provider: selectedProvider,
+                      status: status,
+                    ),
+                    const SizedBox(height: Spacing.sm),
                     Expanded(
-                      child: usage == null
-                          ? SingleChildScrollView(
-                              child: TrayEmptyState(
-                                failure: error,
+                      child: AnimatedSwitcher(
+                        duration:
+                            MediaQuery.maybeOf(context)?.disableAnimations ??
+                                false
+                            ? Duration.zero
+                            : const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: usage == null
+                            ? refreshing
+                                  ? _DashboardSkeleton(
+                                      key: ValueKey(
+                                        'dashboard-skeleton-'
+                                        '${selectedProvider.providerId.value}',
+                                      ),
+                                    )
+                                  : SingleChildScrollView(
+                                      key: ValueKey(
+                                        'dashboard-empty-'
+                                        '${selectedProvider.providerId.value}',
+                                      ),
+                                      child: TrayEmptyState(
+                                        failure: error,
+                                        provider: selectedProvider,
+                                      ),
+                                    )
+                            : _DashboardBody(
+                                key: ValueKey(
+                                  'dashboard-'
+                                  '${selectedProvider.providerId.value}',
+                                ),
+                                usage: usage,
+                                status: status,
+                                kind: kind,
                                 provider: selectedProvider,
                               ),
-                            )
-                          : _DashboardBody(
-                              usage: usage,
-                              status: status,
-                              kind: kind,
-                              provider: selectedProvider,
-                            ),
+                      ),
                     ),
                     const SectionDivider(),
                     Row(
@@ -202,12 +244,334 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
   }
 }
 
+final class _DashboardStatusNotice extends StatelessWidget {
+  const _DashboardStatusNotice({
+    required this.icon,
+    required this.message,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      label: message,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(RadiusTokens.md),
+          border: Border.all(color: color.withValues(alpha: 0.45)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(child: Icon(icon, color: color, size: 18)),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Text(
+                  message,
+                  style: context.typography.caption.copyWith(color: color),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _ProviderHeader extends StatelessWidget {
+  const _ProviderHeader({
+    required this.provider,
+    required this.status,
+    super.key,
+  });
+
+  final AIProvider provider;
+  final RefreshStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final kind = UsageStatusMapper.kind(status);
+    final healthColor = switch (kind) {
+      TrayStatusKind.live => colors.success,
+      TrayStatusKind.cached => colors.warning,
+      TrayStatusKind.refreshing => colors.info,
+      TrayStatusKind.error => colors.error,
+      TrayStatusKind.idle => colors.textMuted,
+    };
+    final lastRefresh = UsageStatusMapper.relativeUpdated(
+      status.lastSuccessAt ?? status.lastResult?.usage?.fetchedAt,
+    );
+
+    return Semantics(
+      container: true,
+      label:
+          '${provider.displayName} provider, '
+          '${UsageStatusMapper.label(kind)}, last refreshed $lastRefresh',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(RadiusTokens.md),
+          border: Border.all(color: colors.border),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.sm),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.surfaceAlt,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(Spacing.sm),
+                    child: Icon(
+                      provider.providerId == ProviderId.copilot
+                          ? Icons.code_rounded
+                          : Icons.auto_awesome_rounded,
+                      color: colors.textPrimary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: Spacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            provider.displayName,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.typography.section,
+                          ),
+                        ),
+                        if (provider.providerId == ProviderId.copilot) ...[
+                          const SizedBox(width: Spacing.sm),
+                          _ExperimentalBadge(color: colors.warning),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      'Last refreshed $lastRefresh',
+                      style: context.typography.caption,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Spacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: healthColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                      Text(
+                        UsageStatusMapper.label(kind),
+                        style: context.typography.status.copyWith(
+                          color: healthColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (kind == TrayStatusKind.refreshing) ...[
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      'Updating metrics…',
+                      style: context.typography.caption,
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _ExperimentalBadge extends StatelessWidget {
+  const _ExperimentalBadge({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(RadiusTokens.sm),
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: 2,
+        ),
+        child: Text(
+          'EXPERIMENTAL',
+          style: context.typography.caption.copyWith(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Loading usage metrics',
+      child: const SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _SkeletonCard(),
+            SizedBox(height: Spacing.sm),
+            _SkeletonCard(),
+            SizedBox(height: Spacing.md),
+            _SkeletonPanel(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _SkeletonCard extends StatelessWidget {
+  const _SkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(RadiusTokens.md),
+          border: Border.all(color: colors.border),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.md),
+          child: Row(
+            children: [
+              Container(
+                width: Spacing.progressRingSize,
+                height: Spacing.progressRingSize,
+                decoration: BoxDecoration(
+                  color: colors.surfaceAlt,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: Spacing.md),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SkeletonLine(widthFactor: 0.45),
+                    SizedBox(height: Spacing.sm),
+                    _SkeletonLine(widthFactor: 0.7),
+                    SizedBox(height: Spacing.sm),
+                    _SkeletonLine(widthFactor: 0.55),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _SkeletonPanel extends StatelessWidget {
+  const _SkeletonPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.colors.surface,
+          borderRadius: BorderRadius.circular(RadiusTokens.md),
+          border: Border.all(color: context.colors.border),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(Spacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _SkeletonLine(widthFactor: 0.3),
+              SizedBox(height: Spacing.md),
+              _SkeletonLine(widthFactor: 0.8),
+              SizedBox(height: Spacing.sm),
+              _SkeletonLine(widthFactor: 0.65),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _SkeletonLine extends StatelessWidget {
+  const _SkeletonLine({required this.widthFactor});
+
+  final double widthFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      widthFactor: widthFactor,
+      alignment: Alignment.centerLeft,
+      child: Container(
+        height: 10,
+        decoration: BoxDecoration(
+          color: context.colors.surfaceAlt,
+          borderRadius: BorderRadius.circular(RadiusTokens.sm),
+        ),
+      ),
+    );
+  }
+}
+
 final class _DashboardBody extends ConsumerWidget {
   const _DashboardBody({
     required this.usage,
     required this.status,
     required this.kind,
     required this.provider,
+    super.key,
   });
 
   final UsageInfo usage;
@@ -244,16 +608,31 @@ final class _DashboardBody extends ConsumerWidget {
         final parserOk = parser?.validation == ValidationStatus.valid;
         final authOk = kind != TrayStatusKind.error;
 
-        final metricCards = [
-          for (final metric in dashboardData.metrics)
-            MetricCard(
-              key: ValueKey(metric.key),
-              label: metric.label,
-              percent: metric.usedPercent,
-              resetsAtRaw: metric.resetsAtRaw,
-              sparklineValues: _sparkFromPercent(metric.usedPercent),
-            ),
-        ];
+        final metricCards = dashboardData.metrics.isEmpty
+            ? const [
+                MetricCard(
+                  key: ValueKey('usage-unavailable'),
+                  label: 'Usage',
+                  percent: 0,
+                  available: false,
+                ),
+              ]
+            : [
+                for (final metric in dashboardData.metrics)
+                  MetricCard(
+                    key: ValueKey(metric.key),
+                    label: metric.label,
+                    percent: metric.usedPercent,
+                    resetsAtRaw: metric.resetsAtRaw,
+                    value: metric.value,
+                    total: metric.total,
+                    unit: metric.unit,
+                    remainingPercent: metric.remainingPercent,
+                    unlimited: metric.unlimited,
+                    refreshing: dashboardData.status.isRefreshing,
+                    sparklineValues: _sparkFromPercent(metric.usedPercent),
+                  ),
+              ];
         final primaryMetricCards = metricCards.take(2).toList();
 
         return LayoutBuilder(
@@ -411,14 +790,23 @@ final class _DashboardBody extends ConsumerWidget {
                   ],
                   if (outcome == RefreshOutcome.softFailure) ...[
                     const SizedBox(height: Spacing.sm),
-                    Text(
-                      dashboardData.limitsUnavailableMessage,
-                      style: context.typography.caption,
+                    _DashboardStatusNotice(
+                      icon: Icons.history_rounded,
+                      message:
+                          'Showing saved usage. '
+                          '${dashboardData.limitsUnavailableMessage}',
+                      color: context.colors.warning,
                     ),
                   ],
                   if (outcome == RefreshOutcome.failure && error != null) ...[
                     const SizedBox(height: Spacing.sm),
-                    Text(error.message, style: context.typography.error),
+                    _DashboardStatusNotice(
+                      icon: Icons.error_outline_rounded,
+                      message:
+                          'Refresh failed. Showing the last available usage. '
+                          '${error.message}',
+                      color: context.colors.error,
+                    ),
                   ],
                 ],
               ),

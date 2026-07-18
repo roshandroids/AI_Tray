@@ -18,18 +18,29 @@ final class UsageInfo {
     List<WeeklyUsage> weekly = const [],
     List<ProviderUsageMetric> metrics = const [],
   }) {
-    final normalizedMetrics = metrics.isEmpty
-        ? [
+    // When parsers only populate session/weekly fields, project them into the
+    // shared metrics list so the capability-driven dashboard has one source.
+    final normalizedMetrics = metrics.isNotEmpty
+        ? List<ProviderUsageMetric>.unmodifiable(metrics)
+        : List<ProviderUsageMetric>.unmodifiable([
             ProviderUsageMetric(
-              key: '${providerId.value}-session',
-              label: 'Current session',
+              key: 'session',
+              label: 'Session',
               usedPercent: sessionUsedPercent,
               primary: true,
               resetsAt: sessionResetsAt,
               resetsAtRaw: sessionResetsAtRaw,
             ),
-          ]
-        : List<ProviderUsageMetric>.unmodifiable(metrics);
+            for (var index = 0; index < weekly.length; index++)
+              ProviderUsageMetric(
+                key: 'scope-$index',
+                label: weekly[index].label,
+                usedPercent: weekly[index].usedPercent,
+                primary: false,
+                resetsAt: weekly[index].resetsAt,
+                resetsAtRaw: weekly[index].resetsAtRaw,
+              ),
+          ]);
     return UsageInfo._(
       sessionUsedPercent: _requirePercent(
         sessionUsedPercent,
