@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.3.3] — 2026-07-17
+
 ### Fixed
 - Claude usage parsing no longer fails with `parserFailure` when the CLI omits
   the session reset suffix (e.g. `Current session: 0% used`); the session reset
