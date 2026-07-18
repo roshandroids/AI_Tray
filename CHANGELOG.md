@@ -6,13 +6,16 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 ## [Unreleased]
 
 ### Added
-- README screenshots for dashboard, settings, diagnostics, logs, and tray rings.
-- Multi-provider registry, capability/status models, provider selector, and
-  disabled GitHub Copilot scaffold.
+- GitHub Copilot provider foundation with official SDK sidecar, quota mapping,
+  health/diagnostics, and provider-scoped refresh/cache isolation (EP-002).
+- Shared multi-provider dashboard surfaces: persisted provider selection,
+  capability-driven metric cards, circular usage indicator states, Copilot
+  settings/diagnostics/logs filters, and actionable empty states.
+- Deterministic macOS and Windows Copilot sidecar packaging in CI/release.
 
 ### Changed
-- Dashboard, settings, diagnostics, tray, and empty states now consume provider
-  metadata and capability-driven shared models.
+- Provider registry and usage pipeline now support normalized provider contracts
+  while preserving the existing Claude Code experience.
 
 ## [1.2.0] — 2026-07-13
 
