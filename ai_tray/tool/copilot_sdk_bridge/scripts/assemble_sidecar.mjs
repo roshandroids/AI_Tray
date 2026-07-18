@@ -20,7 +20,6 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -48,7 +47,13 @@ await requirePath(join(distSource, "bridge_cli.js"), "Run npm run build before a
 const outputRoot = resolve(
   args.output ?? join(packageRoot, "..", "..", "build", "copilot_sdk", targetName),
 );
-const workRoot = await mkdtemp(join(tmpdir(), `ai-tray-sidecar-${targetName}-`));
+const outputParent = dirname(outputRoot);
+await mkdir(outputParent, { recursive: true });
+// Keep staging on the destination volume so the final atomic rename also works
+// on Windows runners whose system temp and workspace use different drives.
+const workRoot = await mkdtemp(
+  join(outputParent, `.ai-tray-sidecar-${targetName}-`),
+);
 
 try {
   const archivePath = args.archive === undefined
@@ -134,7 +139,6 @@ try {
   );
 
   await rm(outputRoot, { recursive: true, force: true });
-  await mkdir(dirname(outputRoot), { recursive: true });
   await rename(stagingRoot, outputRoot);
   process.stdout.write(`Assembled ${targetName} sidecar at ${outputRoot}\n`);
 } finally {
