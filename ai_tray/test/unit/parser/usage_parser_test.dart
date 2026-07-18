@@ -40,6 +40,25 @@ void main() {
     expect(validated.valueOrNull?.sessionUsedPercent, 47.5);
   });
 
+  test('parses Shape A session line without a reset suffix', () {
+    final candidate = parser.parse(
+      rawText: fixture('shape_a_session_no_reset.txt'),
+    );
+
+    expect(candidate.parserState.shape, UsageShape.rateLimitsPresent);
+    expect(candidate.parserState.matchedSessionLine, isTrue);
+    expect(candidate.sessionUsedPercent, 0.0);
+    expect(candidate.sessionResetsAtRaw, isNull);
+    expect(candidate.weekly, isNotEmpty);
+
+    final validated = validator.validate(
+      candidate,
+      fetchedAt: DateTime.utc(2026, 7, 17),
+    );
+    expect(validated.isSuccess, isTrue);
+    expect(validated.valueOrNull?.sessionUsedPercent, 0.0);
+  });
+
   test('parses Shape A with ASCII dot separator', () {
     final candidate = parser.parse(
       rawText: fixture('shape_a_dot_separator.txt'),

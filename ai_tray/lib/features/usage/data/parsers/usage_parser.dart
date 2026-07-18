@@ -9,8 +9,11 @@ import 'package:ai_tray/features/usage/domain/models/weekly_usage.dart';
 final class UsageParser implements ProviderUsageParser {
   const UsageParser();
 
+  // Claude omits the reset suffix when the session bucket is idle (e.g.
+  // "Current session: 0% used"), so the resets clause is optional.
   static final _sessionRe = RegExp(
-    r'Current session:\s*(\d+(?:\.\d+)?)%\s*used\s*[·\.]\s*resets\s+(.+)',
+    r'Current session:\s*(\d+(?:\.\d+)?)%\s*used'
+    r'(?:\s*[·\.]\s*resets\s+(.+))?',
     caseSensitive: false,
   );
   static final _weekRe = RegExp(
