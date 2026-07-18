@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.3.2] — 2026-07-17
+
 ### Fixed
 - macOS release jobs now select their Copilot sidecar payload explicitly,
   preventing Rosetta x64 builds from requesting the arm64 payload.
