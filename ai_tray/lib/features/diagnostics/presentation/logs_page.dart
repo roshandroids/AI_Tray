@@ -24,6 +24,7 @@ final class LogsPage extends ConsumerStatefulWidget {
 final class _LogsPageState extends ConsumerState<LogsPage> {
   final _search = TextEditingController();
   LogLevel? _filter;
+  String? _providerFilter;
   StreamSubscription<List<LogEntry>>? _sub;
   List<LogEntry> _entries = const [];
 
@@ -48,6 +49,9 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     final q = _search.text.trim().toLowerCase();
     return _entries.reversed.where((e) {
       if (_filter != null && e.level != _filter) return false;
+      if (_providerFilter != null && e.provider != _providerFilter) {
+        return false;
+      }
       if (q.isEmpty) return true;
       return e.toPlainLine().toLowerCase().contains(q);
     }).toList();
@@ -69,15 +73,28 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
               await Clipboard.setData(
                 ClipboardData(text: logger.exportPlainText()),
               );
-              messenger.showSnackBar(
-                const SnackBar(content: Text('Logs copied')),
-              );
+              if (!mounted) return;
+              messenger
+                ..hideCurrentSnackBar()
+                ..showSnackBar(
+                  const SnackBar(content: Text('Logs copied')),
+                );
             },
             icon: const Icon(Icons.copy_outlined),
           ),
           IconButton(
             tooltip: 'Clear',
-            onPressed: () => setState(logger.clear),
+            onPressed: logger.entries.isEmpty
+                ? null
+                : () {
+                    logger.clear();
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        const SnackBar(content: Text('Logs cleared')),
+                      );
+                  },
             icon: const Icon(Icons.delete_outline),
           ),
           IconButton(
@@ -136,13 +153,45 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
               ],
             ),
           ),
+          const SizedBox(height: Spacing.xs),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+            child: Row(
+              children: [
+                _Chip(
+                  label: 'ALL PROVIDERS',
+                  selected: _providerFilter == null,
+                  onTap: () => setState(() => _providerFilter = null),
+                ),
+                _Chip(
+                  label: 'CLAUDE',
+                  selected: _providerFilter == 'claude',
+                  onTap: () => setState(() => _providerFilter = 'claude'),
+                ),
+                _Chip(
+                  label: 'COPILOT',
+                  selected: _providerFilter == 'copilot',
+                  onTap: () => setState(() => _providerFilter = 'copilot'),
+                ),
+              ],
+            ),
+          ),
           const SectionDivider(),
           Expanded(
             child: rows.isEmpty
                 ? Center(
                     child: Text(
-                      'No log entries yet.',
+                      _entries.isEmpty
+                          ? 'No log entries yet. Run a refresh or diagnostics '
+                                'check to generate logs.'
+                          : 'No logs match these filters. Clear the search or '
+                                'choose All Providers.',
+                      key: ValueKey(
+                        _entries.isEmpty ? 'logs-empty' : 'logs-no-match',
+                      ),
                       style: context.typography.caption,
+                      textAlign: TextAlign.center,
                     ),
                   )
                 : ListView.builder(
@@ -167,7 +216,10 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
                             SizedBox(
                               width: 110,
                               child: Text(
-                                entry.component ?? 'ai_tray',
+                                [
+                                  entry.component ?? 'ai_tray',
+                                  if (entry.category != null) entry.category,
+                                ].join(' · '),
                                 style: context.typography.label,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -200,6 +252,13 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
   }
 
   Future<void> _export(BufferedAppLogger logger) async {
+    if (logger.entries.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('No logs to export')));
+      return;
+    }
     try {
       final file = File(
         '${Directory.systemTemp.path}/ai-tray-logs-'
@@ -208,15 +267,19 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
       await file.writeAsString(logger.exportPlainText());
       await Clipboard.setData(ClipboardData(text: file.path));
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Exported → ${file.path}')),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text('Exported → ${file.path}')),
+          );
       }
     } on Exception catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Export failed: $error')),
-        );
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text('Export failed: $error')),
+          );
       }
     }
   }
@@ -225,9 +288,11 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     final dir = Directory.systemTemp.path;
     await Clipboard.setData(ClipboardData(text: dir));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Temp folder path copied: $dir')),
-      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Temp folder path copied: $dir')),
+        );
     }
   }
 }

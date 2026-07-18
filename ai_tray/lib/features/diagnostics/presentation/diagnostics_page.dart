@@ -10,7 +10,10 @@ import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/theme_controller.dart';
+import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
+import 'package:ai_tray/features/providers/copilot/diagnostics/copilot_diagnostics.dart';
+import 'package:ai_tray/features/providers/core/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
@@ -35,6 +38,7 @@ final class DiagnosticsPage extends ConsumerWidget {
     final logger = ref.watch(bufferedAppLoggerProvider);
     final themePref = ref.watch(themeControllerProvider).value;
     final selectedProvider = ref.watch(selectedAIProviderProvider);
+    final copilotDiagnostics = ref.watch(copilotDiagnosticsProvider);
 
     return StreamBuilder<RefreshStatus>(
       stream: repository.watchStatus(),
@@ -169,60 +173,68 @@ final class DiagnosticsPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    TerminalPanel(
-                      title: 'Parser / Cache',
-                      child: Column(
-                        children: [
-                          InfoRow(
-                            label: 'Parser',
-                            value: parser?.shape.name ?? '—',
-                          ),
-                          InfoRow(
-                            label: 'Validation',
-                            value: parser?.validation.name ?? '—',
-                          ),
-                          InfoRow(
-                            label: 'Session line',
-                            value: parser == null
-                                ? '—'
-                                : parser.matchedSessionLine
-                                ? 'matched'
-                                : 'miss',
-                          ),
-                          InfoRow(
-                            label: 'Week lines',
-                            value: parser == null
-                                ? '—'
-                                : '${parser.matchedWeekLineCount}',
-                          ),
-                          InfoRow(
-                            label: 'Cache',
-                            value: usage == null
-                                ? 'empty'
-                                : usage.isFromCache
-                                ? 'LKG'
-                                : 'live',
-                            valueColor: usage == null
-                                ? context.colors.textMuted
-                                : usage.isFromCache
-                                ? context.colors.warning
-                                : context.colors.success,
-                          ),
-                          InfoRow(
-                            label: 'Exit code',
-                            value: result?.cliExitCode?.toString() ?? '—',
-                          ),
-                          InfoRow(
-                            label: 'CLI binary',
-                            value:
-                                (settings?.claudeBinaryPath?.isNotEmpty ??
-                                    false)
-                                ? settings!.claudeBinaryPath!
-                                : 'claude (PATH)',
-                          ),
-                        ],
+                    if (selectedProvider.providerId == ProviderId.copilot)
+                      _CopilotDiagnosticsPanel(
+                        state: copilotDiagnostics,
+                        onRetry: () => unawaited(
+                          ref.read(copilotDiagnosticsProvider.notifier).retry(),
+                        ),
+                      )
+                    else
+                      TerminalPanel(
+                        title: 'Parser / Cache',
+                        child: Column(
+                          children: [
+                            InfoRow(
+                              label: 'Parser',
+                              value: parser?.shape.name ?? '—',
+                            ),
+                            InfoRow(
+                              label: 'Validation',
+                              value: parser?.validation.name ?? '—',
+                            ),
+                            InfoRow(
+                              label: 'Session line',
+                              value: parser == null
+                                  ? '—'
+                                  : parser.matchedSessionLine
+                                  ? 'matched'
+                                  : 'miss',
+                            ),
+                            InfoRow(
+                              label: 'Week lines',
+                              value: parser == null
+                                  ? '—'
+                                  : '${parser.matchedWeekLineCount}',
+                            ),
+                            InfoRow(
+                              label: 'Cache',
+                              value: usage == null
+                                  ? 'empty'
+                                  : usage.isFromCache
+                                  ? 'LKG'
+                                  : 'live',
+                              valueColor: usage == null
+                                  ? context.colors.textMuted
+                                  : usage.isFromCache
+                                  ? context.colors.warning
+                                  : context.colors.success,
+                            ),
+                            InfoRow(
+                              label: 'Exit code',
+                              value: result?.cliExitCode?.toString() ?? '—',
+                            ),
+                            InfoRow(
+                              label: 'CLI binary',
+                              value:
+                                  (settings?.claudeBinaryPath?.isNotEmpty ??
+                                      false)
+                                  ? settings!.claudeBinaryPath!
+                                  : 'claude (PATH)',
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                     TerminalPanel(
                       title: 'Tools',
                       child: Wrap(
@@ -443,6 +455,114 @@ final class DiagnosticsPage extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+final class _CopilotDiagnosticsPanel extends StatelessWidget {
+  const _CopilotDiagnosticsPanel({
+    required this.state,
+    required this.onRetry,
+  });
+
+  final AsyncValue<CopilotDiagnostics> state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final diagnostics = state.value;
+    if (state.isLoading && diagnostics == null) {
+      return const TerminalPanel(
+        title: 'Copilot SDK',
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.all(Spacing.md),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+    if (state.hasError && diagnostics == null) {
+      final timedOut = state.error is TimeoutException;
+      return TerminalPanel(
+        title: 'Copilot SDK',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              timedOut
+                  ? 'Diagnostics timed out. Verify the bundled SDK and retry.'
+                  : 'Diagnostics failed safely. No credentials or tokens were '
+                        'included in this report.',
+              style: context.typography.body,
+            ),
+            const SizedBox(height: Spacing.sm),
+            OutlinedButton(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+    if (diagnostics == null) {
+      return TerminalPanel(
+        title: 'Copilot SDK',
+        child: OutlinedButton(
+          onPressed: onRetry,
+          child: const Text('Run diagnostics'),
+        ),
+      );
+    }
+
+    final warnings = <String>[
+      if (!diagnostics.providerEnabled) 'Provider is disabled in Settings.',
+      if (diagnostics.authStatus != 'Authenticated')
+        'Authentication: ${diagnostics.authStatus}',
+      if (diagnostics.quotaRpcStatus != 'Available')
+        'Quota RPC: ${diagnostics.quotaRpcStatus}',
+      if (!diagnostics.available)
+        'Usage remains unavailable until all required checks pass.',
+    ];
+    return TerminalPanel(
+      title: 'Copilot SDK',
+      child: Column(
+        children: [
+          InfoRow(label: 'SDK version', value: diagnostics.sdkVersion),
+          InfoRow(label: 'CLI version', value: diagnostics.cliVersion),
+          InfoRow(label: 'Authentication', value: diagnostics.authStatus),
+          InfoRow(label: 'Health', value: diagnostics.healthStatus),
+          InfoRow(label: 'Quota RPC', value: diagnostics.quotaRpcStatus),
+          InfoRow(
+            label: 'Experimental API',
+            value: diagnostics.experimentalStatus,
+          ),
+          InfoRow(label: 'Model', value: diagnostics.currentModel),
+          InfoRow(
+            label: 'Duration',
+            value: '${diagnostics.duration.inMilliseconds}ms',
+          ),
+          InfoRow(
+            label: 'Checked',
+            value: diagnostics.checkedAt.toLocal().toIso8601String(),
+          ),
+          if (warnings.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: Spacing.sm),
+              child: Text(
+                warnings.join('\n'),
+                style: context.typography.caption.copyWith(
+                  color: context.colors.warning,
+                ),
+              ),
+            ),
+          const SizedBox(height: Spacing.sm),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton(
+              onPressed: state.isLoading ? null : onRetry,
+              child: Text(state.isLoading ? 'Checking…' : 'Retry'),
+            ),
           ),
         ],
       ),

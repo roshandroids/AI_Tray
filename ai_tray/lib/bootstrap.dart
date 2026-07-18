@@ -36,6 +36,8 @@ Future<void> bootstrap({
     ],
   );
 
+  await container.read(selectedProviderIdProvider.future);
+
   final usageRepository = container.read(usageRepositoryProvider);
   if (usageRepository is UsageRepositoryImpl) {
     unawaited(usageRepository.start());

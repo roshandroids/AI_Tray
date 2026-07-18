@@ -12,6 +12,8 @@ final class LogEntry {
     this.error,
     this.stackTrace,
     this.recoveryHint,
+    this.provider,
+    this.category,
   });
 
   final DateTime timestamp;
@@ -21,6 +23,8 @@ final class LogEntry {
   final Object? error;
   final StackTrace? stackTrace;
   final String? recoveryHint;
+  final String? provider;
+  final String? category;
 
   String get formattedTime {
     final local = timestamp.toLocal();
@@ -32,6 +36,9 @@ final class LogEntry {
     final name = component == null ? '' : ' [$component]';
     final err = error == null ? '' : ' error=$error';
     final hint = recoveryHint == null ? '' : ' · $recoveryHint';
-    return '$formattedTime ${level.label}$name $message$err$hint';
+    final providerTag = provider == null ? '' : ' provider=$provider';
+    final categoryTag = category == null ? '' : ' category=$category';
+    return '$formattedTime ${level.label}$name$providerTag$categoryTag '
+        '$message$err$hint';
   }
 }

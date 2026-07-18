@@ -6,7 +6,7 @@ import 'package:ai_tray/features/providers/domain/models/provider_status.dart';
 import 'package:meta/meta.dart';
 
 /// Semantic dashboard metric types supported by shared cards.
-enum DashboardMetricKind { sessionUsage, weeklyUsage }
+enum DashboardMetricKind { sessionUsage, weeklyUsage, absoluteUsage }
 
 /// Provider-neutral data required by one dashboard metric card.
 @immutable
@@ -17,6 +17,11 @@ final class DashboardMetric {
     required this.label,
     required this.usedPercent,
     this.resetsAtRaw,
+    this.value,
+    this.total,
+    this.unit,
+    this.remainingPercent,
+    this.unlimited = false,
   });
 
   final String key;
@@ -24,6 +29,19 @@ final class DashboardMetric {
   final String label;
   final double usedPercent;
   final String? resetsAtRaw;
+  final num? value;
+  final num? total;
+  final String? unit;
+  final double? remainingPercent;
+  final bool unlimited;
+
+  /// Absolute amount remaining for bounded metrics.
+  num? get remaining {
+    final used = value;
+    final entitlement = total;
+    if (unlimited || used == null || entitlement == null) return null;
+    return (entitlement - used).clamp(0, entitlement);
+  }
 }
 
 /// Complete provider-neutral snapshot consumed by the dashboard.

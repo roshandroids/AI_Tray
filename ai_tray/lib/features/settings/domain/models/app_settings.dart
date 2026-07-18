@@ -1,4 +1,5 @@
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
+import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:meta/meta.dart';
 
 /// User-configurable MVP preferences.
@@ -12,7 +13,9 @@ final class AppSettings {
     required bool showStaleIndicator,
     double? notifyAtSessionPercent,
     String? claudeBinaryPath,
+    ProviderId selectedProviderId = ProviderId.claude,
     AppThemePreference themeMode = AppThemePreference.system,
+    bool copilotEnabled = true,
   }) {
     _validateRefreshInterval(refreshInterval);
     final threshold = notifyAtSessionPercent;
@@ -27,8 +30,10 @@ final class AppSettings {
       notifyAtSessionPercent: threshold,
       launchAtLogin: launchAtLogin,
       claudeBinaryPath: (path == null || path.isEmpty) ? null : path,
+      selectedProviderId: selectedProviderId,
       showStaleIndicator: showStaleIndicator,
       themeMode: themeMode,
+      copilotEnabled: copilotEnabled,
     );
   }
 
@@ -39,8 +44,10 @@ final class AppSettings {
     required this.notifyAtSessionPercent,
     required this.launchAtLogin,
     required this.claudeBinaryPath,
+    required this.selectedProviderId,
     required this.showStaleIndicator,
     required this.themeMode,
+    required this.copilotEnabled,
   });
 
   /// MVP defaults aligned with planning (60s auto-refresh).
@@ -64,8 +71,10 @@ final class AppSettings {
   final double? notifyAtSessionPercent;
   final bool launchAtLogin;
   final String? claudeBinaryPath;
+  final ProviderId selectedProviderId;
   final bool showStaleIndicator;
   final AppThemePreference themeMode;
+  final bool copilotEnabled;
 
   AppSettings copyWith({
     bool? autoRefreshEnabled,
@@ -74,8 +83,10 @@ final class AppSettings {
     double? notifyAtSessionPercent,
     bool? launchAtLogin,
     String? claudeBinaryPath,
+    ProviderId? selectedProviderId,
     bool? showStaleIndicator,
     AppThemePreference? themeMode,
+    bool? copilotEnabled,
   }) {
     return AppSettings(
       autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
@@ -85,8 +96,10 @@ final class AppSettings {
           notifyAtSessionPercent ?? this.notifyAtSessionPercent,
       launchAtLogin: launchAtLogin ?? this.launchAtLogin,
       claudeBinaryPath: claudeBinaryPath ?? this.claudeBinaryPath,
+      selectedProviderId: selectedProviderId ?? this.selectedProviderId,
       showStaleIndicator: showStaleIndicator ?? this.showStaleIndicator,
       themeMode: themeMode ?? this.themeMode,
+      copilotEnabled: copilotEnabled ?? this.copilotEnabled,
     );
   }
 
@@ -99,8 +112,10 @@ final class AppSettings {
         other.notifyAtSessionPercent == notifyAtSessionPercent &&
         other.launchAtLogin == launchAtLogin &&
         other.claudeBinaryPath == claudeBinaryPath &&
+        other.selectedProviderId == selectedProviderId &&
         other.showStaleIndicator == showStaleIndicator &&
-        other.themeMode == themeMode;
+        other.themeMode == themeMode &&
+        other.copilotEnabled == copilotEnabled;
   }
 
   @override
@@ -111,8 +126,10 @@ final class AppSettings {
     notifyAtSessionPercent,
     launchAtLogin,
     claudeBinaryPath,
+    selectedProviderId,
     showStaleIndicator,
     themeMode,
+    copilotEnabled,
   );
 }
 
