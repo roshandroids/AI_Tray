@@ -38,7 +38,6 @@ final usageValidatorProvider = Provider<UsageValidator>(
 final usageCacheProvider = Provider<UsageCache>((ref) {
   return SharedPreferencesUsageCache(ref.watch(sharedPreferencesProvider));
 });
-  
 
 final refreshServiceProvider = Provider<RefreshService>((ref) {
   return RefreshService(
