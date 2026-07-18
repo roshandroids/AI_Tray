@@ -10,6 +10,10 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
   the session reset suffix (e.g. `Current session: 0% used`); the session reset
   clause is now optional, matching the weekly-line behavior.
 
+### Changed
+- Release pipeline no longer builds or publishes macOS x64 (Rosetta/Intel);
+  GitHub Releases ship macOS arm64 and Windows x64 only.
+
 ## [1.3.2] — 2026-07-17
 
 ### Fixed
