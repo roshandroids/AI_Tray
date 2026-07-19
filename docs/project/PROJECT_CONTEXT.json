@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-07-19",
+  "version": "1.3.3+9",
+  "project_status": "ep002_merged_stabilization_pending",
+  "current_epic": "post-EP-002-stabilization",
+  "current_phase": "EP-002 Phase 3 merged; docs/handoff + stabilization + EP-004 assessment",
+  "branch": {
+    "name": "cursor/ep003-handoff-docs",
+    "commit": "working-tree",
+    "base": "main"
+  },
+  "release": {
+    "latest": "v1.3.3",
+    "phase_3_included": false,
+    "artifacts": [
+      "macos-arm64",
+      "windows-x64"
+    ]
+  },
+  "project": {
+    "name": "AI Tray",
+    "summary": "Flutter desktop companion for AI-provider subscription usage and health.",
+    "repository": "roshandroids/AI_Tray",
+    "current_release": {
+      "tag": "v1.3.3",
+      "pubspec_version": "1.3.3+9"
+    }
+  },
+  "repository_state": {
+    "default_branch": "main",
+    "default_branch_commit": "2885980",
+    "active_branch": "cursor/ep003-handoff-docs",
+    "active_branch_commit": "working-tree",
+    "merged_pull_requests": [
+      {
+        "number": 7,
+        "title": "EP-002 Phase 3 Copilot UI integration",
+        "url": "https://github.com/roshandroids/AI_Tray/pull/7",
+        "merge_commit": "2885980",
+        "state_at_snapshot": "merged"
+      }
+    ],
+    "active_pull_requests": [],
+    "uncommitted_work_at_snapshot": [
+      "docs/research/EP-003-cursor-agent-provider.md",
+      "docs/research/EP-003A-cursor-usage-verification.md",
+      "docs/README.md",
+      "docs/project/",
+      "docs/release/CI-CD.md",
+      ".cursor/rules/project-handoff.mdc"
+    ]
+  },
+  "platforms": {
+    "macos_arm64": "supported",
+    "windows_x64": "experimental",
+    "macos_x64": "not_published"
+  },
+  "providers": [
+    {
+      "id": "claude",
+      "display_name": "Claude Code",
+      "status": "stable",
+      "data_source": "claude -p /usage --output-format json",
+      "risks": [
+        "Free-text result schema is not a stable public API",
+        "GUI PATH may differ from terminal PATH"
+      ]
+    },
+    {
+      "id": "copilot",
+      "display_name": "GitHub Copilot",
+      "status": "experimental",
+      "data_source": "@github/copilot-sdk account.getQuota via bundled NDJSON sidecar",
+      "risks": [
+        "Quota RPC is experimental",
+        "Sidecar packaging is required for releases"
+      ]
+    },
+    {
+      "id": "cursor",
+      "display_name": "Cursor Agent",
+      "status": "research_only",
+      "decision": "Do not implement as a personal quota provider until an official consumer usage-summary API exists",
+      "possible_future_scope": "Separate automation provider using documented CLI headless JSON or SDK",
+      "usage_verification": {
+        "agent_print_usage_available": false,
+        "plan_usage_percentages_returned": false,
+        "reset_date_returned": false,
+        "json_available": true,
+        "json_usage_meaning": "per-turn token accounting only",
+        "stability": "unsupported generated prose"
+      }
+    }
+  ],
+  "architecture": {
+    "style": "Feature-first Clean Architecture",
+    "flow": [
+      "UI",
+      "Riverpod State",
+      "Domain",
+      "Data",
+      "External CLI or SDK"
+    ],
+    "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
+    "provider_catalog": "ProviderRegistry",
+    "canonical_usage_model": "UsageInfo.metrics",
+    "resilience": [
+      "provider-scoped single-flight refresh",
+      "bounded transient retry",
+      "stale-result rejection",
+      "last-known-good cache",
+      "no invented usage values"
+    ],
+    "prohibited_integrations": [
+      "/copilot_internal",
+      "undocumented provider APIs",
+      "dashboard scraping",
+      "interactive terminal text parsing"
+    ]
+  },
+  "completed": [
+    "PD-021 design system",
+    "Multi-provider registry and capability-driven UI",
+    "EP-002 Copilot SDK/provider foundation and distribution",
+    "EP-002 Phase 3 shared UI, accessibility, golden tests, screenshots, docs",
+    "PR #7 merge to main (2885980)",
+    "v1.3.3 Claude session parser resilience fix",
+    "CI build gating and explicit release triggers",
+    "EP-003 Cursor Agent provider research",
+    "EP-003A Cursor Agent non-interactive usage verification"
+  ],
+  "product_decisions": [
+    {
+      "id": "PD-021",
+      "date": "2026-07-16",
+      "status": "approved_implemented",
+      "decision": "Adopt the design system and capability-driven multi-provider platform",
+      "impact": "Shared provider UI, registry, tokens, themes, and selector"
+    },
+    {
+      "id": "PD-023",
+      "date": "2026-07-18",
+      "status": "approved",
+      "decision": "Do not implement Cursor Agent as a personal quota provider until an official consumer usage-summary API exists",
+      "rationale": "Supported interfaces do not expose personal remaining percentage, reset date, or pool balances; scraping is unsupported",
+      "impact": "EP-003 ends after research; any automation provider requires a separate epic"
+    }
+  ],
+  "current_work": [
+    "Land EP-003/EP-003A/handoff/CI-CD documentation PR",
+    "Post-EP-002 stabilization sprint",
+    "EP-004 architecture assessment and go/no-go decision"
+  ],
+  "risks": [
+    {
+      "id": "copilot_experimental_quota",
+      "severity": "high"
+    },
+    {
+      "id": "claude_free_text_contract",
+      "severity": "high"
+    },
+    {
+      "id": "unsigned_unnotarized_macos",
+      "severity": "medium"
+    },
+    {
+      "id": "windows_experimental",
+      "severity": "medium"
+    },
+    {
+      "id": "provider_directory_transitional_duplication",
+      "severity": "medium"
+    },
+    {
+      "id": "cursor_unknown_prompt_quota_consumption",
+      "severity": "medium"
+    },
+    {
+      "id": "phase3_on_main_not_released",
+      "severity": "low"
+    }
+  ],
+  "next_recommended_tasks": [
+    "Merge documentation PR for EP-003 and docs/project",
+    "Create post-EP-002 stabilization branch from main",
+    "Run Flutter/bridge baselines and classify P0/P1 defects",
+    "Harden lifecycle, refresh races, and sidecar protocol tests",
+    "Produce EP-004 assessment with no-go / targeted cleanup / full-epic decision"
+  ],
+  "verification": {
+    "last_recorded": {
+      "flutter_analyze": "pass",
+      "non_golden_tests": 132,
+      "golden_tests": 7,
+      "screenshot_generation": "pass",
+      "git_diff_check": "pass",
+      "production_copilot_internal_references": 0
+    },
+    "commands": [
+      "dart format --set-exit-if-changed lib test",
+      "flutter analyze --fatal-infos",
+      "flutter test --exclude-tags golden,screenshot",
+      "flutter test --tags golden",
+      "git diff --check"
+    ]
+  },
+  "handoff": {
+    "official_package": true,
+    "maintenance_trigger": "any significant feature, bug, refactor, architecture, product, epic, phase, release, merge, debt, dependency, CI/CD, or documentation change",
+    "completion_gate": [
+      "code complete",
+      "tests passing",
+      "documentation updated",
+      "handoff package updated",
+      "validation complete"
+    ],
+    "read_first": [
+      "docs/project/AI_HANDOFF.md",
+      "docs/project/PROJECT_CONTEXT.json",
+      "docs/project/NEXT_SESSION.md"
+    ]
+  }
+}

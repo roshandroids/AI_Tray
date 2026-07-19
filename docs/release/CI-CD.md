@@ -2,8 +2,9 @@
 
 Foundation for continuous integration and desktop release automation for AI Tray (PD-016).
 
-**Scope today:** Protected `main` — PRs run Format / Analyze / Test / Build macOS; tagged releases build macOS + Windows and publish GitHub Releases.  
+**Scope today:** Protected `main` — PRs run Format / Analyze / Test / Build macOS; pushes to `main` run Format / Analyze / Test only (no desktop artifact build). Tagged releases and manual dispatch build **macOS arm64 + Windows x64** and publish GitHub Releases.
 **Out of scope:** Code signing, notarization, Sparkle auto-update (documented as future work).
+**Not published:** macOS Intel / x64 artifacts (D-007).
 
 Aligned with house conventions from **CELPIP** (`ci.yml` job naming, Flutter pin, concurrency) and **MBO Research** (CHANGELOG-as-release-notes, SemVer on pubspec, tag `vX.Y.Z`).
 
@@ -22,26 +23,24 @@ flowchart TB
   end
 
   subgraph MAIN["push → main"]
-    CI[CI re-runs]
-    ART[macOS artifact · 7-day retention]
+    CI[Format / Analyze / Test]
   end
 
-  subgraph REL["git tag vX.Y.Z"]
+  subgraph REL["git tag vX.Y.Z or workflow_dispatch"]
     V[Validate pubspec]
     MA[Build macOS arm64]
-    MX[Build macOS x64]
     WIN[Build Windows x64]
     GH[GitHub Release + assets]
-    V --> MA & MX & WIN --> GH
+    V --> MA & WIN --> GH
   end
 
-  PR -->|squash merge| MAIN
+  PR -->|squash or merge| MAIN
   PUB[publish.sh] -->|commit + tag + push| REL
 ```
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
-| **CI** | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | PR + push → `main` | Quality gates + macOS build verification |
+| **CI** | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | PR + push → `main` | Quality gates; **Build macOS only on PRs** |
 | **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or manual dispatch | Desktop builds + GitHub Release |
 
 **Flutter:** `3.38.9` (stable) · **App directory:** `ai_tray/`
@@ -57,7 +56,7 @@ flowchart TB
 | Flutter pin | `3.38.9` env | `3.38.9` inline | `3.38.9` env |
 | `subosito/flutter-action@v2` + cache | Yes | Yes | Yes |
 | Concurrency cancel-in-progress | Yes | No | Yes |
-| Deploy on merge | Firebase Hosting | N/A (CLI package) | GitHub Release on **tag only** |
+| Deploy on merge | Firebase Hosting | N/A (CLI package) | GitHub Release on **tag or manual dispatch only** |
 | Release automation | Placeholder (web only) | Manual tag + CHANGELOG | **Automated** tag → builds → release |
 | Version source | App pubspec | Package pubspec | `ai_tray/pubspec.yaml` |
 | CHANGELOG | Yes | Yes (Keep a Changelog) | Yes |
@@ -72,12 +71,12 @@ flowchart TB
 
 **Required checks (configure in branch protection):**
 
-| Check name | Command |
-|------------|---------|
+| Check name | Command / behavior |
+|------------|--------------------|
 | `Format` | `dart format --set-exit-if-changed .` |
 | `Analyze` | `flutter analyze --fatal-infos` |
 | `Test` | `flutter test` |
-| `Build macOS` | `flutter build macos --release` |
+| `Build macOS` | macOS arm64 release build + Copilot sidecar assemble/verify (**PRs only**) |
 
 Run locally before opening a PR:
 
@@ -94,7 +93,10 @@ flutter build macos --release
 
 ## Main branch
 
-On every push to `main`, CI re-runs all checks. The **Build macOS** job also uploads a short-lived artifact (`macos-arm64-build`, 7 days) for smoke verification — not a user-facing release asset.
+On every push to `main`, CI re-runs **Format**, **Analyze**, and **Test** only.
+The **Build macOS** job is gated to pull requests (`if: github.event_name == 'pull_request'`).
+No short-lived desktop artifacts are uploaded from the main-push CI path.
+User-facing desktop packages are produced only by the **Release** workflow.
 
 ---
 
@@ -123,9 +125,11 @@ On every push to `main`, CI re-runs all checks. The **Build macOS** job also upl
    - Validates tag ↔ pubspec
    - Builds and packages:
      - `AI-Tray-macOS-arm64.zip`
-     - `AI-Tray-macOS-x64.zip`
      - `AI-Tray-Windows-x64.zip`
    - Creates GitHub Release with CHANGELOG body
+
+Manual re-run is available via Actions → **Release** → **Run workflow**
+(`workflow_dispatch`) for an existing tag.
 
 ### Versioning rules
 
@@ -144,11 +148,12 @@ On every push to `main`, CI re-runs all checks. The **Build macOS** job also upl
 
 | Asset | Runner | Build command |
 |-------|--------|---------------|
-| `AI-Tray-macOS-arm64.zip` | `macos-latest` | `flutter build macos --release` |
-| `AI-Tray-macOS-x64.zip` | `macos-latest` | `arch -x86_64 flutter build macos --release` |
+| `AI-Tray-macOS-arm64.zip` | `macos-latest` | `flutter build macos --release` (arm64) |
 | `AI-Tray-Windows-x64.zip` | `windows-latest` | `flutter build windows --release` |
 
-macOS zips contain `AI Tray.app`. Windows zip contains the `Release/` folder contents.
+macOS zip contains `AI Tray.app`. Windows zip contains the `Release/` folder contents.
+
+**Not published:** `AI-Tray-macOS-x64.zip` (Intel). Demand must justify CI/distribution cost before restoring that matrix entry.
 
 **Not attached (future):** dSYM / PDB symbols, signed/notarized builds, DMG/MSIX installers.
 
@@ -181,12 +186,12 @@ See [RH-003-packaging.md](RH-003-packaging.md).
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Release fails: pubspec mismatch | Tag pushed without `publish.sh` | Align pubspec `version:` name with tag, re-tag |
-| macOS x64 build fails | Rosetta / Xcode on runner | Check Actions log; build arm64 locally as fallback |
 | Windows build fails | Desktop not enabled / VS missing | Runner has VS 2022; run `flutter doctor` in workflow |
 | Format check fails on CI only | pub get skipped before format | CI runs `flutter pub get` first (CELPIP lesson) |
 | Branch protection blocks merge | Stale check names | Require `Format`, `Analyze`, `Test`, `Build macOS` exactly |
 | `[Unreleased]` empty | No changelog entry | Add notes before `publish.sh` |
 | Duplicate release | Tag pushed twice | Delete release + tag in GitHub, fix, re-publish |
+| Expecting macOS x64 asset | Policy D-007 | Only arm64 + Windows x64 are published |
 
 ### Verify check names
 
@@ -202,7 +207,7 @@ gh api repos/roshandroids/AI_Tray/commits/<sha>/check-runs \
 1. Settings → Rules → protect `main`
 2. Require PR before merge
 3. Require status checks: **Format**, **Analyze**, **Test**, **Build macOS**
-4. Do **not** require Release workflow for merge (tag-only)
+4. Do **not** require Release workflow for merge (tag/manual dispatch only)
 
 ---
 
@@ -218,8 +223,6 @@ gh api repos/roshandroids/AI_Tray/commits/<sha>/check-runs \
 # → Dry run — reverting pubspec and CHANGELOG edits
 # → Would commit, tag v1.0.0, and push to origin
 ```
-
-**Stop — awaiting Product Owner approval before the first automated release.**
 
 ---
 
