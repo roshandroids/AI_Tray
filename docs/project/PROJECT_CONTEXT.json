@@ -7,7 +7,7 @@
   "current_phase": "Stabilization complete; EP-004 targeted cleanup approved",
   "branch": {
     "name": "cursor/post-ep002-stabilization",
-    "commit": "ad28c82",
+    "commit": "2560ea1",
     "base": "main"
   },
   "release": {
@@ -31,7 +31,7 @@
     "default_branch": "main",
     "default_branch_commit": "2885980",
     "active_branch": "cursor/post-ep002-stabilization",
-    "active_branch_commit": "ad28c82",
+    "active_branch_commit": "2560ea1",
     "merged_pull_requests": [
       {
         "number": 7,
