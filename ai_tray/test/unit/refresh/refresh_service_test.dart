@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
+import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
 import 'package:ai_tray/features/providers/data/claude/claude_cli_adapter.dart';
@@ -175,4 +176,110 @@ void main() {
     final cached = await cache.read();
     expect(cached.valueOrNull, isNull);
   });
+
+  test('cache write failure is logged and refresh still succeeds', () async {
+    final logger = _RecordingLogger();
+    final failingCache = _FailingWriteCache();
+    service = RefreshService(
+      provider: ClaudeCliAdapter(
+        processRunner: runner,
+        logger: ConsoleAppLogger(defaultName: 'test'),
+      ),
+      parser: const UsageParser(),
+      validator: UsageValidator(),
+      cache: failingCache,
+      logger: logger,
+      softRetryDelay: Duration.zero,
+      hardRetryDelay: Duration.zero,
+    );
+    runner.handler = (exe, args) {
+      return Result.success(
+        ProcessRunResult(
+          exitCode: 0,
+          stdout: jsonEncode(envelopeFor(shapeA)),
+          stderr: '',
+          duration: const Duration(milliseconds: 10),
+        ),
+      );
+    };
+
+    final result = await service.refresh(
+      settings: AppSettings.defaults(),
+      currentStatus: RefreshStatus.initial(),
+    );
+
+    expect(result.status, RefreshOutcome.success);
+    expect(result.usage?.sessionUsedPercent, 2.0);
+    expect(
+      logger.messages.any((m) => m.contains('operation=cache_write')),
+      isTrue,
+    );
+  });
+}
+
+final class _FailingWriteCache implements UsageCache {
+  @override
+  Future<Result<UsageInfo?>> read({ProviderId? providerId}) async {
+    return const Result.success(null);
+  }
+
+  @override
+  Future<Result<Unit>> write(UsageInfo usage) async {
+    return const Result.failure(
+      AppFailure(
+        code: FailureCode.cacheUnavailable,
+        message: 'write failed',
+      ),
+    );
+  }
+
+  @override
+  Future<Result<Unit>> clear({ProviderId? providerId}) async {
+    return const Result.success(Unit.unit);
+  }
+}
+
+final class _RecordingLogger implements AppLogger {
+  final List<String> messages = [];
+
+  @override
+  void debug(
+    String message, {
+    String? name,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    messages.add(message);
+  }
+
+  @override
+  void info(
+    String message, {
+    String? name,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    messages.add(message);
+  }
+
+  @override
+  void warning(
+    String message, {
+    String? name,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    messages.add(message);
+  }
+
+  @override
+  void error(
+    String message, {
+    String? name,
+    Object? error,
+    StackTrace? stackTrace,
+    AppFailure? failure,
+  }) {
+    messages.add(message);
+  }
 }

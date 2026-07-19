@@ -118,6 +118,64 @@ test("reports unsupported SDK and CLI combinations without crashing", async () =
   await host.stop();
 });
 
+test("rejects malformed requests and duplicate active ids", async () => {
+  const output: string[] = [];
+  const host = new PersistentBridgeHost(
+    () => fakeClient({
+      getQuota: () => new Promise(() => undefined),
+    }),
+    output.push.bind(output),
+  );
+
+  await host.handleLine("{not-json");
+  assert.equal(parseResponse(output[0]!).error.code, "invalid_json");
+
+  await host.handleLine(request("h", "handshake", {
+    supportedVersions: [1],
+  }));
+  const hanging = host.handleLine(request("q", "quota.get"));
+  await host.handleLine(request("q", "quota.get"));
+  assert.equal(parseResponse(output[2]!).error.code, "duplicate_request_id");
+  await host.stop();
+  hanging.catch(() => undefined);
+});
+
+test("handles concurrent requests and cancels the target only", async () => {
+  const output: string[] = [];
+  let resolveQuota: ((value: unknown) => void) | undefined;
+  const host = new PersistentBridgeHost(
+    () => fakeClient({
+      getQuota: () => new Promise((resolve) => {
+        resolveQuota = resolve;
+      }),
+    }),
+    output.push.bind(output),
+  );
+
+  await host.handleLine(request("h", "handshake", {
+    supportedVersions: [1],
+  }));
+  const quotaPromise = host.handleLine(request("q", "quota.get"));
+  await host.handleLine(request("e", "health.get"));
+  await host.handleLine(request("c", "cancel", { requestId: "q" }));
+
+  assert.equal(parseResponse(output[1]!).id, "e");
+  assert.equal(parseResponse(output[1]!).result.healthy, true);
+  assert.equal(parseResponse(output[2]!).id, "c");
+  assert.equal(parseResponse(output[2]!).result.cancelled, true);
+
+  resolveQuota?.({ premium: { available: true } });
+  await quotaPromise;
+  assert.equal(
+    output.some((line) => {
+      const parsed = parseResponse(line);
+      return parsed.id === "q" && parsed.result !== undefined;
+    }),
+    false,
+  );
+  await host.stop();
+});
+
 interface FakeOverrides {
   readonly start?: () => Promise<void>;
   readonly getQuota?: () => Promise<unknown>;

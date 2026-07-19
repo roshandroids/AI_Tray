@@ -3,6 +3,7 @@
 **Updated:** 2026-07-19  
 **Current release:** v1.3.3  
 **Positioning:** Desktop usage and health companion for AI developer tools
+**Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004)
 
 ## Supported experience
 

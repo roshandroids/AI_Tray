@@ -1,7 +1,8 @@
 # AI Tray — Architecture State
 
-**Updated:** 2026-07-19  
-**Primary references:** ADR-001, ADR-002, ADR-003, provider-platform docs
+**Updated:** 2026-07-19
+**Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, provider-platform docs,
+EP-004 assessment
 
 ## System shape
 
@@ -82,11 +83,10 @@ boundary. Graceful degradation is required.
 
 ## Technical debt
 
-- Transitional compatibility directories exist under provider `core/`,
-  `domain/`, `data/copilot/`, and `copilot/`; consolidation needs a dedicated
-  migration with import inventory and full regression tests.
-- `docs/release/CI-CD.md` is stale relative to actual arm64-only macOS release
-  and main-push build gating.
+- Transitional compatibility directories (~35 alias files) under provider
+  `core/`, `domain/`, `data/copilot/`, and `copilot/` — addressed by ADR-004
+  targeted cleanup (import canonicalize + deprecate), not a full rewrite.
 - Notification dependency/migration state must be reconciled with current
   `pubspec.yaml` before further notification work.
-- Signing, notarization, sandbox strategy, and Windows validation remain open.
+- Signing, notarization, sandbox strategy, and Windows hardware validation
+  remain open (Windows stays Experimental).

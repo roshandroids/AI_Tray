@@ -16,6 +16,8 @@
 | [project/AI_HANDOFF.md](project/AI_HANDOFF.md) | Official AI handoff package and current resumption context |
 | [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Official UI design system (PD-021) |
 | [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider architecture |
+| [architecture/EP-004-provider-platform-assessment.md](architecture/EP-004-provider-platform-assessment.md) | Post-EP-002 EP-004 go/no-go assessment |
+| [stabilization/POST_EP002_BASELINE.md](stabilization/POST_EP002_BASELINE.md) | Post-EP-002 stabilization baseline |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
 | [guides/known-limitations.md](guides/known-limitations.md) | Current product limitations |

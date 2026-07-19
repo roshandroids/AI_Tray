@@ -158,4 +158,39 @@ void main() {
     expect(result.usage?.sessionUsedPercent, 2.0);
     expect(result.usage?.isFromCache, isTrue);
   });
+
+  test('resume recovery refreshes once when schedule is overdue', () async {
+    settingsRepo.settings = AppSettings(
+      autoRefreshEnabled: true,
+      refreshInterval: const Duration(seconds: 30),
+      notificationsEnabled: false,
+      launchAtLogin: false,
+      showStaleIndicator: true,
+    );
+    var fetches = 0;
+    runner.handler = (exe, args) {
+      fetches += 1;
+      return Result.success(
+        ProcessRunResult(
+          exitCode: 0,
+          stdout: jsonEncode(envelopeFor(shapeA)),
+          stderr: '',
+          duration: Duration.zero,
+        ),
+      );
+    };
+
+    await repository.refresh(manual: true);
+    expect(fetches, greaterThanOrEqualTo(1));
+    final baseline = fetches;
+    final overdue = DateTime.now().toUtc().add(const Duration(minutes: 1));
+    await repository.recoverScheduleIfOverdue(now: overdue);
+    expect(fetches, greaterThan(baseline));
+
+    final afterOverdue = fetches;
+    await repository.recoverScheduleIfOverdue(
+      now: DateTime.now().toUtc().subtract(const Duration(seconds: 5)),
+    );
+    expect(fetches, afterOverdue);
+  });
 }

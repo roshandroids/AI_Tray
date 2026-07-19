@@ -11,6 +11,7 @@ ADRs, provider research, and implementation reports.
 | --- | --- | --- | --- | --- | --- |
 | PD-021 | 2026-07-16 | Approved / implemented | Adopt the terminal-inspired design system and capability-driven multi-provider platform | A shared UI prevents provider-specific duplication and preserves Claude behavior | Established `ProviderRegistry`, shared dashboard components, tokens, themes, and provider selector |
 | PD-023 | 2026-07-18 | Approved | Do not implement Cursor Agent as a personal quota provider until Cursor publishes an official consumer usage-summary API; any automation provider requires a separate epic | Supported interfaces expose automation, auth, models, and per-run tokens, but not Hobby/Pro remaining %, reset date, or pool balances; EP-003A confirmed `/usage` print prompts return prose, not quota; dashboard scraping is unsupported and conflicts with ToS | EP-003/EP-003A stop after research; no Cursor production code; roadmap may consider a separate automation-only epic |
+| PD-024 | 2026-07-19 | Approved | Treat post-EP-002 EP-004 posture as **targeted cleanup**, not a full provider-platform rewrite and not a pure no-go | Stabilization fixed shared orchestration defects without a rewrite; ~35 compatibility aliases and thin capability metadata remain; no third quota provider is planned (PD-023); full-epic triggers are unmet | Canonicalize `core/` + `copilot/` imports; deprecate aliases; enrich metadata; choose one retry owner; keep refresh/cache/sidecar architecture |
 
 ## Architecture and operational decisions
 
@@ -28,7 +29,8 @@ ADRs, provider research, and implementation reports.
 | D-010 | 2026-07-18 | Allow future Cursor automation only as a separate product epic | Requires Product Owner approval and explicit non-goals |
 | D-011 | 2026-07-18 | Make `docs/project/` the official AI handoff package | Active; update after every epic/phase/major feature/release |
 | D-012 | 2026-07-19 | Close EP-002 Phase 3 as merged on main (`2885980`); keep Phase 3 out of a docs-only release | Active; next product release remains an explicit Product Owner decision |
-| D-013 | 2026-07-19 | Defer EP-004 implementation until post-stabilization assessment chooses no-go, targeted cleanup, or full epic | Active; no provider-folder rewrite during stabilization |
+| D-013 | 2026-07-19 | Complete post-EP-002 stabilization before any EP-004 folder rewrite | Done; see ADR-004 / PD-024 |
+| D-014 | 2026-07-19 | Accept ADR-004 targeted cleanup as the EP-004 posture | Active; full rewrite is contingency-only |
 
 ## Decision maintenance
 
