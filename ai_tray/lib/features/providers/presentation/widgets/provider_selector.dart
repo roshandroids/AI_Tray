@@ -17,6 +17,7 @@ final class ProviderSelector extends StatelessWidget {
     required this.providers,
     required this.selectedId,
     required this.onSelected,
+    this.enabled = true,
     super.key,
   });
 
@@ -24,10 +25,16 @@ final class ProviderSelector extends StatelessWidget {
   final ProviderId selectedId;
   final ValueChanged<ProviderId> onSelected;
 
+  /// When false, the dropdown is disabled (e.g. while selection is saving).
+  final bool enabled;
+
   @override
   Widget build(BuildContext context) {
+    final canChange = enabled && providers.length > 1;
     return Semantics(
       label: 'AI provider',
+      enabled: canChange,
+      button: true,
       child: DropdownButtonHideUnderline(
         child: DropdownButton<ProviderId>(
           value: selectedId,
@@ -36,16 +43,22 @@ final class ProviderSelector extends StatelessWidget {
           dropdownColor: context.colors.surface,
           style: context.typography.label,
           icon: const Icon(Icons.expand_more, size: 16),
-          onChanged: providers.length <= 1
-              ? null
-              : (providerId) {
+          onChanged: canChange
+              ? (providerId) {
                   if (providerId != null) onSelected(providerId);
-                },
+                }
+              : null,
           items: [
             for (final provider in providers)
               DropdownMenuItem(
                 value: provider.providerId,
-                child: Text(provider.displayName),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 44),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(provider.displayName),
+                  ),
+                ),
               ),
           ],
         ),

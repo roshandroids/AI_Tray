@@ -1,19 +1,24 @@
 # AI Tray
 
-Native desktop companion for **Claude Code** subscription usage (macOS menu bar / Windows system tray).
+Native desktop companion for **Claude Code** and **GitHub Copilot** subscription
+usage (macOS menu bar / Windows system tray).
 
-**Status:** **v1.2.0** · design system (PD-021)  
-**Platforms:** **macOS supported** · **Windows Experimental** ([PD-010](docs/stabilization/PD-010-defer-windows.md))
+**Status:** **v1.3.3** · multi-provider platform (EP-002)
+**Platforms:** **macOS arm64 supported** · **Windows Experimental** ([PD-010](docs/stabilization/PD-010-defer-windows.md))
 
 ## Screenshots
 
-Dark dashboard with session / week rings and CLI health:
+Dark Claude dashboard with session / week rings and provider health:
 
 ![AI Tray dashboard (dark)](docs/assets/screenshots/dashboard-dark.png)
 
 Light theme:
 
 ![AI Tray dashboard (light)](docs/assets/screenshots/dashboard-light.png)
+
+GitHub Copilot dashboard (experimental quota API):
+
+![AI Tray Copilot dashboard](docs/assets/screenshots/dashboard-copilot-dark.png)
 
 Settings with left navigation rail:
 
@@ -29,12 +34,23 @@ Diagnostics · Logs · Menu bar tray rings:
 
 *Tray (L→R): Live · Cached · Refreshing · Error*
 
+## Providers
+
+| Provider | Status | Notes |
+| --- | --- | --- |
+| Claude Code | Stable | CLI `/usage` pipeline |
+| GitHub Copilot | Experimental | Official SDK sidecar + `account.getQuota` |
+
+See [GitHub Copilot provider docs](docs/providers/github-copilot.md) and the
+[EP-002 implementation report](docs/release/EP-002-implementation-report.md).
+
 ## Quick links
 
 | | |
 |--|--|
 | App package | [ai_tray/](ai_tray/) · [ai_tray/README.md](ai_tray/README.md) |
 | Design system | [docs/design/DESIGN_SYSTEM.md](docs/design/DESIGN_SYSTEM.md) |
+| Provider architecture | [docs/architecture/provider-platform.md](docs/architecture/provider-platform.md) |
 | Docs index | [docs/README.md](docs/README.md) |
 | Releases | [GitHub Releases](https://github.com/roshandroids/AI_Tray/releases) |
 | **CI/CD** | [docs/release/CI-CD.md](docs/release/CI-CD.md) |
@@ -45,7 +61,9 @@ Diagnostics · Logs · Menu bar tray rings:
 
 ## Install
 
-See [installation guide](docs/guides/installation.md). Latest builds: [v1.2.0](https://github.com/roshandroids/AI_Tray/releases/tag/v1.2.0).
+See [installation guide](docs/guides/installation.md). Latest builds:
+[v1.3.3](https://github.com/roshandroids/AI_Tray/releases/tag/v1.3.3)
+(`AI-Tray-macOS-arm64.zip`, `AI-Tray-Windows-x64.zip`).
 
 ## Run (macOS)
 

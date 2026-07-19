@@ -92,6 +92,10 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
     final repository = ref.watch(usageRepositoryProvider);
     final selectableProviders = ref.watch(selectableAIProvidersProvider);
     final selectedProvider = ref.watch(selectedAIProviderProvider);
+    final selectionAsync = ref.watch(selectedProviderIdProvider);
+    final selectionNotifier = ref.read(selectedProviderIdProvider.notifier);
+    final selectionBusy = selectionAsync.isLoading;
+    final selectionFailure = selectionNotifier.lastPersistenceFailure;
 
     return StreamBuilder<RefreshStatus>(
       stream: repository.watchStatus(),
@@ -114,6 +118,7 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
               ProviderSelector(
                 providers: selectableProviders,
                 selectedId: selectedProvider.providerId,
+                enabled: !selectionBusy,
                 onSelected: (providerId) async {
                   final changed = await ref
                       .read(selectedProviderIdProvider.notifier)
@@ -160,6 +165,23 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
                 ),
                 child: Column(
                   children: [
+                    if (selectionFailure != null) ...[
+                      _DashboardStatusNotice(
+                        icon: Icons.save_outlined,
+                        message:
+                            '${selectionFailure.message}. '
+                            'Selection is active in memory — '
+                            'tap Retry to save.',
+                        color: context.colors.warning,
+                        actionLabel: 'Retry',
+                        onAction: () => unawaited(
+                          ref
+                              .read(selectedProviderIdProvider.notifier)
+                              .retryPersistence(),
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.sm),
+                    ],
                     _ProviderHeader(
                       key: ValueKey(
                         'provider-header-${selectedProvider.providerId.value}',
@@ -249,11 +271,15 @@ final class _DashboardStatusNotice extends StatelessWidget {
     required this.icon,
     required this.message,
     required this.color,
+    this.actionLabel,
+    this.onAction,
   });
 
   final IconData icon;
   final String message;
   final Color color;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
@@ -279,6 +305,16 @@ final class _DashboardStatusNotice extends StatelessWidget {
                   style: context.typography.caption.copyWith(color: color),
                 ),
               ),
+              if (actionLabel != null && onAction != null) ...[
+                const SizedBox(width: Spacing.sm),
+                TextButton(
+                  onPressed: onAction,
+                  child: Text(
+                    actionLabel!,
+                    style: context.typography.label.copyWith(color: color),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
