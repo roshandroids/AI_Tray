@@ -1,0 +1,38 @@
+---
+description: Keep the official AI Tray project handoff package current
+alwaysApply: true
+---
+
+# Project Handoff Maintenance
+
+The `docs/project/` package is the single source of truth. Maintenance is
+mandatory; significant work is not complete until the package is reviewed.
+
+At session start, read `AI_HANDOFF.md`, `PROJECT_CONTEXT.json`, and
+`NEXT_SESSION.md`; verify branch, working tree, PR, and release state.
+
+Review/update the package after any feature add/remove/change, bug fix,
+refactor, architecture/product decision, epic start/completion, phase
+completion, release, merge, technical-debt change, dependency change, CI/CD
+change, or significant documentation update.
+
+Always review all eight files; modify only affected ones:
+`AI_HANDOFF.md`, `PROJECT_STATE.md`, `ARCHITECTURE_STATE.md`,
+`PRODUCT_STATE.md`, `DECISION_LOG.md`, `ROADMAP.md`, `NEXT_SESSION.md`, and
+`PROJECT_CONTEXT.json`.
+
+Rules:
+
+- Summarize outcomes; never paste commit logs.
+- Keep executive state, phase/epic, version/release, branch, providers, risks,
+  completed/in-progress work, roadmap, and next actions consistent.
+- Product Decisions require ID, date, status, decision, rationale, and impact.
+- Never delete decisions; record reversals as new entries.
+- `NEXT_SESSION.md` must state objective, prerequisites, blockers, and
+  acceptance criteria.
+- Do not claim a PR merged, release published, or test passed without evidence.
+- Keep `PROJECT_CONTEXT.json` valid JSON.
+- Validate internal links plus version, branch, date, and JSON consistency.
+
+Completion gate: code complete, tests passing, docs updated, handoff updated,
+and validation complete. Only then mark the task complete.

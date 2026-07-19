@@ -11,6 +11,9 @@
 |--|--|
 | [providers/github-copilot.md](providers/github-copilot.md) | GitHub Copilot provider guide (EP-002) |
 | [release/EP-002-implementation-report.md](release/EP-002-implementation-report.md) | EP-002 final implementation report |
+| [research/EP-003-cursor-agent-provider.md](research/EP-003-cursor-agent-provider.md) | EP-003 Cursor Agent provider research (no implementation) |
+| [research/EP-003A-cursor-usage-verification.md](research/EP-003A-cursor-usage-verification.md) | EP-003A non-interactive `/usage` verification |
+| [project/AI_HANDOFF.md](project/AI_HANDOFF.md) | Official AI handoff package and current resumption context |
 | [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Official UI design system (PD-021) |
 | [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider architecture |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |

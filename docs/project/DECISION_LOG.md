@@ -1,0 +1,37 @@
+# AI Tray — Decision Log
+
+**Updated:** 2026-07-19
+
+This is the concise cross-epic decision index. Detailed rationale remains in
+ADRs, provider research, and implementation reports.
+
+## Approved Product Decisions
+
+| ID | Date | Status | Decision | Rationale | Impact |
+| --- | --- | --- | --- | --- | --- |
+| PD-021 | 2026-07-16 | Approved / implemented | Adopt the terminal-inspired design system and capability-driven multi-provider platform | A shared UI prevents provider-specific duplication and preserves Claude behavior | Established `ProviderRegistry`, shared dashboard components, tokens, themes, and provider selector |
+| PD-023 | 2026-07-18 | Approved | Do not implement Cursor Agent as a personal quota provider until Cursor publishes an official consumer usage-summary API; any automation provider requires a separate epic | Supported interfaces expose automation, auth, models, and per-run tokens, but not Hobby/Pro remaining %, reset date, or pool balances; EP-003A confirmed `/usage` print prompts return prose, not quota; dashboard scraping is unsupported and conflicts with ToS | EP-003/EP-003A stop after research; no Cursor production code; roadmap may consider a separate automation-only epic |
+
+## Architecture and operational decisions
+
+| ID | Date | Decision | Status / consequence |
+| --- | --- | --- | --- |
+| D-001 | 2026-07-12 | Use installed Claude CLI as the MVP usage source | Accepted; parse defensively and keep fixtures |
+| D-002 | 2026-07-12 | Standardize failures, bounded retry, single-flight, and LKG cache | Normative resilience model; never invent usage |
+| D-003 | 2026-07-16 | Adopt `AIProvider`, `ProviderRegistry`, capabilities, and shared UI | Accepted; no provider-specific pages |
+| D-004 | 2026-07-17 | Integrate Copilot only through official SDK `account.getQuota` | Accepted as experimental with graceful degradation |
+| D-005 | 2026-07-17 | Reject `/copilot_internal`, undocumented APIs, and TUI scraping | Permanent integration constraint |
+| D-006 | 2026-07-17 | Bundle a versioned Node sidecar for Copilot SDK/runtime | Accepted; packaging is part of release verification |
+| D-007 | 2026-07-17 | Publish macOS arm64 + Windows x64; drop macOS Intel artifact | Active release policy |
+| D-008 | 2026-07-17 | Do not build artifacts on main push; publish only by tag/manual dispatch | Active CI/release policy |
+| D-009 | 2026-07-18 | Apply PD-023 to provider planning | Cursor personal quota provider remains blocked |
+| D-010 | 2026-07-18 | Allow future Cursor automation only as a separate product epic | Requires Product Owner approval and explicit non-goals |
+| D-011 | 2026-07-18 | Make `docs/project/` the official AI handoff package | Active; update after every epic/phase/major feature/release |
+| D-012 | 2026-07-19 | Close EP-002 Phase 3 as merged on main (`2885980`); keep Phase 3 out of a docs-only release | Active; next product release remains an explicit Product Owner decision |
+| D-013 | 2026-07-19 | Defer EP-004 implementation until post-stabilization assessment chooses no-go, targeted cleanup, or full epic | Active; no provider-folder rewrite during stabilization |
+
+## Decision maintenance
+
+- Add a row only for durable product or architecture decisions.
+- Record reversals as new rows; do not silently rewrite history.
+- Keep detailed evidence in an ADR/research report and link it from state docs.
