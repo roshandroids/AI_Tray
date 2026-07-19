@@ -11,6 +11,8 @@ No new features. Only critical bug fixes, stability improvements, and documentat
 
 | Doc | Purpose |
 |--|--|
+| [POST_EP002_MACOS_ARM64.md](POST_EP002_MACOS_ARM64.md) | Post-EP-002 macOS arm64 dogfood checklist |
+| [POST_EP002_WINDOWS_X64.md](POST_EP002_WINDOWS_X64.md) | Post-EP-002 Windows x64 runtime checklist (Experimental) |
 | [daily-observation-log.md](daily-observation-log.md) | Running daily log |
 | [issue-template.md](issue-template.md) | File a bug |
 | [bug-triage-template.md](bug-triage-template.md) | Triage |

@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated_at": "2026-07-19",
   "version": "1.3.3+9",
-  "project_status": "ep002_merged_stabilization_pending",
+  "project_status": "stabilization_complete_ep004_targeted_cleanup",
   "current_epic": "post-EP-002-stabilization",
-  "current_phase": "EP-002 Phase 3 merged; docs/handoff + stabilization + EP-004 assessment",
+  "current_phase": "Stabilization complete; EP-004 targeted cleanup approved",
   "branch": {
-    "name": "cursor/ep003-handoff-docs",
-    "commit": "working-tree",
+    "name": "cursor/post-ep002-stabilization",
+    "commit": "ad28c82",
     "base": "main"
   },
   "release": {
@@ -30,8 +30,8 @@
   "repository_state": {
     "default_branch": "main",
     "default_branch_commit": "2885980",
-    "active_branch": "cursor/ep003-handoff-docs",
-    "active_branch_commit": "working-tree",
+    "active_branch": "cursor/post-ep002-stabilization",
+    "active_branch_commit": "ad28c82",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -41,14 +41,13 @@
         "state_at_snapshot": "merged"
       }
     ],
-    "active_pull_requests": [],
-    "uncommitted_work_at_snapshot": [
-      "docs/research/EP-003-cursor-agent-provider.md",
-      "docs/research/EP-003A-cursor-usage-verification.md",
-      "docs/README.md",
-      "docs/project/",
-      "docs/release/CI-CD.md",
-      ".cursor/rules/project-handoff.mdc"
+    "active_pull_requests": [
+      {
+        "number": 8,
+        "title": "docs: close EP-002 and land EP-003 handoff package",
+        "url": "https://github.com/roshandroids/AI_Tray/pull/8",
+        "state_at_snapshot": "open_or_merged"
+      }
     ]
   },
   "platforms": {
@@ -61,96 +60,72 @@
       "id": "claude",
       "display_name": "Claude Code",
       "status": "stable",
-      "data_source": "claude -p /usage --output-format json",
-      "risks": [
-        "Free-text result schema is not a stable public API",
-        "GUI PATH may differ from terminal PATH"
-      ]
+      "data_source": "claude -p /usage --output-format json"
     },
     {
       "id": "copilot",
       "display_name": "GitHub Copilot",
       "status": "experimental",
-      "data_source": "@github/copilot-sdk account.getQuota via bundled NDJSON sidecar",
-      "risks": [
-        "Quota RPC is experimental",
-        "Sidecar packaging is required for releases"
-      ]
+      "data_source": "@github/copilot-sdk account.getQuota via bundled NDJSON sidecar"
     },
     {
       "id": "cursor",
       "display_name": "Cursor Agent",
       "status": "research_only",
-      "decision": "Do not implement as a personal quota provider until an official consumer usage-summary API exists",
-      "possible_future_scope": "Separate automation provider using documented CLI headless JSON or SDK",
-      "usage_verification": {
-        "agent_print_usage_available": false,
-        "plan_usage_percentages_returned": false,
-        "reset_date_returned": false,
-        "json_available": true,
-        "json_usage_meaning": "per-turn token accounting only",
-        "stability": "unsupported generated prose"
-      }
+      "decision": "Do not implement as a personal quota provider until an official consumer usage-summary API exists"
     }
   ],
   "architecture": {
     "style": "Feature-first Clean Architecture",
-    "flow": [
-      "UI",
-      "Riverpod State",
-      "Domain",
-      "Data",
-      "External CLI or SDK"
+    "canonical_provider_namespaces": [
+      "features/providers/core",
+      "features/providers/copilot"
     ],
+    "ep004_posture": "targeted_cleanup",
     "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
     "provider_catalog": "ProviderRegistry",
-    "canonical_usage_model": "UsageInfo.metrics",
     "resilience": [
       "provider-scoped single-flight refresh",
-      "bounded transient retry",
-      "stale-result rejection",
+      "provider-scoped backoff",
+      "generation-based stale rejection",
+      "dispose-safe refresh completion",
       "last-known-good cache",
       "no invented usage values"
-    ],
-    "prohibited_integrations": [
-      "/copilot_internal",
-      "undocumented provider APIs",
-      "dashboard scraping",
-      "interactive terminal text parsing"
     ]
   },
   "completed": [
-    "PD-021 design system",
-    "Multi-provider registry and capability-driven UI",
-    "EP-002 Copilot SDK/provider foundation and distribution",
-    "EP-002 Phase 3 shared UI, accessibility, golden tests, screenshots, docs",
-    "PR #7 merge to main (2885980)",
-    "v1.3.3 Claude session parser resilience fix",
-    "CI build gating and explicit release triggers",
-    "EP-003 Cursor Agent provider research",
-    "EP-003A Cursor Agent non-interactive usage verification"
+    "EP-002 Phase 3 merge",
+    "EP-003/EP-003A research and handoff package",
+    "Post-EP-002 stabilization baseline and P0 lifecycle fixes",
+    "Sidecar protocol hardening and assembly smoke",
+    "EP-004 assessment and ADR-004 targeted cleanup decision"
   ],
   "product_decisions": [
     {
       "id": "PD-021",
       "date": "2026-07-16",
       "status": "approved_implemented",
-      "decision": "Adopt the design system and capability-driven multi-provider platform",
-      "impact": "Shared provider UI, registry, tokens, themes, and selector"
+      "decision": "Adopt the design system and capability-driven multi-provider platform"
     },
     {
       "id": "PD-023",
       "date": "2026-07-18",
       "status": "approved",
-      "decision": "Do not implement Cursor Agent as a personal quota provider until an official consumer usage-summary API exists",
-      "rationale": "Supported interfaces do not expose personal remaining percentage, reset date, or pool balances; scraping is unsupported",
-      "impact": "EP-003 ends after research; any automation provider requires a separate epic"
+      "decision": "Do not implement Cursor Agent as a personal quota provider until an official consumer usage-summary API exists"
+    },
+    {
+      "id": "PD-024",
+      "date": "2026-07-19",
+      "status": "approved",
+      "decision": "Treat EP-004 as targeted cleanup, not a full provider-platform rewrite",
+      "rationale": "Stabilization fixed shared orchestration defects without a rewrite; full-epic triggers unmet",
+      "impact": "Canonicalize imports, deprecate aliases, enrich metadata, choose one retry owner"
     }
   ],
   "current_work": [
-    "Land EP-003/EP-003A/handoff/CI-CD documentation PR",
-    "Post-EP-002 stabilization sprint",
-    "EP-004 architecture assessment and go/no-go decision"
+    "Land stabilization PR",
+    "Execute macOS arm64 dogfood checklist",
+    "Product Owner release timing for Phase 3"
   ],
   "risks": [
     {
@@ -158,23 +133,7 @@
       "severity": "high"
     },
     {
-      "id": "claude_free_text_contract",
-      "severity": "high"
-    },
-    {
-      "id": "unsigned_unnotarized_macos",
-      "severity": "medium"
-    },
-    {
       "id": "windows_experimental",
-      "severity": "medium"
-    },
-    {
-      "id": "provider_directory_transitional_duplication",
-      "severity": "medium"
-    },
-    {
-      "id": "cursor_unknown_prompt_quota_consumption",
       "severity": "medium"
     },
     {
@@ -183,19 +142,17 @@
     }
   ],
   "next_recommended_tasks": [
-    "Merge documentation PR for EP-003 and docs/project",
-    "Create post-EP-002 stabilization branch from main",
-    "Run Flutter/bridge baselines and classify P0/P1 defects",
-    "Harden lifecycle, refresh races, and sidecar protocol tests",
-    "Produce EP-004 assessment with no-go / targeted cleanup / full-epic decision"
+    "Merge post-EP-002 stabilization PR",
+    "Run macOS arm64 dogfood checklist",
+    "Optionally start targeted-cleanup import canonicalization",
+    "Keep Windows Experimental until hardware checklist passes"
   ],
   "verification": {
     "last_recorded": {
       "flutter_analyze": "pass",
-      "non_golden_tests": 132,
+      "non_golden_tests": 144,
       "golden_tests": 7,
-      "screenshot_generation": "pass",
-      "git_diff_check": "pass",
+      "bridge_npm_check": "pass",
       "production_copilot_internal_references": 0
     },
     "commands": [
@@ -203,19 +160,11 @@
       "flutter analyze --fatal-infos",
       "flutter test --exclude-tags golden,screenshot",
       "flutter test --tags golden",
-      "git diff --check"
+      "npm run check"
     ]
   },
   "handoff": {
     "official_package": true,
-    "maintenance_trigger": "any significant feature, bug, refactor, architecture, product, epic, phase, release, merge, debt, dependency, CI/CD, or documentation change",
-    "completion_gate": [
-      "code complete",
-      "tests passing",
-      "documentation updated",
-      "handoff package updated",
-      "validation complete"
-    ],
     "read_first": [
       "docs/project/AI_HANDOFF.md",
       "docs/project/PROJECT_CONTEXT.json",

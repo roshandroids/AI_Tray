@@ -43,6 +43,14 @@ final class RefreshService {
 
   final Map<ProviderId, Future<RefreshResult>> _inFlight = {};
 
+  /// Drops coalescing for [providerId] without awaiting the abandoned future.
+  ///
+  /// Used when the selected provider changes so a later return to the same
+  /// provider starts a fresh refresh instead of joining a stale in-flight run.
+  void invalidateInFlight(ProviderId providerId) {
+    _inFlight.remove(providerId);
+  }
+
   Future<RefreshResult> refresh({
     required AppSettings settings,
     required RefreshStatus currentStatus,
@@ -110,7 +118,19 @@ final class RefreshService {
 
         return validated.when(
           success: (usage) async {
-            await _cache.write(usage);
+            final writeResult = await _cache.write(usage);
+            writeResult.when(
+              success: (_) {},
+              onFailure: (failure) {
+                _logger.warning(
+                  'operation=cache_write status=failed '
+                  'provider=${provider.providerId.value} '
+                  'code=${failure.code.name}',
+                  name: 'refresh',
+                  error: failure,
+                );
+              },
+            );
             final result = RefreshResult(
               status: RefreshOutcome.success,
               usage: usage,
