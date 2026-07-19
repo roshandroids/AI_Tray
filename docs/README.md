@@ -1,23 +1,23 @@
 # Documentation Index
 
-**Project status:** **v1.0.0-rc2** · dogfooding (PD-011) · feature freeze  
-**Platforms:** macOS validated · Windows Experimental ([PD-010](stabilization/PD-010-defer-windows.md))  
-**Postmortem:** [POSTMORTEM.md](POSTMORTEM.md)  
+**Project status:** **v1.3.3** · multi-provider platform (EP-002)
+**Platforms:** macOS arm64 validated · Windows Experimental ([PD-010](stabilization/PD-010-defer-windows.md))
+**Postmortem:** [POSTMORTEM.md](POSTMORTEM.md)
 **Phase 2:** [STABILIZATION_REPORT.md](stabilization/STABILIZATION_REPORT.md) · [S-010](stabilization/S-010-ga-recommendation.md)
 
 ## Start here
 
 | Doc | Description |
 |--|--|
-| [release/release-notes-v1.0.0-rc2.md](release/release-notes-v1.0.0-rc2.md) | RC2 release notes |
-| [release/PD-011-rc2-dogfooding.md](release/PD-011-rc2-dogfooding.md) | Dogfood policy |
-| [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
-| [dogfood/daily-observation-log.md](dogfood/daily-observation-log.md) | Daily running log |
-| [POSTMORTEM.md](POSTMORTEM.md) | Lessons learned |
+| [providers/github-copilot.md](providers/github-copilot.md) | GitHub Copilot provider guide (EP-002) |
+| [release/EP-002-implementation-report.md](release/EP-002-implementation-report.md) | EP-002 final implementation report |
 | [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Official UI design system (PD-021) |
+| [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider architecture |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
-| [release/README.md](release/README.md) | RC1 hardening & final deliverables |
+| [guides/known-limitations.md](guides/known-limitations.md) | Current product limitations |
+| [release/CI-CD.md](release/CI-CD.md) | CI / release automation |
+| [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
 | [release/known-issues.md](release/known-issues.md) | Open issues + dogfood log template |
 
 ## Product & process (historical SoT)

@@ -5,6 +5,15 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+### Added
+- EP-002 Phase 3 UI quality coverage: accessibility/state widget tests and
+  provider UI golden baselines for Claude and GitHub Copilot.
+- Copilot screenshots plus provider docs and the EP-002 implementation report.
+
+### Changed
+- Provider selector disables while selection persistence is busy and surfaces a
+  retryable save-failure banner on the shared dashboard.
+
 ## [1.3.3] — 2026-07-17
 
 ### Fixed

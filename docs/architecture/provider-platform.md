@@ -1,8 +1,8 @@
 # Provider Platform Architecture
 
-**Decision:** PD-021 Multi-Provider Architecture  
-**Status:** Implemented (framework and Copilot scaffold)  
-**Date:** 2026-07-16
+**Decision:** PD-021 Multi-Provider Architecture · EP-002 Copilot Integration
+**Status:** Implemented (Claude + GitHub Copilot shared platform)
+**Date:** 2026-07-18
 
 ## Architecture diagram
 
@@ -13,8 +13,9 @@ flowchart LR
   ProviderRegistry --> ClaudeCliAdapter
   ProviderRegistry --> CopilotProvider
   ClaudeCliAdapter --> UsageParser
-  CopilotProvider --> CopilotAdapter
-  CopilotProvider --> CopilotUsageParser
+  CopilotProvider --> CopilotSdkAdapter
+  CopilotSdkAdapter --> CopilotSdkV1
+  CopilotSdkV1 --> BundledCopilotSidecar
   ProviderRegistry --> RefreshService
   RefreshService --> UsageRepository
   UsageRepository --> DashboardDataMapper
@@ -24,8 +25,8 @@ flowchart LR
 ```
 
 The registry is the only provider catalog. Shared presentation consumes provider
-metadata, capabilities, `DashboardData`, and `ProviderStatus`; it never checks a
-concrete provider ID.
+metadata, capabilities, `DashboardData`, and `ProviderStatus`. Provider-specific
+branching is limited to experimental badges and empty-state recovery copy.
 
 ## Refactoring summary
 
@@ -62,9 +63,9 @@ when declared by `ProviderCapabilities`. The dashboard loops over those metrics
 using the shared `MetricCard`. Status, source labels, health visibility, settings
 labels, diagnostics, tray labels, and empty-state copy use provider metadata.
 
-The provider selector receives `ProviderRegistry.enabledProviders`. Copilot is
-registered but disabled, so Claude remains the only selectable and active
-provider in this phase.
+The provider selector receives user-enabled registry providers. Copilot can be
+enabled in Settings; selection persists across launches and triggers a
+provider-scoped refresh.
 
 ## Updated folder structure
 
@@ -102,26 +103,24 @@ lib/features/usage/domain/
     └── dashboard_data_mapper.dart
 ```
 
-## Copilot scaffold and limitations
+## Copilot integration and limitations
 
-`CopilotProvider` is intentionally disabled. Its adapter:
+`CopilotProvider` is enabled through the shared framework and talks to the
+official GitHub Copilot SDK via a bundled Node sidecar:
 
-- Starts no process
-- Makes no network request
-- Returns an explicit not-implemented failure
+- Adapter owns lifecycle, timeouts, retries, logging, and DTO mapping
+- Domain metrics are app-owned (`UsageInfo.metrics`) and SDK-free in UI
+- Quota retrieval uses experimental `client.rpc.account.getQuota({})`
+- Failures degrade to LKG cache / actionable empty states
 
-Its parser implements the shared contract but returns an invalid candidate
-marked `copilot_parser_not_implemented`.
+Remaining limitations:
 
-Unknowns that block activation:
+1. Quota RPC remains experimental and may change without notice.
+2. Release artifacts currently publish macOS arm64 + Windows x64 only.
+3. Auth depends on the GitHub identity available to the sidecar environment.
 
-1. No stable Copilot subscription usage payload is defined.
-2. Authentication and executable discovery are not selected.
-3. Session/weekly metric semantics and reset fields are unknown.
-4. Cache namespace and provider-specific settings are not activated.
-
-Implementing those data contracts and changing `enabled`/capabilities is
-provider work; the selector and dashboard components require no Copilot branch.
+See [GitHub Copilot provider docs](../providers/github-copilot.md) and the
+[EP-002 implementation report](../release/EP-002-implementation-report.md).
 
 ## Migration notes
 
