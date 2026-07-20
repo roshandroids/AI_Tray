@@ -2,9 +2,9 @@
   "schema_version": 1,
   "updated_at": "2026-07-19",
   "version": "1.3.3+9",
-  "project_status": "stabilization_complete_ep004_targeted_cleanup",
+  "project_status": "stabilization_complete_ep004_targeted_cleanup_ep004a_ci_local_first",
   "current_epic": "post-EP-002-stabilization",
-  "current_phase": "Stabilization complete; EP-004 targeted cleanup approved",
+  "current_phase": "Stabilization complete; EP-004 targeted cleanup; EP-004A Local First CI in working tree",
   "branch": {
     "name": "cursor/post-ep002-stabilization",
     "commit": "2560ea1",
@@ -72,7 +72,7 @@
       "id": "cursor",
       "display_name": "Cursor Agent",
       "status": "research_only",
-      "decision": "Do not implement as a personal quota provider until an official consumer usage-summary API exists"
+      "decision": "Do not implement Cursor Agent as a personal quota provider until an official consumer usage-summary API exists"
     }
   ],
   "architecture": {
@@ -82,6 +82,7 @@
       "features/providers/copilot"
     ],
     "ep004_posture": "targeted_cleanup",
+    "ci_local_first": true,
     "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
     "provider_catalog": "ProviderRegistry",
     "resilience": [
@@ -93,12 +94,44 @@
       "no invented usage values"
     ]
   },
+  "ci_cd": {
+    "strategy": "local_first",
+    "epic": "EP-004A",
+    "workflows": {
+      "quality": ".github/workflows/quality.yml",
+      "documentation": ".github/workflows/documentation.yml",
+      "release": ".github/workflows/release.yml",
+      "maintenance": ".github/workflows/maintenance.yml"
+    },
+    "removed": [
+      ".github/workflows/ci.yml"
+    ],
+    "desktop_builds": "tag_or_workflow_dispatch_only",
+    "pr_required_checks": [
+      "Format",
+      "Analyze",
+      "Test",
+      "Validate workflows"
+    ],
+    "pr_must_not_require": [
+      "Build macOS"
+    ],
+    "lefthook": "optional_per_clone",
+    "docs": [
+      "docs/devops/LOCAL_DEVELOPMENT.md",
+      "docs/devops/CI_AUDIT.md",
+      "docs/release/CI-CD.md"
+    ],
+    "actions_minutes_target_per_month": 300,
+    "actions_minutes_measured": null
+  },
   "completed": [
     "EP-002 Phase 3 merge",
     "EP-003/EP-003A research and handoff package",
     "Post-EP-002 stabilization baseline and P0 lifecycle fixes",
     "Sidecar protocol hardening and assembly smoke",
-    "EP-004 assessment and ADR-004 targeted cleanup decision"
+    "EP-004 assessment and ADR-004 targeted cleanup decision",
+    "EP-004A Local First CI (quality/docs/release/maintenance; no PR desktop)"
   ],
   "product_decisions": [
     {
@@ -123,6 +156,7 @@
     }
   ],
   "current_work": [
+    "Land EP-004A CI changes and update branch protection",
     "Land stabilization PR",
     "Execute macOS arm64 dogfood checklist",
     "Product Owner release timing for Phase 3"
@@ -139,9 +173,15 @@
     {
       "id": "phase3_on_main_not_released",
       "severity": "low"
+    },
+    {
+      "id": "branch_protection_stale_build_macos_check",
+      "severity": "medium"
     }
   ],
   "next_recommended_tasks": [
+    "Update branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
+    "Commit/land EP-004A Local First CI when Product Owner asks",
     "Merge post-EP-002 stabilization PR",
     "Run macOS arm64 dogfood checklist",
     "Optionally start targeted-cleanup import canonicalization",

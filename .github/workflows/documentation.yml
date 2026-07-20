@@ -1,0 +1,99 @@
+name: Documentation
+
+# Local First (EP-004A): docs / markdown / handoff validation without Flutter.
+# Docs-only PRs should not pay for Format / Analyze / Test or desktop builds.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "*.md"
+      - "CHANGELOG.md"
+      - "AI_Tray_*.md"
+      - ".github/workflows/documentation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "*.md"
+      - "CHANGELOG.md"
+      - "AI_Tray_*.md"
+      - ".github/workflows/documentation.yml"
+
+concurrency:
+  group: documentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-docs:
+    name: Validate docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate AI handoff package
+        run: bash scripts/ci/validate_handoff.sh
+
+      - name: Validate project JSON
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("docs/project")
+          files = sorted(root.glob("*.json"))
+          if not files:
+              raise SystemExit("No JSON files under docs/project/")
+          for path in files:
+              with path.open(encoding="utf-8") as handle:
+                  json.load(handle)
+              print(f"OK {path}")
+          PY
+
+      - name: Check markdown relative links (docs/project + docs/devops)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          link_re = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
+          roots = [Path("docs/project"), Path("docs/devops"), Path("docs/adr")]
+          failures = []
+
+          for root in roots:
+              if not root.exists():
+                  continue
+              for md in root.rglob("*.md"):
+                  text = md.read_text(encoding="utf-8")
+                  for _label, target in link_re.findall(text):
+                      if target.startswith(("http://", "https://", "mailto:", "#")):
+                          continue
+                      clean = target.split("#", 1)[0].strip()
+                      if not clean:
+                          continue
+                      resolved = (md.parent / clean).resolve()
+                      try:
+                          resolved.relative_to(Path.cwd().resolve())
+                      except ValueError:
+                          failures.append(f"{md}: escapes repo ({target})")
+                          continue
+                      if not resolved.exists():
+                          failures.append(f"{md}: missing {target}")
+
+          if failures:
+              print("Broken relative links:")
+              print("\n".join(failures))
+              sys.exit(1)
+          print("OK relative links in docs/project, docs/devops, docs/adr")
+          PY
+
+      - name: Parse documentation workflow YAML
+        run: |
+          set -euo pipefail
+          ruby -ryaml -e "YAML.load_file(ARGV[0]); puts \"OK #{ARGV[0]}\"" \
+            .github/workflows/documentation.yml
