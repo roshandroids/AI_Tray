@@ -1,12 +1,23 @@
 # CI/CD & Release Automation
 
-Foundation for continuous integration and desktop release automation for AI Tray (PD-016).
+Foundation for continuous integration and desktop release automation for AI Tray
+(PD-016, evolved by **EP-004A Local First**).
 
-**Scope today:** Protected `main` — PRs run Format / Analyze / Test / Build macOS; pushes to `main` run Format / Analyze / Test only (no desktop artifact build). Tagged releases and manual dispatch build **macOS arm64 + Windows x64** and publish GitHub Releases.
-**Out of scope:** Code signing, notarization, Sparkle auto-update (documented as future work).
+**Scope today (Local First):**
+- **PRs / push → `main`:** Quality only — Format, Analyze, Test, Validate workflows.
+  Path filters skip Flutter setup for docs-only changes. **No desktop binary builds.**
+- **Docs / markdown paths:** Documentation workflow (handoff JSON, links) without Flutter.
+- **Tagged releases / `workflow_dispatch`:** macOS arm64 + Windows x64 build, package, publish.
+- **Weekly maintenance:** Informational dependency outdated reports.
+
+**Out of scope:** Code signing, notarization, Sparkle auto-update, security scanning
+(future `security.yml` placeholder only — do not invent scanners without evidence).
 **Not published:** macOS Intel / x64 artifacts (D-007).
 
-Aligned with house conventions from **CELPIP** (`ci.yml` job naming, Flutter pin, concurrency) and **MBO Research** (CHANGELOG-as-release-notes, SemVer on pubspec, tag `vX.Y.Z`).
+Aligned with house conventions from **CELPIP** (job naming, Flutter pin, concurrency)
+and **MBO Research** (CHANGELOG-as-release-notes, SemVer on pubspec, tag `vX.Y.Z`).
+
+Local validation: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md).
 
 ---
 
@@ -14,16 +25,12 @@ Aligned with house conventions from **CELPIP** (`ci.yml` job naming, Flutter pin
 
 ```mermaid
 flowchart TB
-  subgraph PR["Pull Request → main"]
+  subgraph PR["Pull Request / push → main"]
     F[Format]
     A[Analyze]
     T[Test]
-    BM[Build macOS]
-    F & A & T --> BM
-  end
-
-  subgraph MAIN["push → main"]
-    CI[Format / Analyze / Test]
+    W[Validate workflows]
+    D[Documentation — docs paths]
   end
 
   subgraph REL["git tag vX.Y.Z or workflow_dispatch"]
@@ -34,16 +41,24 @@ flowchart TB
     V --> MA & WIN --> GH
   end
 
-  PR -->|squash or merge| MAIN
+  subgraph M["schedule / dispatch"]
+    DEP[Dependency audit]
+  end
+
+  PR -->|squash or merge| main
   PUB[publish.sh] -->|commit + tag + push| REL
 ```
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
-| **CI** | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) | PR + push → `main` | Quality gates; **Build macOS only on PRs** |
-| **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or manual dispatch | Desktop builds + GitHub Release |
+| **Quality** | [`.github/workflows/quality.yml`](../../.github/workflows/quality.yml) | PR + push → `main` | Format / Analyze / Test / workflow YAML — **no desktop** |
+| **Documentation** | [`.github/workflows/documentation.yml`](../../.github/workflows/documentation.yml) | Docs / `*.md` paths | Handoff + JSON + relative links |
+| **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or dispatch | Desktop builds + GitHub Release |
+| **Maintenance** | [`.github/workflows/maintenance.yml`](../../.github/workflows/maintenance.yml) | Weekly + dispatch | Safe outdated reports |
 
 **Flutter:** `3.38.9` (stable) · **App directory:** `ai_tray/`
+
+**Removed:** `.github/workflows/ci.yml` (replaced by Quality; PR macOS build deleted).
 
 ---
 
@@ -51,52 +66,61 @@ flowchart TB
 
 | Aspect | CELPIP | MBO Research | AI Tray (this repo) |
 |--------|--------|--------------|---------------------|
-| Workflow name | `CI` | `ci` | `CI` |
-| Job names (branch protection) | Format, Analyze, Test, Build Web | Analyze, Format, Test, Corpus | Format, Analyze, Test, Build macOS |
+| Quality workflow | `CI` | `ci` | `Quality` (`quality.yml`) |
+| Job names (branch protection) | Format, Analyze, Test, Build Web | Analyze, Format, Test, Corpus | Format, Analyze, Test, Validate workflows |
 | Flutter pin | `3.38.9` env | `3.38.9` inline | `3.38.9` env |
-| `subosito/flutter-action@v2` + cache | Yes | Yes | Yes |
-| Concurrency cancel-in-progress | Yes | No | Yes |
-| Deploy on merge | Firebase Hosting | N/A (CLI package) | GitHub Release on **tag or manual dispatch only** |
-| Release automation | Placeholder (web only) | Manual tag + CHANGELOG | **Automated** tag → builds → release |
-| Version source | App pubspec | Package pubspec | `ai_tray/pubspec.yaml` |
-| CHANGELOG | Yes | Yes (Keep a Changelog) | Yes |
-| FVM / Melos / Fastlane | Melos stub; no FVM in CI | None | None (Flutter pin in workflow env) |
-| One-command publish | Not yet | Not yet | `scripts/release/publish.sh` |
-
-**Reuse decisions:** CELPIP’s parallel Format/Analyze/Test + gated build job, stable job `name:` fields, and Flutter cache strategy. MBO’s CHANGELOG + SemVer + `vX.Y.Z` tagging. AI Tray adds desktop release matrix and `publish.sh` (foundation for PD-017 one-command releases across all personal projects).
+| `subosito/flutter-action@v2` + cache | Yes | Yes | Yes (+ `pub-cache-key` from `pubspec.lock`) |
+| Concurrency cancel-in-progress | Yes | No | Yes (Quality / Docs / Maintenance) |
+| Deploy on merge | Firebase Hosting | N/A | GitHub Release on **tag or dispatch only** |
+| Desktop on PR | N/A (web) | N/A | **No** (Local First / EP-004A) |
 
 ---
 
-## Pull request CI
+## Pull request CI (Quality)
 
 **Required checks (configure in branch protection):**
 
 | Check name | Command / behavior |
 |------------|--------------------|
-| `Format` | `dart format --set-exit-if-changed .` |
+| `Format` | `dart format --set-exit-if-changed .` (skipped no-op if no code paths) |
 | `Analyze` | `flutter analyze --fatal-infos` |
-| `Test` | `flutter test` |
-| `Build macOS` | macOS arm64 release build + Copilot sidecar assemble/verify (**PRs only**) |
+| `Test` | Bridge `npm run check` + `flutter test --exclude-tags golden,screenshot` |
+| `Validate workflows` | Ruby YAML parse of `.github/workflows/*.yml` |
 
-Run locally before opening a PR:
+**Do not require:** `Build macOS` (removed), Release, Maintenance.
+
+Run locally before opening a PR (or enable Lefthook — see Local Development):
 
 ```bash
 cd ai_tray
 flutter pub get
 dart format --set-exit-if-changed .
 flutter analyze --fatal-infos
-flutter test
-flutter build macos --release
+flutter test --exclude-tags golden,screenshot
+cd tool/copilot_sdk_bridge && npm run check
 ```
+
+Desktop builds are **release-only**. Do not expect a PR macOS binary.
 
 ---
 
 ## Main branch
 
-On every push to `main`, CI re-runs **Format**, **Analyze**, and **Test** only.
-The **Build macOS** job is gated to pull requests (`if: github.event_name == 'pull_request'`).
-No short-lived desktop artifacts are uploaded from the main-push CI path.
-User-facing desktop packages are produced only by the **Release** workflow.
+On push to `main`, Quality re-runs the same lightweight jobs (with path-aware
+Flutter skips). No desktop artifacts. User-facing packages come only from **Release**.
+
+---
+
+## Documentation workflow
+
+Triggers on `docs/**`, root `*.md`, `CHANGELOG.md`, `AI_Tray_*.md`, and the
+documentation workflow file. Validates:
+
+- `scripts/ci/validate_handoff.sh`
+- `docs/project/*.json` parse
+- Relative markdown links under `docs/project`, `docs/devops`, `docs/adr`
+
+No Flutter SDK install.
 
 ---
 
@@ -105,7 +129,7 @@ User-facing desktop packages are produced only by the **Release** workflow.
 ### Automated path — “Publish AI Tray”
 
 1. Add notes under `## [Unreleased]` in [`CHANGELOG.md`](../../CHANGELOG.md).
-2. Ensure CI is green on `main`.
+2. Ensure Quality is green on `main`.
 3. Run from repo root:
 
 ```bash
@@ -128,8 +152,7 @@ User-facing desktop packages are produced only by the **Release** workflow.
      - `AI-Tray-Windows-x64.zip`
    - Creates GitHub Release with CHANGELOG body
 
-Manual re-run is available via Actions → **Release** → **Run workflow**
-(`workflow_dispatch`) for an existing tag.
+Manual re-run: Actions → **Release** → **Run workflow** (`workflow_dispatch`).
 
 ### Versioning rules
 
@@ -154,8 +177,6 @@ Manual re-run is available via Actions → **Release** → **Run workflow**
 macOS zip contains `AI Tray.app`. Windows zip contains the `Release/` folder contents.
 
 **Not published:** `AI-Tray-macOS-x64.zip` (Intel). Demand must justify CI/distribution cost before restoring that matrix entry.
-
-**Not attached (future):** dSYM / PDB symbols, signed/notarized builds, DMG/MSIX installers.
 
 ---
 
@@ -187,8 +208,9 @@ See [RH-003-packaging.md](RH-003-packaging.md).
 |---------|--------------|-----|
 | Release fails: pubspec mismatch | Tag pushed without `publish.sh` | Align pubspec `version:` name with tag, re-tag |
 | Windows build fails | Desktop not enabled / VS missing | Runner has VS 2022; run `flutter doctor` in workflow |
-| Format check fails on CI only | pub get skipped before format | CI runs `flutter pub get` first (CELPIP lesson) |
-| Branch protection blocks merge | Stale check names | Require `Format`, `Analyze`, `Test`, `Build macOS` exactly |
+| Format check fails on CI only | pub get skipped before format | Quality runs `flutter pub get` first |
+| Branch protection blocks merge | Stale check names | Require `Format`, `Analyze`, `Test`, `Validate workflows` — **not** `Build macOS` |
+| Docs-only PR still “needs” Flutter | Old `ci.yml` still present | Confirm only `quality.yml` exists; path filter no-ops Flutter steps |
 | `[Unreleased]` empty | No changelog entry | Add notes before `publish.sh` |
 | Duplicate release | Tag pushed twice | Delete release + tag in GitHub, fix, re-publish |
 | Expecting macOS x64 asset | Policy D-007 | Only arm64 + Windows x64 are published |
@@ -206,33 +228,29 @@ gh api repos/roshandroids/AI_Tray/commits/<sha>/check-runs \
 
 1. Settings → Rules → protect `main`
 2. Require PR before merge
-3. Require status checks: **Format**, **Analyze**, **Test**, **Build macOS**
-4. Do **not** require Release workflow for merge (tag/manual dispatch only)
+3. Require status checks: **Format**, **Analyze**, **Test**, **Validate workflows**
+4. **Remove** required check **Build macOS** (if still listed)
+5. Do **not** require Release / Maintenance for merge
 
 ---
 
-## Example release execution (dry run)
+## Cost posture (target, not measured)
 
-```bash
-# From clean main with [Unreleased] populated:
-./scripts/release/publish.sh 1.0.0 --dry-run
-
-# Expected output:
-# → New version: 1.0.0+3 (tag v1.0.0)
-# → Updated CHANGELOG.md → [1.0.0]
-# → Dry run — reverting pubspec and CHANGELOG edits
-# → Would commit, tag v1.0.0, and push to origin
-```
+Product Owner target: **&lt;300 Actions minutes / month**. Audit sample math
+([CI_AUDIT.md](../devops/CI_AUDIT.md)) suggested ~65 billable min/PR with macOS
+on every PR vs ~4–8 without. Local First shape (scenario C) projects roughly
+**~160–210** billable min/month under moderate assumptions — still a projection,
+not billing-dashboard fact.
 
 ---
 
 ## Related documents
 
+- [LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md)
+- [CI_AUDIT.md](../devops/CI_AUDIT.md)
 - [CHANGELOG.md](../../CHANGELOG.md)
 - [RH-003-packaging.md](RH-003-packaging.md)
-- [release-notes-v1.0.0-rc2.md](release-notes-v1.0.0-rc2.md)
-- CELPIP: `docs/workflows/CI_CD.md`
-- MBO: `docs/RELEASE_GUIDE.md`
+- [lefthook.yml](../../lefthook.yml)
 
 ---
 
@@ -246,4 +264,4 @@ publish minor    # → 1.1.0
 publish major    # → 2.0.0
 ```
 
-AI Tray implements this today via `./scripts/release/publish.sh`. CELPIP and MBO can adopt the same script layout when their desktop/store pipelines land.
+AI Tray implements this today via `./scripts/release/publish.sh`.

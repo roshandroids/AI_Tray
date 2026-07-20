@@ -1,0 +1,191 @@
+name: Quality
+
+# Local First (EP-004A): PR / main quality gates only — no desktop binary builds.
+# Desktop packaging lives exclusively in release.yml (tags + workflow_dispatch).
+#
+# Path filtering uses dorny/paths-filter so docs-only PRs skip Flutter setup while
+# still reporting the same stable check names (required for branch protection).
+#
+# STABLE CHECK CONTEXTS (branch protection / rulesets):
+#   Format | Analyze | Test | Validate workflows
+# Job `name:` below IS the GitHub status check name — do not rename without
+# updating branch protection. See docs/release/CI-CD.md and
+# docs/devops/LOCAL_DEVELOPMENT.md.
+#
+# Do NOT require "Build macOS" — removed in EP-004A.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.38.9"
+  NODE_VERSION: "22.17.0"
+  NPM_VERSION: "10.9.2"
+  WORKING_DIRECTORY: ai_tray
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      workflows: ${{ steps.filter.outputs.workflows }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Path filter
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'ai_tray/**'
+              - 'lefthook.yml'
+              - 'scripts/**'
+            workflows:
+              - '.github/workflows/**'
+
+  format:
+    name: Format
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Skip Flutter (no code paths)
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No ai_tray/scripts/lefthook changes — skipping format."
+
+      - name: Checkout
+        if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        if: needs.changes.outputs.code == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: flutter pub get
+
+      - name: Check formatting
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: dart format --set-exit-if-changed .
+
+  analyze:
+    name: Analyze
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Skip Flutter (no code paths)
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No ai_tray/scripts/lefthook changes — skipping analyze."
+
+      - name: Checkout
+        if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        if: needs.changes.outputs.code == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: flutter pub get
+
+      - name: Analyze
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: flutter analyze --fatal-infos
+
+  test:
+    name: Test
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Skip Flutter (no code paths)
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No ai_tray/scripts/lefthook changes — skipping tests."
+
+      - name: Checkout
+        if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        if: needs.changes.outputs.code == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
+
+      - name: Set up pinned Node
+        if: needs.changes.outputs.code == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Build and test Copilot bridge
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          test "$(npm --version)" = "${{ env.NPM_VERSION }}"
+          npm ci
+          npm run check
+
+      - name: Install dependencies
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: flutter pub get
+
+      - name: Test (unit + widget, excluding macOS goldens)
+        if: needs.changes.outputs.code == 'true'
+        working-directory: ai_tray
+        run: flutter test --exclude-tags golden,screenshot
+
+  validate-workflows:
+    name: Validate workflows
+    needs: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Skip (no workflow changes)
+        if: needs.changes.outputs.workflows != 'true' && needs.changes.outputs.code != 'true'
+        run: echo "No workflow/code changes — skipping workflow YAML parse."
+
+      - name: Checkout
+        if: needs.changes.outputs.workflows == 'true' || needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+
+      - name: Parse workflow YAML
+        if: needs.changes.outputs.workflows == 'true' || needs.changes.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          for f in .github/workflows/*.yml; do
+            ruby -ryaml -e "YAML.load_file(ARGV[0]); puts \"OK #{ARGV[0]}\"" "$f"
+          done

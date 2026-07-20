@@ -90,6 +90,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
 
       - name: Set up pinned Node arm64
         uses: actions/setup-node@v4
@@ -154,6 +155,7 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
 
       - name: Set up pinned Node x64
         uses: actions/setup-node@v4

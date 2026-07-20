@@ -1,0 +1,62 @@
+name: Maintenance
+
+# Local First (EP-004A): scheduled / manual dependency hygiene.
+# Safe read-only checks only — no cache deletion or destructive runner ops.
+on:
+  schedule:
+    # Mondays 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: maintenance-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: "3.38.9"
+  NODE_VERSION: "22.17.0"
+  WORKING_DIRECTORY: ai_tray
+
+jobs:
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai_tray
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+          pub-cache-key: flutter-pub-${{ runner.os }}-${{ hashFiles('ai_tray/pubspec.lock') }}
+
+      - name: Install Dart/Flutter dependencies
+        run: flutter pub get
+
+      - name: Report outdated Flutter packages
+        run: flutter pub outdated || true
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ai_tray/tool/copilot_sdk_bridge/package-lock.json
+
+      - name: Report outdated Copilot bridge packages
+        working-directory: ai_tray/tool/copilot_sdk_bridge
+        run: |
+          npm ci
+          npm outdated || true
+
+      - name: Summarize
+        run: |
+          echo "Maintenance audit completed (informational)."
+          echo "Review outdated output above; do not auto-bump from this workflow."

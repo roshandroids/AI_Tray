@@ -31,6 +31,7 @@ ADRs, provider research, and implementation reports.
 | D-012 | 2026-07-19 | Close EP-002 Phase 3 as merged on main (`2885980`); keep Phase 3 out of a docs-only release | Active; next product release remains an explicit Product Owner decision |
 | D-013 | 2026-07-19 | Complete post-EP-002 stabilization before any EP-004 folder rewrite | Done; see ADR-004 / PD-024 |
 | D-014 | 2026-07-19 | Accept ADR-004 targeted cleanup as the EP-004 posture | Active; full rewrite is contingency-only |
+| D-015 | 2026-07-19 | Local First CI (EP-004A): no desktop builds on PR/main; Quality + Documentation + Release (tag/dispatch) + Maintenance; Lefthook optional locally | Active; supersedes PR `Build macOS` required check; PO target &lt;300 Actions min/month |
 
 ## Decision maintenance
 

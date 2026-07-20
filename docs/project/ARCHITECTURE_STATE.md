@@ -71,7 +71,10 @@ boundary. Graceful degradation is required.
 - Flutter 3.38.9 / Dart 3.10.x
 - Node sidecar toolchain is pinned and assembled per release target.
 - Release artifacts: macOS arm64 and Windows x64.
-- Release workflow runs on version tags or manual dispatch.
+- **CI (EP-004A Local First):** `quality.yml` on PR/main (format/analyze/test;
+  no desktop binaries); `documentation.yml` for docs paths; `release.yml` on
+  version tags or manual dispatch only; `maintenance.yml` weekly outdated
+  checks. Optional Lefthook locally — see `docs/devops/LOCAL_DEVELOPMENT.md`.
 
 ## Invariants
 

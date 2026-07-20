@@ -1,14 +1,19 @@
 # PD-016 — Standardize CI/CD & Release Automation
 
-**Status:** Ready for Product Owner review  
+**Status:** Historical design record (superseded in parts by **EP-004A Local First**)  
 **Scope:** Automation only — no application functionality changes  
-**Date:** 2026-07-12
+**Date:** 2026-07-12  
+**Live source of truth:** [CI-CD.md](../CI-CD.md), [LOCAL_DEVELOPMENT.md](../../devops/LOCAL_DEVELOPMENT.md), `.github/workflows/`
+
+> **Stale vs live YAML (2026-07-19):** PR desktop builds and `ci.yml` were removed.
+> Quality is `quality.yml` (no desktop). Release is tag/dispatch only (macOS arm64 +
+> Windows x64 — not macOS Intel). See [CI_AUDIT.md](../../devops/CI_AUDIT.md) §11.
 
 ---
 
-## 1. CI/CD architecture summary
+## 1. CI/CD architecture summary (original PD-016)
 
-| Layer | Implementation |
+| Layer | Implementation (as designed 2026-07-12) |
 |-------|----------------|
 | PR gates | `.github/workflows/ci.yml` — Format, Analyze, Test (Ubuntu) → Build macOS |
 | Main verification | Same CI on push; ephemeral macOS artifact |

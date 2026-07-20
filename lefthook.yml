@@ -1,0 +1,43 @@
+# Lefthook — local-first validation for AI Tray (EP-004A)
+#
+# Hooks are NOT installed automatically by cloning this repo.
+# Enable once per clone:
+#   brew install lefthook   # or: go install / npm i -g @evilmartians/lefthook
+#   lefthook install
+#
+# See docs/devops/LOCAL_DEVELOPMENT.md
+
+min_version: 1.5.0
+
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      root: ai_tray
+      glob: "*.{dart}"
+      run: dart format --set-exit-if-changed lib test
+    analyze:
+      root: ai_tray
+      glob: "*.{dart}"
+      run: flutter analyze --fatal-infos
+    quick-tests:
+      root: ai_tray
+      glob: "*.{dart}"
+      run: flutter test --exclude-tags golden,screenshot --reporter compact
+
+commit-msg:
+  commands:
+    conventional:
+      run: bash scripts/ci/check_conventional_commit.sh {1}
+
+pre-push:
+  parallel: false
+  commands:
+    unit-tests:
+      root: ai_tray
+      run: flutter test --exclude-tags golden,screenshot
+    bridge-check:
+      root: ai_tray/tool/copilot_sdk_bridge
+      run: npm run check
+    handoff:
+      run: bash scripts/ci/validate_handoff.sh

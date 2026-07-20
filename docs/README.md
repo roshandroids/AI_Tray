@@ -21,7 +21,9 @@
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
 | [guides/known-limitations.md](guides/known-limitations.md) | Current product limitations |
-| [release/CI-CD.md](release/CI-CD.md) | CI / release automation |
+| [release/CI-CD.md](release/CI-CD.md) | CI / release automation (Local First) |
+| [devops/LOCAL_DEVELOPMENT.md](devops/LOCAL_DEVELOPMENT.md) | Local First validation + Lefthook |
+| [devops/CI_AUDIT.md](devops/CI_AUDIT.md) | EP-004A CI audit + post-change status |
 | [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
 | [release/known-issues.md](release/known-issues.md) | Open issues + dogfood log template |
 
