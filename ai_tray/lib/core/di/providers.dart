@@ -11,6 +11,8 @@ import 'package:ai_tray/features/usage/data/validators/usage_validator.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+export 'package:ai_tray/core/notifications/notification_providers.dart'
+    show notificationGatewayProvider;
 export 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart'
     show
         selectableAIProvidersProvider,

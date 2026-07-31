@@ -615,3 +615,97 @@ independently verifiable by grep: no `--resume`, no write call anywhere
 under `lib/features/sessions/`.
 
 ---
+
+## Milestone 2 — Manual Resume + Better Notifications (gated on M1 shipped)
+
+### Epic 2.1 — Notification Gateway
+
+#### Feature 2.1.1 — Notification Gateway Port — ✅ Complete
+
+**Stories completed:** Define `NotificationGateway` port + fake · Migrate
+`TrayController.maybeNotify` to the gateway.
+
+**Files added:**
+- `lib/core/notifications/notification_gateway.dart` — port
+  (`notify({title, body, onClick})`), lives in `core/` not
+  `features/sessions/` since it's cross-cutting (§7 placement rule 2,
+  §12)
+- `lib/core/notifications/io_notification_gateway.dart` — wraps
+  `local_notifier`, preserving `maybeNotify`'s exact prior behavior
+  (catch-log-swallow on failure, never throws)
+- `lib/core/notifications/fake_notification_gateway.dart` — records
+  calls (title/body/onClick), mirrors `FakeProcessRunner`'s shape
+- `lib/core/notifications/notification_providers.dart` —
+  `notificationGatewayProvider`
+- `test/unit/notifications/fake_notification_gateway_test.dart`,
+  `test/unit/tray/tray_controller_test.dart` (new — none existed before,
+  see discoveries)
+
+**Files modified:**
+- `lib/features/tray/presentation/tray_controller.dart` —
+  `TrayController` takes a `notificationGateway` constructor parameter;
+  `maybeNotify()` now calls `notificationGateway.notify(title: 'AI Tray',
+  body: '...')` instead of constructing `LocalNotification` directly —
+  same title/body string, same threshold logic, unchanged
+- `lib/core/di/providers.dart` — exports `notificationGatewayProvider`;
+  `trayControllerProvider` now wires it in
+- `lib/features/notifications/{data,domain,presentation}/.gitkeep` —
+  removed. §7 explicitly retires this empty placeholder feature in favor
+  of `core/notifications/`; this story is where that retirement actually
+  happens.
+- `docs/dogfood/POST_EP002_MACOS_ARM64.md` — added checklist row 12 for
+  the gateway migration and (forward-looking) `onClick` verification,
+  per this feature's own acceptance criteria
+
+**Deviations from the roadmap:** None in shape or intent.
+
+**Implementation discoveries for later milestones:**
+- **No `TrayController`/`maybeNotify` test existed before this feature** —
+  confirmed by grepping `test/` for both names (zero hits), matching
+  exactly what §12's own text already claimed ("no notification test
+  exists"). So "existing tests must keep passing unmodified" had nothing
+  to preserve; the 5 new `tray_controller_test.dart` cases are the first
+  coverage this code path has ever had (notifies with correct title/body,
+  suppressed below threshold, suppressed when disabled, suppressed for
+  cached usage, suppressed with no threshold configured) — closing
+  exactly the gap the v1 audit and this roadmap both flagged.
+- **A second, unmigrated `LocalNotification` call site exists**:
+  `DiagnosticsPage._testNotification()` (a "Test notification" diagnostic
+  button) constructs `LocalNotification` directly, not through the new
+  gateway. Left as-is deliberately — this story's roadmap text names only
+  `TrayController.maybeNotify` as the migration target, and
+  `_testNotification` is a `static` helper with no `ref`/DI access today,
+  so migrating it would be new scope (threading a gateway into a static
+  diagnostics helper), not a like-for-like swap. **Trigger for
+  revisiting:** if Epic 2.3's `onClick`-driven notifications reveal any
+  gateway behavior gap, checking this second call site for the same gap
+  is the first place to look; otherwise it's cosmetic inconsistency, not
+  a correctness issue.
+- `IoNotificationGateway` has no automated test — `local_notifier` needs
+  real platform channels (macOS/Windows native code) that don't exist in
+  a plain `flutter test` VM run, the same reason `docs/claude_code_cli_capability_report.md`-style
+  CLI-adjacent code gets fixture/fake tests instead of hitting the real
+  thing. This is exactly why §12/Feature 2.1.1 asks for a **manual**
+  dogfood checklist entry instead of an automated one — added as row 12
+  above, not skipped.
+
+**Regression found:** None. `TrayController`'s constructor gained a new
+required parameter, a compile-level change only `trayControllerProvider`
+needed updating for (one call site, confirmed by grep).
+
+**ADR changes required:** None. This is exactly ADR-006's/§12's
+`NotificationGateway` design, implemented as specified — ports+fake
+modeled on `ProcessRunner`, cross-cutting placement in `core/`.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 3 `fake_notification_gateway_test.dart` cases, 5
+  `tray_controller_test.dart` cases — 8 total, all passing.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **288
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test recorded under
+  Feature 1.2.1/1.2.2's log entries; nothing new.
+
+---

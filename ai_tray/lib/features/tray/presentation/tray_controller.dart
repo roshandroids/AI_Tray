@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
+import 'package:ai_tray/core/notifications/notification_gateway.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
@@ -79,12 +80,14 @@ final class TrayController with TrayListener, WindowListener {
     required this.provider,
     required this.logger,
     required this.onOpenSettings,
+    required this.notificationGateway,
   });
 
   final UsageRepository repository;
   final AIProvider provider;
   final AppLogger logger;
   final VoidCallback onOpenSettings;
+  final NotificationGateway notificationGateway;
 
   bool _started = false;
   String? _lastIconPath;
@@ -256,16 +259,10 @@ final class TrayController with TrayListener, WindowListener {
     if (threshold == null || usage == null || usage.isFromCache) return;
     if (usage.sessionUsedPercent < threshold) return;
 
-    try {
-      final notification = LocalNotification(
-        title: 'AI Tray',
-        body:
-            'Session usage at ${usage.sessionUsedPercent.toStringAsFixed(0)}%',
-      );
-      await notification.show();
-    } on Exception catch (error) {
-      logger.warning('notification failed: $error', name: 'tray');
-    }
+    await notificationGateway.notify(
+      title: 'AI Tray',
+      body: 'Session usage at ${usage.sessionUsedPercent.toStringAsFixed(0)}%',
+    );
   }
 }
 
@@ -284,6 +281,7 @@ final trayControllerProvider = Provider<TrayController>((ref) {
     repository: ref.watch(usageRepositoryProvider),
     provider: ref.watch(selectedAIProviderProvider),
     logger: ref.watch(appLoggerProvider),
+    notificationGateway: ref.watch(notificationGatewayProvider),
     onOpenSettings: () {
       ref.read(settingsOpenRequestProvider.notifier).open();
     },
