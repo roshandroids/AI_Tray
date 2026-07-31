@@ -1,5 +1,8 @@
 # AI Tray --- Autonomous Delivery Plan
 
+> **DEPRECATED (historical).** Use [`docs/project/`](docs/project/),
+> [`AGENTS.md`](AGENTS.md), and [`docs/PROJECT_BLUEPRINT.md`](docs/PROJECT_BLUEPRINT.md).
+
 ## Product Owner Execution Guide (Cursor)
 
 Purpose: Allow Cursor to continue implementation autonomously until the

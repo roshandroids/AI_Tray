@@ -10,30 +10,31 @@ usage and health in one shared macOS menu-bar / Windows tray experience.
 Claude is stable; GitHub Copilot is experimental through the official SDK.
 EP-002 Phase 3 is merged (`2885980`). Post-EP-002 stabilization completed;
 EP-004 posture is **targeted cleanup** (ADR-004 / PD-024). **CI/CD model is
-Quality CI + Release CD (EP-004A):** Ubuntu-only Quality on PR/push; desktop
-(macOS/Windows) builds **only** in Release on tag/`workflow_dispatch`;
-`ci.yml` removed; Lefthook optional locally. **Demo strategy (PD-025):** the
-product is the demo (`showcase/demos.json` → `id: main`, `type: desktop`);
-no Flutter Web playground. Cursor personal quota remains blocked (PD-023).
-Latest published release remains v1.3.3 (Phase 3 not yet tagged).
+Quality CI + Release CD (EP-004A)** and is on `main` (`ci.yml` removed;
+Lefthook optional). **Demo strategy (PD-025):** product-as-demo
+(`showcase/demos.json` → `id: main`). Cursor personal quota remains blocked
+(PD-023). Documentation upgrade Master Prompt Phases 1–7 landed on `main`
+(governance, contributor templates, process pack, engineering standard,
+blueprint, pruned Cursor rules, cleanup). Latest published release remains
+v1.3.3 (Phase 3 not yet tagged).
 
 ## Current phase
 
-- Completed: **EP-002** (all phases) and **post-EP-002 stabilization**
+- Completed: **EP-002**, **post-EP-002 stabilization**, **EP-004A on main**,
+  **docs upgrade Phases 1–7**
 - Architecture posture: **EP-004 targeted cleanup** (not full rewrite)
-- DevOps: **Quality CI + Release CD** (EP-004A) — hardened; awaiting merge to `main`
 - Showcase: **product-as-demo** (`demos.json` → `main` desktop)
 - Research: **EP-003 / EP-003A** complete; no Cursor production code
-- Current objective: land CI branch on `main`, update branch protection, dogfood,
-  then Product Owner release timing
+- Current objective: confirm GitHub branch protection (no `Build macOS`),
+  macOS arm64 dogfood, then Product Owner release timing; finish docs
+  Phase 8 validation
 
 ## Repository state
 
 - Current release: **v1.3.3** (`1.3.3+9`)
-- Main: still has legacy `ci.yml` with PR macOS builds until EP-004A merges
-- Active branch: `cursor/ep004a-local-first-ci` (upstream may be gone —
-  verify with `git status` / `git branch -vv`)
+- Active branch: **`main`** (EP-004A merged via PR #11)
 - Showcase contract: `showcase/metadata.json` + `showcase/demos.json`
+- Agent entry: root `AGENTS.md` · Blueprint: `docs/PROJECT_BLUEPRINT.md`
 
 Always re-run `git status` before changing anything.
 
@@ -58,18 +59,17 @@ Always re-run `git status` before changing anything.
 
 ## Completed this session
 
-- Analysis-only: Document Platform vs AI Tray engineering/docs parity plan
-  (`docs/reports/v2-refactor-plan.md`) — no code changes
-- Prior: Quality CI + Release CD hardening, ubuntu guardrail, DEMO_STRATEGY
+- Documentation upgrade Master Prompt Phases 1–7 (governance through cleanup)
+- Prior: Quality CI + Release CD on `main`, DEMO_STRATEGY / PD-025
 
 ## Immediate next actions
 
-1. Update GitHub branch protection: drop required `Build macOS`; keep
-   Format / Analyze / Test / Validate workflows.
-2. Land/merge EP-004A CI branch onto `main` (deletes legacy `ci.yml`).
+1. Confirm GitHub branch protection: drop required `Build macOS`; keep
+   Format / Analyze / Test / Validate workflows
+   (`docs/process/BRANCH_PROTECTION.md`).
+2. Finish Master Prompt Phase 8 validation report if not yet committed.
 3. Execute macOS arm64 dogfood checklist.
-4. Optional: start Phase 1 of `docs/reports/v2-refactor-plan.md` (governance
-   files only) when Product Owner approves — do not Melos-split or add web demo.
+4. Optional: targeted-cleanup import canonicalization (ADR-004).
 
 ## Verification baseline
 
@@ -83,6 +83,7 @@ cd tool/copilot_sdk_bridge && npm run check
 ```
 
 Quality CI + Release CD / Lefthook: `docs/devops/LOCAL_DEVELOPMENT.md`.  
-Demo strategy: `docs/devops/DEMO_STRATEGY.md`.
+Demo strategy: `docs/devops/DEMO_STRATEGY.md`.  
+Engineering: `docs/ENGINEERING_STANDARD.md`.
 
 Last recorded: analyzer clean, **144** non-golden, **7** golden, bridge 16 pass / 1 skip.

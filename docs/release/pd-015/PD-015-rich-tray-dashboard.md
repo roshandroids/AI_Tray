@@ -69,7 +69,7 @@ Quit
 
 Users can answer routine checks from the tray without opening the dashboard window.
 
-Implementation: [`tray_menu_builder.dart`](../../ai_tray/lib/features/tray/presentation/tray_menu_builder.dart) maps existing `RefreshStatus` → disabled info rows + actions. No repository or parser changes.
+Implementation: [`tray_menu_builder.dart`](../../../ai_tray/lib/features/tray/presentation/tray_menu_builder.dart) maps existing `RefreshStatus` → disabled info rows + actions. No repository or parser changes.
 
 ---
 

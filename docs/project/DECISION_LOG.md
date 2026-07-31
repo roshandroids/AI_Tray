@@ -34,7 +34,8 @@ ADRs, provider research, and implementation reports.
 | D-014 | 2026-07-19 | Accept ADR-004 targeted cleanup as the EP-004 posture | Active; full rewrite is contingency-only |
 | D-015 | 2026-07-19 | Local First CI (EP-004A): no desktop builds on PR/main; Quality + Documentation + Release (tag/dispatch) + Maintenance; Lefthook optional locally | Active; supersedes PR `Build macOS` required check; PO target &lt;300 Actions min/month |
 | D-016 | 2026-07-27 | Demo/Showcase: product-as-demo — `showcase/demos.json` lists `main` (desktop/Releases); no Flutter Web playground; ship `reusable-flutter-web-demo.yml` as callable template unused by AI Tray | Active; PD-025; see `docs/devops/DEMO_STRATEGY.md` |
-| D-017 | 2026-07-31 | Name and enforce **Quality CI + Release CD**: Ubuntu-only Quality on PR/push; macOS/Windows exclusively in Release CD (tag/`workflow_dispatch`); Quality validates companions stay ubuntu-only | Active; hardens D-015; delete legacy `ci.yml` on merge to `main` |
+| D-017 | 2026-07-31 | Name and enforce **Quality CI + Release CD**: Ubuntu-only Quality on PR/push; macOS/Windows exclusively in Release CD (tag/`workflow_dispatch`); Quality validates companions stay ubuntu-only | Active; hardens D-015; `ci.yml` removed on `main` (PR #11) |
+| D-018 | 2026-07-31 | Adopt Document Platform *standard* for governance/docs without Melos or web demo: root governance, CONTRIBUTING/AGENTS, process pack, ENGINEERING_STANDARD, PROJECT_BLUEPRINT, pruned Cursor rules | Active; Master Prompt Phases 1–7; see `docs/reports/v2-refactor-plan.md` |
 
 ## Decision maintenance
 

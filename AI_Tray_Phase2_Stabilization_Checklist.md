@@ -1,5 +1,9 @@
 # AI Tray --- Phase 2 Stabilization Checklist
 
+> **DEPRECATED (historical).** Stabilization records live under
+> [`docs/stabilization/`](docs/stabilization/). Living SoT:
+> [`docs/project/`](docs/project/).
+
 ## Autonomous Iteration Plan (Cursor)
 
 **Status:** v1.0.0-rc1 Accepted\

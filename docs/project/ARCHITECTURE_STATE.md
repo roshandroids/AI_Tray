@@ -2,7 +2,8 @@
 
 **Updated:** 2026-07-31
 **Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, provider-platform docs,
-EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017)
+EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017),
+`docs/ENGINEERING_STANDARD.md`, `docs/PROJECT_BLUEPRINT.md`
 
 ## System shape
 

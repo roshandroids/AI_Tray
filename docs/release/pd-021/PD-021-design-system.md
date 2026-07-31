@@ -24,7 +24,7 @@
 
 ### Docs
 
-- [`docs/design/DESIGN_SYSTEM.md`](../design/DESIGN_SYSTEM.md)
+- [`docs/design/DESIGN_SYSTEM.md`](../../design/DESIGN_SYSTEM.md)
 
 ## Known limitations
 

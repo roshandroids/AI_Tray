@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "stabilization_complete_ep004_targeted_cleanup_quality_ci_release_cd_d017_demo_strategy_pd025",
-  "current_epic": "ep004a-local-first-ci",
-  "current_phase": "Quality CI + Release CD (EP-004A/D-017) + PD-025 demo strategy; merge to main + dogfood pending",
+  "project_status": "ep004a_on_main_docs_upgrade_phases_1_7_dogfood_pending",
+  "current_epic": "ep004-targeted-cleanup-and-docs-upgrade",
+  "current_phase": "EP-004A on main; docs Master Prompt Phases 1-7 done; Phase 8 + dogfood + branch protection pending",
   "branch": {
-    "name": "cursor/ep004a-local-first-ci",
-    "commit": "99a9f7f",
+    "name": "main",
+    "commit": "e95f814",
     "base": "main"
   },
   "release": {
@@ -29,8 +29,8 @@
   },
   "repository_state": {
     "default_branch": "main",
-    "active_branch": "cursor/ep004a-local-first-ci",
-    "active_branch_commit": "99a9f7f",
+    "active_branch": "main",
+    "active_branch_commit": "e95f814",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -50,6 +50,13 @@
         "title": "Post-EP-002 stabilization",
         "url": "https://github.com/roshandroids/AI_Tray/pull/9",
         "merge_commit": "38045c9",
+        "state_at_snapshot": "merged"
+      },
+      {
+        "number": 11,
+        "title": "EP-004A Quality CI + Release CD",
+        "url": "https://github.com/roshandroids/AI_Tray/pull/11",
+        "merge_commit": "cbadbd7",
         "state_at_snapshot": "merged"
       }
     ],
@@ -134,7 +141,8 @@
       "docs/devops/LOCAL_DEVELOPMENT.md",
       "docs/devops/CI_AUDIT.md",
       "docs/devops/DEMO_STRATEGY.md",
-      "docs/release/CI-CD.md"
+      "docs/release/CI-CD.md",
+      "docs/process/CI_REQUIRED_CHECKS.md"
     ],
     "actions_minutes_target_per_month": 300,
     "actions_minutes_measured": null,
@@ -150,16 +158,24 @@
     "web_embed": "unavailable",
     "runnable_experience": "product_releases"
   },
+  "documentation": {
+    "upgrade_decision": "D-018",
+    "master_prompt_phases_completed": [1, 2, 3, 4, 5, 6, 7],
+    "engineering_standard": "docs/ENGINEERING_STANDARD.md",
+    "project_blueprint": "docs/PROJECT_BLUEPRINT.md",
+    "process": "docs/process/",
+    "cursor_rules": ".cursor/README.md"
+  },
   "completed": [
     "EP-002 Phase 3 merge",
     "EP-003/EP-003A research and handoff package",
     "Post-EP-002 stabilization baseline and P0 lifecycle fixes",
     "Sidecar protocol hardening and assembly smoke",
     "EP-004 assessment and ADR-004 targeted cleanup decision",
-    "EP-004A Local First CI (quality/docs/release/maintenance; no PR desktop)",
+    "EP-004A Local First CI on main (PR #11)",
     "PD-025 demo strategy and showcase demos.json contract",
-    "D-017 Quality CI + Release CD hardening (ubuntu-only guardrail)",
-    "Document Platform parity gap analysis (docs/reports/v2-refactor-plan.md)"
+    "D-017 Quality CI + Release CD hardening",
+    "Docs upgrade Master Prompt Phases 1-7 (D-018)"
   ],
   "product_decisions": [
     {
@@ -192,8 +208,9 @@
     }
   ],
   "current_work": [
-    "Merge Quality CI + Release CD to main; update branch protection",
+    "Confirm GitHub branch protection matches EP-004A",
     "Execute macOS arm64 dogfood checklist",
+    "Docs Master Prompt Phase 8 validation",
     "Product Owner release timing for Phase 3"
   ],
   "risks": [
@@ -215,9 +232,9 @@
     }
   ],
   "next_recommended_tasks": [
-    "Update branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
-    "Merge EP-004A Quality CI + Release CD onto main (deletes legacy ci.yml)",
+    "Update/verify branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
     "Run macOS arm64 dogfood checklist",
+    "Finish docs Phase 8 validation report",
     "Optionally start targeted-cleanup import canonicalization",
     "Keep Windows Experimental until hardware checklist passes",
     "Do not add a Flutter Web playground for AI Tray"
@@ -229,7 +246,8 @@
       "golden_tests": 7,
       "bridge_npm_check": "pass",
       "production_copilot_internal_references": 0,
-      "showcase_json": "valid"
+      "showcase_json": "valid",
+      "docs_relative_links": "pass_after_phase_7"
     },
     "commands": [
       "dart format --set-exit-if-changed lib test",

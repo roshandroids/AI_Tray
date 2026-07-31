@@ -657,7 +657,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | 4 — Engineering standard | **Completed** 2026-07-31 | `docs: add engineering standards` |
 | 5 — Project blueprint | **Completed** 2026-07-31 | `docs: add project blueprint` |
 | 6 — Cursor rules | **Completed** 2026-07-31 | `docs: refine cursor rules` |
-| 7 — Documentation cleanup | Pending | `docs: cleanup documentation` |
+| 7 — Documentation cleanup | **Completed** 2026-07-31 | `docs: cleanup documentation` |
 | 8 — Validation | Pending | `docs: finalize documentation upgrade` |
 
 ### Phase 1 notes
@@ -692,3 +692,9 @@ map, workflows, roadmap, getting started).
 Pruned Cursor rules: kept `project-handoff`; added documentation-first,
 architecture, decision-records, testing-standards, git-github-workflow,
 security, self-audit. Documented non-adopted DP rules in `.cursor/README.md`.
+
+### Phase 7 notes
+
+Fixed broken PD-015/016/021 links; updated architecture overview provider
+wording; deprecated root `AI_Tray_*.md` as historical; refreshed handoff for
+EP-004A-on-main + D-018; wrote `documentation-cleanup-summary.md`.

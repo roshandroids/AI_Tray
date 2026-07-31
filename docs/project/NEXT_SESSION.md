@@ -6,40 +6,39 @@
 
 1. Read `AI_HANDOFF.md` and `PROJECT_CONTEXT.json`.
 2. `git status`, `git branch --show-current`, `git log -5 --oneline`.
-3. Confirm EP-004A Quality CI + Release CD is merged (or open a PR); verify
-   required checks are `Format` | `Analyze` | `Test` | `Validate workflows`
-   and that `Build macOS` is **not** required.
-4. Skim `docs/devops/DEMO_STRATEGY.md` (PD-025) — product is the demo.
+3. Verify required checks are `Format` | `Analyze` | `Test` | `Validate workflows`
+   and that `Build macOS` is **not** required
+   ([BRANCH_PROTECTION.md](../process/BRANCH_PROTECTION.md)).
+4. Skim `docs/devops/DEMO_STRATEGY.md` (PD-025) and `AGENTS.md`.
 
 ## Current objective
 
-Land Quality CI + Release CD on `main`, complete macOS arm64 dogfood, then
-consider Phase 3 release timing or targeted-cleanup import PRs.
+Confirm branch protection matches EP-004A, complete macOS arm64 dogfood, then
+consider Phase 3 release timing or targeted-cleanup import PRs. Finish docs
+upgrade Phase 8 validation if still open.
 
 ## Prerequisites
 
 - Stabilization merged to `main` (PR #9)
+- EP-004A Quality CI + Release CD on `main` (PR #11)
 - ADR-004 / PD-024: targeted cleanup, not full rewrite
 - PD-023: no Cursor quota provider
 - PD-025: product-as-demo (`demos.json` id `main`)
-- EP-004A: require `Format` | `Analyze` | `Test` | `Validate workflows`;
-  never `Build macOS`
+- Docs Master Prompt Phases 1–7 complete on `main`
 
 ## Blockers
 
 - Windows Experimental until hardware checklist is completed
 - Phase 3 still unpublished; release needs Product Owner timing
-- Until EP-004A merges, `main` still runs legacy PR macOS builds
+- GitHub branch protection may still list stale `Build macOS` until updated
 
 ## Recommended next task
 
-1. Push/open PR for `cursor/ep004a-local-first-ci` if needed; merge after Quality green.
-2. Update branch protection (drop `Build macOS`).
-3. Run [`docs/dogfood/POST_EP002_MACOS_ARM64.md`](../dogfood/POST_EP002_MACOS_ARM64.md).
-4. If cleanup is approved: canonicalize imports to `core/` + `copilot/` only.
-5. If PO wants docs parity: start Phase 1 only from
-   [`docs/reports/v2-refactor-plan.md`](../reports/v2-refactor-plan.md).
-6. Do not add a Flutter Web playground for AI Tray; do not Melos-split for parity.
+1. Apply/verify branch protection ruleset
+   ([`docs/process/github-ruleset-protect-main-branch.json`](../process/github-ruleset-protect-main-branch.json)).
+2. Run [`docs/dogfood/POST_EP002_MACOS_ARM64.md`](../dogfood/POST_EP002_MACOS_ARM64.md).
+3. If cleanup is approved: canonicalize imports to `core/` + `copilot/` only.
+4. Do not add a Flutter Web playground; do not Melos-split for parity.
 
 ## Do not do next
 
@@ -51,8 +50,8 @@ consider Phase 3 release timing or targeted-cleanup import PRs.
 
 ## Acceptance criteria
 
-- EP-004A merged; `ci.yml` gone from `main`
-- Normal PRs run Ubuntu Quality only (no macOS/Windows jobs)
+- Branch protection matches EP-004A required checks
 - Showcase `demos.json` lists product `main` + DEMO_STRATEGY consistent with PD-025
 - Handoff JSON/Markdown consistent
 - No Cursor quota code
+- Docs validation report present after Phase 8

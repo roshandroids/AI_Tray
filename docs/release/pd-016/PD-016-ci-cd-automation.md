@@ -26,7 +26,7 @@
 
 ## 2. Comparison with MBO Research & CELPIP
 
-See [CI-CD.md](CI-CD.md#comparison-with-existing-repositories).
+See [CI-CD.md](../CI-CD.md#comparison-with-existing-repositories).
 
 **Key finding:** Neither reference repo has full desktop release automation yet. AI Tray adopts their **CI conventions** and extends with a **tag-driven release pipeline** PO requested for all personal projects (PD-017 foundation).
 
@@ -57,7 +57,7 @@ Developer → publish.sh → version bump + CHANGELOG + commit + tag + push
 
 ## 5. Documentation
 
-- [docs/release/CI-CD.md](CI-CD.md) — pipeline, troubleshooting, branch protection, manual fallback
+- [docs/release/CI-CD.md](../CI-CD.md) — pipeline, troubleshooting, branch protection, manual fallback
 
 ---
 

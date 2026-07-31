@@ -8,8 +8,8 @@
 Desktop companion that displays AI provider subscription usage in the system
 tray / menu bar. A provider registry resolves enabled implementations; raw
 provider output is parsed/validated into shared domain models, cached, and shown
-through capability-driven Riverpod-backed UI. Claude is the only enabled
-provider.
+through capability-driven Riverpod-backed UI. Claude Code is stable; GitHub
+Copilot is experimental via the official SDK sidecar.
 
 ## Layering
 

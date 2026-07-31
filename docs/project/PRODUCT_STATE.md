@@ -5,7 +5,8 @@
 **Positioning:** Desktop usage and health companion for AI developer tools
 **Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004)
 **Demo posture:** Product-as-demo via GitHub Releases (`demos.json` id `main`); no Flutter Web embed (PD-025)
-**CI posture:** Quality CI + Release CD (D-017) — desktop builds only on tag/dispatch
+**CI posture:** Quality CI + Release CD (D-017) on `main` — desktop builds only on tag/dispatch
+**Docs posture:** Governance + process + engineering standard + blueprint (D-018)
 
 ## Supported experience
 

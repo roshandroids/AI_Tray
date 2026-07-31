@@ -2,11 +2,16 @@
 
 ## Product Owner Master Roadmap (v1.0)
 
-> **Purpose**
+> **DEPRECATED (historical).** Living roadmap and session SoT:
+> [`docs/project/ROADMAP.md`](docs/project/ROADMAP.md),
+> [`docs/project/AI_HANDOFF.md`](docs/project/AI_HANDOFF.md),
+> [`docs/PROJECT_BLUEPRINT.md`](docs/PROJECT_BLUEPRINT.md).
+> Do not treat this file as the primary planning document.
+
+> **Purpose (original)**
 >
-> This document is the single source of truth for the project.
-> Cursor/Claude should use it as the primary planning document before
-> implementing any code.
+> This document was the single source of truth for early project planning.
+> Cursor/Claude should use the `docs/project/` handoff package instead.
 
 ------------------------------------------------------------------------
 
