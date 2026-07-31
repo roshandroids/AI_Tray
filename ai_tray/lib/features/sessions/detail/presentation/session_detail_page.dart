@@ -8,15 +8,18 @@ import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_controller.dart';
 import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
 import 'package:ai_tray/features/sessions/domain/models/resume_outcome.dart';
+import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
 import 'package:ai_tray/features/sessions/resume/presentation/resume_controller.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Session Detail view (Feature 1.2.2; M1 "Session Visibility"). Renders
-/// entirely from `SessionRepository.readSession()` — read-only, no mutating
-/// CLI action anywhere in this page.
+/// Session Detail view. Loads its data read-only from
+/// `SessionRepository.readSession()` (Feature 1.2.2), and hosts two
+/// acting sections added since: attended "Resume now" (Feature 2.2.1) and
+/// "Add to queue" (Feature 2.2.2) — both opt-in, both disabled with no
+/// decoded project path, never silent about what they do.
 final class SessionDetailPage extends ConsumerWidget {
   const SessionDetailPage({required this.sessionId, super.key});
 
@@ -128,6 +131,11 @@ final class _SessionDetailBody extends StatelessWidget {
               ),
               const SizedBox(height: Spacing.md),
               _ResumeSection(
+                sessionId: session.sessionId,
+                workingDirectory: session.projectPath,
+              ),
+              const SizedBox(height: Spacing.md),
+              _EnqueueSection(
                 sessionId: session.sessionId,
                 workingDirectory: session.projectPath,
               ),
@@ -351,6 +359,160 @@ final class _SessionDetailError extends StatelessWidget {
             Text('$error', style: type.bodySmall, textAlign: TextAlign.center),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "Enqueue from Session Detail" (Feature 2.2.2). A budget cap is
+/// mandatory (design principle 2) — the submit button stays disabled
+/// until both a prompt and a positive cap are entered; there is no
+/// "submit without a cap" path in this form. Enqueuing never triggers
+/// execution by itself (see `ResumeQueueController`'s own doc comment).
+final class _EnqueueSection extends ConsumerStatefulWidget {
+  const _EnqueueSection({
+    required this.sessionId,
+    required this.workingDirectory,
+  });
+
+  final String sessionId;
+  final String? workingDirectory;
+
+  @override
+  ConsumerState<_EnqueueSection> createState() => _EnqueueSectionState();
+}
+
+final class _EnqueueSectionState extends ConsumerState<_EnqueueSection> {
+  final _prompt = TextEditingController();
+  final _budgetCap = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+  bool _justEnqueued = false;
+
+  @override
+  void dispose() {
+    _prompt.dispose();
+    _budgetCap.dispose();
+    super.dispose();
+  }
+
+  double? get _parsedCap => double.tryParse(_budgetCap.text.trim());
+
+  bool get _canSubmit {
+    final workingDirectory = widget.workingDirectory;
+    final cap = _parsedCap;
+    return workingDirectory != null &&
+        !_submitting &&
+        _prompt.text.trim().isNotEmpty &&
+        cap != null &&
+        cap > 0;
+  }
+
+  Future<void> _submit() async {
+    final workingDirectory = widget.workingDirectory;
+    final cap = _parsedCap;
+    if (workingDirectory == null || cap == null) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+      _justEnqueued = false;
+    });
+
+    final ok = await ref
+        .read(resumeQueueControllerProvider.notifier)
+        .enqueue(
+          sessionId: widget.sessionId,
+          cwd: workingDirectory,
+          prompt: _prompt.text.trim(),
+          maxBudgetUsd: cap,
+        );
+
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _justEnqueued = ok;
+      _error = ok ? null : 'Could not add to the queue.';
+      if (ok) {
+        _prompt.clear();
+        _budgetCap.clear();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    final workingDirectory = widget.workingDirectory;
+
+    return SectionCard(
+      title: 'Add to queue',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (workingDirectory == null)
+            Text(
+              'Queueing is unavailable — the project path for this '
+              "session couldn't be determined.",
+              style: type.caption,
+            )
+          else ...[
+            TextField(
+              key: const ValueKey('enqueue-prompt-field'),
+              controller: _prompt,
+              maxLines: 3,
+              style: type.body,
+              enabled: !_submitting,
+              decoration: const InputDecoration(hintText: 'Continue with…'),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Spacing.sm),
+            TextField(
+              key: const ValueKey('enqueue-budget-cap-field'),
+              controller: _budgetCap,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              style: type.body,
+              enabled: !_submitting,
+              decoration: const InputDecoration(
+                labelText: 'Budget cap (USD) — required',
+                hintText: 'e.g. 2.00',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                key: const ValueKey('enqueue-submit-button'),
+                onPressed: _canSubmit ? () => unawaited(_submit()) : null,
+                child: _submitting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Add to queue'),
+              ),
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              _error!,
+              key: const ValueKey('enqueue-error'),
+              style: type.caption.copyWith(color: context.colors.error),
+            ),
+          ],
+          if (_justEnqueued) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              'Added to the resume queue.',
+              key: const ValueKey('enqueue-success'),
+              style: type.caption.copyWith(color: context.colors.success),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -8,6 +8,7 @@ import 'package:ai_tray/features/sessions/browser/presentation/session_browser_c
 import 'package:ai_tray/features/sessions/browser/presentation/session_list_filter.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
+import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_page.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +46,13 @@ final class _SessionBrowserPageState
       appBar: AppBar(
         title: const Text('Sessions'),
         actions: [
+          IconButton(
+            tooltip: 'Resume Queue',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ResumeQueuePage()),
+            ),
+            icon: const Icon(Icons.pending_actions_outlined),
+          ),
           IconButton(
             tooltip: 'Refresh',
             onPressed: sessionsAsync.isLoading

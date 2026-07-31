@@ -836,3 +836,173 @@ issues on every new/modified file in this feature.
   `shared_surfaces_controller_test.dart` timing test; nothing new.
 
 ---
+
+#### Feature 2.2.2 — Resume Queue — ✅ Complete
+
+**This is "the highest-risk story in the milestone"** per the roadmap's
+own words — the safety model (mandatory cap, fork-by-default, stale-`cwd`
+fail-fast, no auto-execute-by-default) had to compose correctly across a
+persisted model, a repository, and a sequential executor at once, not
+just one class.
+
+**Stories completed:** `ResumeQueueItem` model + bounded repository ·
+Enqueue from Session Detail · Sequential executor · Queue UI.
+
+**Files added:**
+- `lib/features/sessions/queue/domain/models/resume_queue_item.dart` —
+  `ResumeQueueItem` + `ResumeQueueStatus`; constructor validates the
+  budget cap synchronously (`ArgumentError`, mirrors `AppSettings`);
+  `tryFromJson` is the separate, tolerant read-path deserializer that
+  degrades (`null`) instead of throwing — see §9's own distinction
+  between these two paths, which this feature is the first to need.
+- `lib/features/sessions/queue/domain/repositories/resume_queue_repository.dart`
+  — port: `list()`, `enqueue()`, `updateStatus()`, `remove()` (§9's exact
+  method names)
+- `lib/features/sessions/queue/data/repositories/shared_preferences_resume_queue_repository.dart`
+  — one JSON array under `resume_queue_v1` (versioned-prefix convention,
+  §9), bounded at 50 (`maxSize`), evicts the oldest
+  `succeeded`/`failed` item first when full, fails fast with a visible
+  error when full with nothing evictable (never touches a
+  `pending`/`running` item)
+- `lib/features/sessions/queue/data/repositories/fake_resume_queue_repository.dart`
+  — in-memory fake, mirrors `FakeSessionRepository`'s configurable
+  shape
+- `lib/features/sessions/queue/data/services/resume_queue_executor.dart`
+  — `ResumeQueueExecutor.runNext()`: stale-`cwd` fail-fast (before any
+  process spawn), runs the oldest pending item through the same
+  `ClaudeSessionService.resume()` Feature 2.2.1 already built, single-
+  flight (see discoveries)
+- `lib/features/sessions/queue/presentation/{resume_queue_controller.dart, resume_queue_page.dart}`
+  — `AsyncNotifier<List<ResumeQueueItem>>` + a page rendering pending/
+  running/succeeded/failed items with a status chip and a "Run next"
+  action
+- `lib/features/sessions/queue/queue_providers.dart` — DI wiring
+- Tests: `resume_queue_item_test.dart`,
+  `shared_preferences_resume_queue_repository_test.dart`,
+  `resume_queue_executor_test.dart`, `resume_queue_controller_test.dart`,
+  `test/widget/resume_queue_page_test.dart`
+
+**Files modified:**
+- `lib/core/errors/failure_code.dart` — added `workingDirectoryMissing`
+  and `budgetCapRequired` (§8's two remaining reserved codes, both now
+  with a named producer *and* consumer, closing the Final Architecture
+  Validation's own "confirmed every FailureCode value has both" check)
+- `lib/features/usage/presentation/widgets/tray_empty_state.dart` —
+  bucketed both new codes with `unknown` in the same exhaustive switch
+  Feature 1.1.1 already had to touch for `sessionNotFound` — expected,
+  mechanical fallout of extending a shared enum, not a regression
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  added an "Add to queue" section (prompt + mandatory budget cap field;
+  submit stays disabled until both are valid); corrected its own class
+  doc comment, which had gone stale after Feature 2.2.1 added "Resume
+  now" but still claimed "no mutating CLI action anywhere in this page"
+- `lib/features/sessions/browser/presentation/session_browser_page.dart`
+  — added a toolbar entry point to `ResumeQueuePage`, matching the
+  existing bare `Navigator.push` pattern
+
+**Deviations from the roadmap, stated as deliberate scope decisions:**
+- **No auto-execute toggle exists yet.** Design principle 2 names
+  auto-execute as "an explicit, separate, off-by-default setting," but
+  none of this feature's four named stories (item+repo, enqueue UI,
+  executor, queue UI) is "build the auto-execute setting" — so items sit
+  `pending` until a human presses "Run next" in the Queue UI. This
+  satisfies the safety property (inert until a human acts) without
+  overbuilding a setting no story asked for. **Trigger for revisiting:**
+  the first time a story explicitly asks for background/scheduled
+  execution — likely Milestone 3, which is itself evidence-gated (see
+  the M3 blocker noted for this whole session).
+- **`ResumeQueueItem.forkSession` is always `true` in this pass** — every
+  item is created through the one enqueue path this feature builds
+  (Session Detail's "Add to queue" form), which is inherently for
+  deferred/unattended execution. §8's "false only when created via the
+  attended 'Resume now' action" describes a different creation path this
+  feature doesn't build (there is no "enqueue this as an attended run"
+  UI) — Feature 2.2.1's `ClaudeSessionService.resume()` already covers
+  the attended case directly, without ever touching the queue. Recorded
+  so a later reader doesn't mistake the hardcoded `true` for an
+  oversight.
+
+**Implementation discoveries for later milestones:**
+- **`ResumeQueueExecutor`'s single-flight shape deliberately diverges
+  from `RefreshService`'s.** `RefreshService.refresh()` *joins* a second
+  concurrent call to the same in-flight `Future` because callers want
+  that shared result. `ResumeQueueExecutor.runNext()` has no single
+  result to share (different calls could be for different items), so a
+  second concurrent call is simply a no-op instead — the actual
+  guarantee needed (acceptance criterion (c): "only one item executes at
+  a time") doesn't require joining, just not starting a second run. Both
+  are legitimate "single-flight" shapes; worth remembering they're not
+  interchangeable before copying either one for a third consumer.
+- **No new `uuid` dependency was needed for "app-generated" ids** (§8) —
+  confirmed `pubspec.yaml` has no `collection` or `uuid` package, and
+  §6 states no new dependency is required through M3. IDs are a
+  microsecond timestamp plus an in-memory counter
+  (`SharedPreferencesResumeQueueRepository._generateId`), sufficient
+  since ids only need to be unique within one device's stored queue, not
+  globally unique.
+- **Avoided introducing an anonymous public extension for
+  `Iterable.firstOrNull`** in `resume_queue_item.dart` — an unnamed
+  extension is still part of that library's exported surface, and would
+  risk an "ambiguous extension member" conflict for any future importer
+  that also brings in `package:collection`'s identically-named extension
+  on the same type. Replaced with a plain manual loop; worth remembering
+  this shape (manual loop, not a throwaway extension) for any future
+  "find the first matching item" need until/unless `collection` is
+  actually added as a real dependency.
+- The stale-`cwd` fail-fast check and the malformed-stored-item skip
+  both reuse the exact tolerate-and-degrade shape already established in
+  Feature 1.1.1 (`SessionFileSystem.stat()` racing a deleted file) and
+  Feature 1.1.2 (a malformed transcript line) — this is now the fourth
+  independent application of that same discipline across four different
+  layers (parser, repository, session-repository, queue), not a
+  coincidence: it is this roadmap's one consistent answer to "something
+  expected disappeared or was never really there."
+
+**Regression found:** None. The `FailureCode` switch fallout in
+`tray_empty_state.dart` was caught immediately by `flutter analyze`
+(Dart's own exhaustiveness check, not a grep) and fixed in the same pass
+that added the enum values — confirmed via a full project-wide
+`flutter analyze --fatal-infos` run before any queue code was written,
+matching the mandatory full-tree-analyze discipline Feature 1.1.1
+established.
+
+**ADR changes required:** None. This feature implements ADR-006's
+unattended-execution half of the safety model exactly as specified
+(mandatory cap via constructor validation, fork-by-default, stale-`cwd`
+fail-fast, no `project purge` exposure anywhere in this code).
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature, and a full
+project-wide run (not just the touched files) is clean too.
+
+**Test results:**
+- New: 14 `resume_queue_item_test.dart` cases (constructor validation ×4,
+  defaults ×2, `copyWith`, JSON round-trip ×2, tolerant-degrade ×5), 10
+  `shared_preferences_resume_queue_repository_test.dart` cases (empty,
+  enqueue+list, cross-instance persistence, constructor validation
+  propagates, `updateStatus` targets the right item, `remove` targets
+  the right item, eviction of oldest completed, fail-fast when full with
+  nothing evictable, malformed-item skip, non-JSON failure), 6
+  `resume_queue_executor_test.dart` cases (runs oldest pending →
+  succeeded, fork-session passed through, stale cwd fails fast with zero
+  process calls, a resume failure marks failed, no-op with nothing
+  pending, single-flight under concurrent calls), 4
+  `resume_queue_controller_test.dart` cases (populates state, enqueue
+  adds+refreshes, enqueue failure returns false, read failure surfaces
+  as `AsyncError`, `runNext` drives the executor and reloads — 5
+  total), 2 `resume_queue_page_test.dart` widget cases (one item of each
+  status, empty state), and 4 new `session_detail_page_test.dart` cases
+  (disabled without cap, disabled without prompt, enabled+succeeds with
+  both, a zero cap does not enable submit) — 40 new, all passing.
+- Sessions-scoped suite (`test/unit/sessions/` + all four session widget
+  test files): **157/157 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **350
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test; nothing new.
+
+**M2 exit criteria progress:** Manual resume (2.2.1) and queued resume
+(2.2.2) both now ship with the safety model enforced and tested. Epic
+2.3 (click-to-resume notifications) is the one remaining M2 story before
+the milestone's exit criteria are fully met.
+
+---
