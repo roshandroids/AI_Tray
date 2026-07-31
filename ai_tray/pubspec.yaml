@@ -7,6 +7,7 @@ environment:
   sdk: ^3.10.8
 
 dependencies:
+  flex_color_scheme: ^8.4.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.2
@@ -29,12 +30,29 @@ flutter:
     - assets/release_history.json
     - assets/tray/tray_icon_32.png
     - assets/tray/tray_icon.ico
+    - assets/tray/tray_menubar_template.png
+    - assets/tray/tray_menubar_template_16.png
+    - assets/tray/tray_menubar_template_18.png
+    - assets/tray/tray_menubar_template_36.png
+    - assets/tray/tray_menubar_template_dim.png
+    - assets/tray/tray_menubar_template_dim_36.png
     - assets/tray/tray_icon_live.png
     - assets/tray/tray_icon_cached.png
     - assets/tray/tray_icon_error.png
     - assets/tray/tray_icon_refreshing.png
     - assets/tray/tray_icon_waiting.png
+    - assets/app_icons/
   fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.otf
+          weight: 700
     - family: JetBrainsMono
       fonts:
         - asset: assets/fonts/JetBrainsMono-Regular.ttf
@@ -45,6 +63,26 @@ flutter:
           weight: 600
         - asset: assets/fonts/JetBrainsMono-Bold.ttf
           weight: 700
+    - family: FiraCode
+      fonts:
+        - asset: assets/fonts/FiraCode-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/FiraCode-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/FiraCode-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/FiraCode-Bold.ttf
+          weight: 700
+    - family: IBMPlexSans
+      fonts:
+        - asset: assets/fonts/IBMPlexSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSans-Bold.ttf
+          weight: 700
     - family: IBMPlexMono
       fonts:
         - asset: assets/fonts/IBMPlexMono-Regular.otf
@@ -53,3 +91,13 @@ flutter:
           weight: 500
         - asset: assets/fonts/IBMPlexMono-SemiBold.otf
           weight: 600
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700

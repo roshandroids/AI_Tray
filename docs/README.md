@@ -83,6 +83,9 @@ Blueprint: [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md) · Engineering:
 | [architecture/EP-004-provider-platform-assessment.md](architecture/EP-004-provider-platform-assessment.md) | EP-004 assessment |
 | [adr/README.md](adr/README.md) | ADR index |
 | [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Design system (PD-021) |
+| [design/MENU_BAR_ICON_CONCEPTS.md](design/MENU_BAR_ICON_CONCEPTS.md) | Menu-bar template icon concepts v1 (isolated) |
+| [design/MENU_BAR_ICON_CONCEPTS_V2.md](design/MENU_BAR_ICON_CONCEPTS_V2.md) | Menu-bar concepts v2 — real `[icon] NN%` context |
+| [design/MENU_BAR_DENSITY_AND_BENCHMARK.md](design/MENU_BAR_DENSITY_AND_BENCHMARK.md) | v3 — benchmark extras + density A/B/C (recommended path) |
 
 ### Research & reports
 

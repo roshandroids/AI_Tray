@@ -8,66 +8,43 @@ import 'package:ai_tray/features/usage/domain/models/weekly_usage.dart';
 import 'package:meta/meta.dart';
 import 'package:tray_manager/tray_manager.dart';
 
-/// View model for the native tray context menu (PD-015).
+/// View model for the native tray context menu.
+///
+/// Kept concise to match macOS menu-bar extra conventions: short status lines,
+/// then standard actions — no emoji chrome or ASCII meters.
 @immutable
 final class TrayMenuSnapshot {
   const TrayMenuSnapshot({
-    required this.title,
-    required this.connectionLabel,
-    required this.sessionBarLine,
-    required this.sessionPercentLine,
-    required this.sessionResetLine,
-    required this.weekTitleLine,
-    required this.weekBarLine,
-    required this.weekPercentLine,
-    required this.weekResetLine,
-    required this.footerStatusLine,
-    required this.footerUpdatedLine,
+    required this.headerLine,
+    required this.sessionLine,
+    required this.weekLine,
+    required this.updatedLine,
     required this.toolTip,
     required this.iconTitle,
   });
 
-  final String title;
-  final String connectionLabel;
-  final String sessionBarLine;
-  final String sessionPercentLine;
-  final String sessionResetLine;
-  final String weekTitleLine;
-  final String weekBarLine;
-  final String weekPercentLine;
-  final String weekResetLine;
-  final String footerStatusLine;
-  final String footerUpdatedLine;
+  final String headerLine;
+  final String sessionLine;
+  final String weekLine;
+  final String updatedLine;
   final String toolTip;
 
-  /// macOS menu-bar title beside the tray icon (empty when unavailable).
+  /// Resolved macOS menu-bar title (may be empty for icon-only / adaptive quiet).
   final String iconTitle;
 
   Menu buildMenu() {
     return Menu(
       items: [
-        _info('hdr_title', title),
-        MenuItem.separator(),
-        _info('hdr_connection', connectionLabel),
-        MenuItem.separator(),
-        _info('hdr_session', 'Current Session'),
-        _info('session_bar', sessionBarLine),
-        _info('session_pct', sessionPercentLine),
-        _info('session_reset', sessionResetLine),
-        MenuItem.separator(),
-        _info('hdr_week', weekTitleLine),
-        _info('week_bar', weekBarLine),
-        _info('week_pct', weekPercentLine),
-        _info('week_reset', weekResetLine),
-        MenuItem.separator(),
-        _info('footer_status', footerStatusLine),
-        _info('footer_updated', footerUpdatedLine),
+        _info('hdr', headerLine),
+        _info('session', sessionLine),
+        _info('week', weekLine),
+        _info('updated', updatedLine),
         MenuItem.separator(),
         MenuItem(key: 'open', label: 'Open Dashboard'),
         MenuItem(key: 'refresh', label: 'Refresh Now'),
-        MenuItem(key: 'settings', label: 'Settings'),
+        MenuItem(key: 'settings', label: 'Settings…'),
         MenuItem.separator(),
-        MenuItem(key: 'quit', label: 'Quit'),
+        MenuItem(key: 'quit', label: 'Quit AI Tray'),
       ],
     );
   }
@@ -79,12 +56,11 @@ final class TrayMenuSnapshot {
 
 /// Builds tray menu labels from live refresh status (presentation only).
 abstract final class TrayMenuBuilder {
-  static const _barWidth = 10;
-
   static TrayMenuSnapshot fromStatus(
     RefreshStatus status, {
     String providerDisplayName = 'Claude',
     String providerSourceLabel = 'Claude CLI',
+    String iconTitle = '',
   }) {
     final usage = status.lastResult?.usage;
     final outcome = status.lastResult?.status;
@@ -93,14 +69,6 @@ abstract final class TrayMenuBuilder {
 
     final sessionPct = usage?.sessionUsedPercent;
     final week = _primaryWeek(usage);
-
-    final connection = _connectionLabel(
-      refreshing: refreshing,
-      usage: usage,
-      error: error,
-      providerDisplayName: providerDisplayName,
-      providerSourceLabel: providerSourceLabel,
-    );
     final badge = _statusBadge(
       refreshing: refreshing,
       usage: usage,
@@ -108,54 +76,48 @@ abstract final class TrayMenuBuilder {
       error: error,
     );
     final updatedAt = status.lastSuccessAt ?? usage?.fetchedAt;
-    final updated = _relativeUpdated(updatedAt);
 
-    final sessionBar = sessionPct != null
-        ? _progressBar(sessionPct)
-        : _progressBar(0);
-    final sessionPctLine = sessionPct != null
-        ? '${sessionPct.round()}% used'
-        : '—';
-    final sessionReset = (usage?.sessionResetsAtRaw?.trim().isNotEmpty ?? false)
-        ? 'Resets ${usage!.sessionResetsAtRaw!.trim()}'
-        : 'Resets —';
+    final header = _headerLine(
+      providerDisplayName: providerDisplayName,
+      badge: badge,
+      error: error,
+      providerSourceLabel: providerSourceLabel,
+      refreshing: refreshing,
+    );
 
-    final weekTitle = week != null ? _weekTitle(week.label) : 'Current Week';
-    final weekBar = week != null
-        ? _progressBar(week.usedPercent)
-        : _progressBar(0);
-    final weekPctLine = week != null
-        ? '${week.usedPercent.round()}% used'
-        : '—';
-    final weekReset = (week?.resetsAtRaw?.trim().isNotEmpty ?? false)
-        ? 'Resets ${week!.resetsAtRaw!.trim()}'
-        : 'Resets —';
+    final sessionLine = sessionPct != null
+        ? _sessionLine(usage!, sessionPct)
+        : 'Session —';
+    final weekLine = week != null
+        ? 'Week ${week.usedPercent.round()}%'
+        : 'Week —';
+    final updatedLine = 'Updated ${_relativeUpdated(updatedAt)}';
 
     final toolTip = _toolTip(
+      providerDisplayName: providerDisplayName,
       sessionPct: sessionPct,
       weekPct: week?.usedPercent,
       badge: badge,
+      sessionReset: usage?.sessionResetsAtRaw,
     );
 
-    final iconTitle = sessionPct != null && !refreshing
-        ? '${sessionPct.round()}%'
-        : '';
-
     return TrayMenuSnapshot(
-      title: 'AI Tray',
-      connectionLabel: connection,
-      sessionBarLine: sessionBar,
-      sessionPercentLine: sessionPctLine,
-      sessionResetLine: sessionReset,
-      weekTitleLine: weekTitle,
-      weekBarLine: weekBar,
-      weekPercentLine: weekPctLine,
-      weekResetLine: weekReset,
-      footerStatusLine: badge,
-      footerUpdatedLine: 'Updated $updated',
+      headerLine: header,
+      sessionLine: sessionLine,
+      weekLine: weekLine,
+      updatedLine: updatedLine,
       toolTip: toolTip,
       iconTitle: iconTitle,
     );
+  }
+
+  static String _sessionLine(UsageInfo usage, double sessionPct) {
+    final reset = usage.sessionResetsAtRaw?.trim();
+    final pct = '${sessionPct.round()}%';
+    if (reset != null && reset.isNotEmpty) {
+      return 'Session $pct · Resets $reset';
+    }
+    return 'Session $pct';
   }
 
   static WeeklyUsage? _primaryWeek(UsageInfo? usage) {
@@ -168,39 +130,25 @@ abstract final class TrayMenuBuilder {
     return usage.weekly.first;
   }
 
-  static String _weekTitle(String label) {
-    final trimmed = label.trim();
-    if (trimmed.isEmpty) return 'Current Week';
-    return 'Current Week ($trimmed)';
-  }
-
-  static String _progressBar(double percent) {
-    final clamped = percent.clamp(0.0, 100.0);
-    final filled = (clamped / 100 * _barWidth).round().clamp(0, _barWidth);
-    final empty = _barWidth - filled;
-    return '${'█' * filled}${'░' * empty}';
-  }
-
-  static String _connectionLabel({
-    required bool refreshing,
-    required UsageInfo? usage,
-    required AppFailure? error,
+  static String _headerLine({
     required String providerDisplayName,
+    required String badge,
+    required AppFailure? error,
     required String providerSourceLabel,
+    required bool refreshing,
   }) {
-    if (refreshing) return '🔄 Refreshing…';
+    if (refreshing) return '$providerDisplayName · Refreshing';
     if (error != null) {
       return switch (error.code) {
-        FailureCode.cliNotInstalled => '🔴 $providerSourceLabel not found',
-        FailureCode.notAuthenticated => '🔴 Not authenticated',
-        FailureCode.timeout => '🔴 Refresh timed out',
+        FailureCode.cliNotInstalled => '$providerSourceLabel not found',
+        FailureCode.notAuthenticated => 'Not authenticated',
+        FailureCode.timeout => 'Refresh timed out',
         FailureCode.processLaunchFailed || FailureCode.processNonZeroExit =>
-          '🔴 Could not reach $providerDisplayName',
-        _ => '🔴 Connection error',
+          'Could not reach $providerDisplayName',
+        _ => '$providerDisplayName · Error',
       };
     }
-    if (usage != null) return '🟢 $providerDisplayName connected';
-    return '⚪ Waiting for usage data';
+    return '$providerDisplayName · $badge';
   }
 
   static String _statusBadge({
@@ -209,15 +157,13 @@ abstract final class TrayMenuBuilder {
     required RefreshOutcome? outcome,
     required AppFailure? error,
   }) {
-    if (refreshing) return '🔵 Refreshing';
-    if (outcome == RefreshOutcome.failure && error != null) {
-      return '🔴 Error';
-    }
-    if (usage == null) return '⚪ Waiting';
+    if (refreshing) return 'Refreshing';
+    if (outcome == RefreshOutcome.failure && error != null) return 'Error';
+    if (usage == null) return 'Waiting';
     if (usage.isFromCache || outcome == RefreshOutcome.softFailure) {
-      return '🟡 Cached';
+      return 'Cached';
     }
-    return '🟢 Live';
+    return 'Live';
   }
 
   static String _relativeUpdated(DateTime? at) {
@@ -233,19 +179,24 @@ abstract final class TrayMenuBuilder {
   }
 
   static String _toolTip({
+    required String providerDisplayName,
     required double? sessionPct,
     required double? weekPct,
     required String badge,
+    required String? sessionReset,
   }) {
-    final parts = <String>['AI Tray'];
+    final parts = <String>['AI Tray', providerDisplayName];
     if (sessionPct != null) {
       parts.add('Session ${sessionPct.round()}%');
     }
     if (weekPct != null) {
       parts.add('Week ${weekPct.round()}%');
     }
-    final status = badge.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-    if (status.isNotEmpty) parts.add(status);
+    final reset = sessionReset?.trim();
+    if (reset != null && reset.isNotEmpty) {
+      parts.add('Resets $reset');
+    }
+    parts.add(badge);
     return parts.join(' · ');
   }
 }

@@ -8,6 +8,7 @@ Architecture Decision Records for AI Tray.
 | [ADR-002](ADR-002-error-handling-resilience.md) | Error handling, cache, retry, logging | Approved | 2026-07-12 |
 | [ADR-003](ADR-003-provider-platform.md) | Provider registry and capability-driven UI | Accepted | 2026-07-16 |
 | [ADR-004](ADR-004-provider-platform-post-EP002-assessment.md) | Post-EP-002 targeted cleanup (not full rewrite) | Accepted | 2026-07-19 |
+| [ADR-005](ADR-005-flex-color-scheme-personalization.md) | FlexColorScheme branded personalization | Accepted | 2026-07-31 |
 
 ## Rules
 

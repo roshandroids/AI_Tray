@@ -15,13 +15,14 @@
 - D-020 CHANGELOG SoT + in-app release history (`release_history.json`)
 - PD-025 / D-016 demo strategy: product-as-demo (`demos.json` id `main`, desktop)
 - Docs/engineering upgrade Master Prompt Phases 1–8 (D-018)
+- PD-026 / ADR-005 FlexColorScheme personalization (feature branch)
 
 ## Current milestone
 
-1. Confirm GitHub branch protection (drop `Build macOS` if still required).
-2. Execute macOS arm64 dogfood checklist.
-3. Product Owner decides whether/when to publish a release including Phase 3.
-4. Optional: begin targeted-cleanup import canonicalization.
+1. Merge `feat/personalization-flex-theme` via PR.
+2. Confirm GitHub branch protection (drop `Build macOS` if still required).
+3. Execute macOS arm64 dogfood checklist (including Appearance).
+4. Product Owner decides whether/when to publish a release including Phase 3.
 
 ## Upcoming
 

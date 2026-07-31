@@ -7,44 +7,40 @@
 
 AI Tray is a Flutter desktop companion for AI-provider subscription usage
 (Claude stable; Copilot experimental). EP-004A Quality CI + Release CD is on
-`main`. **D-019** shared `scripts/` Local DX + Remote CI (CI_MODE local-only).
-**D-020** keeps `CHANGELOG.md` as release-notes SoT; publish syncs
-`release_history.json` for Settings About / Diagnostics. Docs upgrade Phases
-1–8 (D-018) landed. Demo strategy PD-025: product-as-demo. Latest release
-v1.3.3 (Phase 3 not yet tagged).
+`main`. **D-019** shared `scripts/` Local DX + Remote CI. **D-020** CHANGELOG
+SoT + in-app release history. **PD-026 / D-021 / ADR-005** FlexColorScheme
+personalization and **PD-027 / D-022** adaptive menu-bar density + template
+glyph are on `feat/personalization-flex-theme`. Latest release v1.3.3.
 
 ## Current phase
 
-- Product: in-app release history (D-020)
-- DevOps: shared scripts Local DX + Remote CI (D-019)
-- Next: branch protection confirm, macOS dogfood, PO release timing
+- Product: Personalization + menu-bar UX on feature branch (pending PR)
+- DevOps: branch protection confirm, macOS dogfood, PO release timing
 
 ## Repository state
 
-- Branch: **`main`**
+- Branch: **`feat/personalization-flex-theme`**
 - Showcase: `showcase/demos.json` → `id: main`
-- Scripts: `./scripts/check.sh`, `./scripts/release.sh`, `./scripts/publish.sh`
-- Toolchain pins: `.ci/toolchain.env` (Local DX + Actions)
-- Release notes SoT: `CHANGELOG.md` → `ai_tray/assets/release_history.json`
+- Theme: `ai_tray/lib/theme/` · Tray density: `TrayDisplayMode`
 
 ## Completed this session
 
-- D-020 release notes SoT + in-app What’s New / history
-- `sync_release_history.sh` wired into `publish.sh`
-- Settings About + Diagnostics use `package_info_plus`
+- ThemeFactory: full light/dark palettes + component themes from presets
+- Appearance: expandable Theme / Font / App Icon + Menu Bar density settings
+- Concise native tray dropdown (no emoji / ASCII meters)
+- Adaptive / Always % / Icon-only title; threshold default 90%
+- G1 solid template icon + dim opacity pulse while refreshing
+- Tooltip always carries full usage
 
 ## Immediate next actions
 
-1. Confirm branch protection (no `Build macOS`)
-2. macOS arm64 dogfood
-3. Commit D-019 shared-scripts work if still uncommitted (separate from D-020)
+1. Commit + open PR to `main`; wait for Quality CI
+2. macOS dogfood: Appearance themes + Menu Bar density + template icon
+3. Confirm branch protection (no `Build macOS`)
 
 ## Verification
 
 ```bash
-./scripts/release/sync_release_history.sh
-cd ai_tray && flutter test test/unit/release_history_test.dart \
-  test/widget/about_settings_test.dart
-./scripts/doctor.sh
-./scripts/check.sh workflows
+cd ai_tray && flutter analyze --fatal-infos
+flutter test test/unit/theme/ test/unit/tray/ test/widget/personalization_pickers_test.dart
 ```

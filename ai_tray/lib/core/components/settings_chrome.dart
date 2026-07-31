@@ -159,11 +159,11 @@ final class SettingsGroup extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Spacing.sm),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: context.colors.surface,
+        Material(
+          color: context.colors.surface,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(RadiusTokens.md),
-            border: Border.all(color: context.colors.border),
+            side: BorderSide(color: context.colors.border),
           ),
           child: Padding(
             padding: const EdgeInsets.all(Spacing.md),

@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "d020_release_notes_sot_d019_shared_scripts_dogfood_pending",
+  "project_status": "pd026_pd027_personalization_menubar_pending_pr",
   "current_epic": "ep004-targeted-cleanup-and-docs-upgrade",
-  "current_phase": "D-020 in-app release history landed; D-019 scripts may still be uncommitted; dogfood + branch protection pending",
+  "current_phase": "PD-026 personalization + PD-027 adaptive menu bar on feat/personalization-flex-theme; dogfood + PR pending",
   "branch": {
-    "name": "main",
-    "commit": "ff84b9a",
+    "name": "feat/personalization-flex-theme",
+    "commit": "899eac2",
     "base": "main"
   },
   "release": {
@@ -29,8 +29,8 @@
   },
   "repository_state": {
     "default_branch": "main",
-    "active_branch": "main",
-    "active_branch_commit": "ff84b9a",
+    "active_branch": "feat/personalization-flex-theme",
+    "active_branch_commit": "899eac2",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -57,6 +57,13 @@
         "title": "EP-004A Quality CI + Release CD",
         "url": "https://github.com/roshandroids/AI_Tray/pull/11",
         "merge_commit": "cbadbd7",
+        "state_at_snapshot": "merged"
+      },
+      {
+        "number": 12,
+        "title": "ci: shared local/remote CI and in-app release history",
+        "url": "https://github.com/roshandroids/AI_Tray/pull/12",
+        "merge_commit": "6dc4608",
         "state_at_snapshot": "merged"
       }
     ],
@@ -94,6 +101,12 @@
       "features/providers/core",
       "features/providers/copilot"
     ],
+    "personalization": {
+      "module": "lib/theme/",
+      "engine": "flex_color_scheme",
+      "decision": "ADR-005",
+      "product_decision": "PD-026"
+    },
     "ep004_posture": "targeted_cleanup",
     "ci_local_first": true,
     "ci_model": "quality_ci_plus_release_cd_shared_scripts",
@@ -130,7 +143,9 @@
     "removed": [
       ".github/workflows/ci.yml"
     ],
-    "quality_runners": ["ubuntu-latest"],
+    "quality_runners": [
+      "ubuntu-latest"
+    ],
     "desktop_builds": "tag_or_workflow_dispatch_only",
     "desktop_runners_allowed_only_in": "release.yml",
     "web_demo_builds": "not_applicable_for_ai_tray",
@@ -180,7 +195,16 @@
   },
   "documentation": {
     "upgrade_decision": "D-018",
-    "master_prompt_phases_completed": [1, 2, 3, 4, 5, 6, 7, 8],
+    "master_prompt_phases_completed": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
     "engineering_standard": "docs/ENGINEERING_STANDARD.md",
     "project_blueprint": "docs/PROJECT_BLUEPRINT.md",
     "process": "docs/process/",
@@ -198,7 +222,8 @@
     "D-017 Quality CI + Release CD hardening",
     "Docs upgrade Master Prompt Phases 1-8 (D-018)",
     "D-019 shared scripts Local DX + Remote CI",
-    "D-020 CHANGELOG SoT + release_history.json + in-app About/history"
+    "D-020 CHANGELOG SoT + release_history.json + in-app About/history",
+    "PD-026 FlexColorScheme personalization implementation (pending PR)"
   ],
   "product_decisions": [
     {
@@ -228,12 +253,20 @@
       "decision": "Product-as-demo: showcase/demos.json lists AI Tray (id main, type desktop) via GitHub Releases; no duplicate playground or Flutter Web embed",
       "rationale": "RSProjects Demo Standard: application repositories use the product as the demo; tray/CLI/sidecar cannot embed on web",
       "impact": "demos.json product entry; reusable-flutter-web-demo.yml for other RSProjects only; DEMO_STRATEGY.md"
+    },
+    {
+      "id": "PD-026",
+      "date": "2026-07-31",
+      "status": "approved_implemented",
+      "decision": "Branded FlexColorScheme personalization with custom theme presets, bundled fonts, and app-icon architecture",
+      "rationale": "Selectable appearance without rewriting tray surfaces; offline desktop forbids runtime font downloads",
+      "impact": "lib/theme module; Settings Appearance pickers; settings_v1 persistence; ADR-005"
     }
   ],
   "current_work": [
-    "Commit D-020 release-notes / D-019 shared-scripts if still uncommitted",
+    "Open PR for feat/personalization-flex-theme",
     "Confirm GitHub branch protection matches EP-004A",
-    "Execute macOS arm64 dogfood checklist (Settings → About)",
+    "Execute macOS arm64 dogfood checklist (Appearance + About)",
     "Product Owner release timing for Phase 3"
   ],
   "risks": [
@@ -255,22 +288,21 @@
     }
   ],
   "next_recommended_tasks": [
+    "Commit and open PR for personalization (PD-026)",
     "Update/verify branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
-    "Run macOS arm64 dogfood checklist; verify Settings About What’s New",
+    "Run macOS arm64 dogfood checklist; verify Appearance + Settings About",
     "Never hand-edit ai_tray/assets/release_history.json",
-    "Optionally start targeted-cleanup import canonicalization",
     "Keep Windows Experimental until hardware checklist passes",
     "Do not add a Flutter Web playground for AI Tray"
   ],
   "verification": {
     "last_recorded": {
       "flutter_analyze": "pass",
-      "non_golden_tests": 144,
-      "golden_tests": 7,
-      "bridge_npm_check": "pass",
+      "theme_unit_widget_tests": "pass",
+      "golden_tests": "pass_updated_baselines",
+      "bridge_npm_check": "not_rerun_this_session",
       "production_copilot_internal_references": 0,
-      "showcase_json": "valid",
-      "docs_relative_links": "pass_after_phase_7"
+      "showcase_json": "valid"
     },
     "commands": [
       "dart format --set-exit-if-changed lib test",

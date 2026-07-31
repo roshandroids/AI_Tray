@@ -145,7 +145,11 @@ final class TrayEmptyState extends StatelessWidget {
         body: 'The previous refresh was interrupted.',
         hint: 'Press Refresh to try again.',
       ),
-      FailureCode.unknown => (
+      // sessionNotFound is a Session Browser (v2) code — the usage-refresh
+      // pipeline that feeds this widget never produces it; bucketed with
+      // unknown rather than given its own unreachable-here copy.
+      FailureCode.unknown ||
+      FailureCode.sessionNotFound => (
         title: 'Refresh failed',
         body: failure.message,
         hint: 'See Troubleshooting in the docs if this keeps happening.',
