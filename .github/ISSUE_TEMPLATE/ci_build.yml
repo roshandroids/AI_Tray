@@ -1,0 +1,54 @@
+name: CI / DevOps
+description: Quality CI, Release CD, Lefthook, or workflow issues
+title: "ci: "
+labels: ["ci", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Policy: [LOCAL_DEVELOPMENT.md](https://github.com/roshandroids/AI_Tray/blob/main/docs/devops/LOCAL_DEVELOPMENT.md) · [CI-CD.md](https://github.com/roshandroids/AI_Tray/blob/main/docs/release/CI-CD.md)
+        Desktop builds belong in Release CD only — not Quality CI.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Quality CI (quality.yml)
+        - Documentation workflow
+        - Release CD (release.yml)
+        - Maintenance workflow
+        - Lefthook / local hooks
+        - Branch protection / required checks
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: run_url
+    attributes:
+      label: Failing run URL (if any)
+      placeholder: https://github.com/roshandroids/AI_Tray/actions/runs/…
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true

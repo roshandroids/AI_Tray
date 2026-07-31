@@ -1,0 +1,46 @@
+name: Documentation
+description: Docs fix, clarification, or process documentation gap
+title: "docs: "
+labels: ["documentation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Prefer fixing small typos via PR. Use this Issue for larger gaps or conflicting sources of truth.
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Doc location
+      description: Path or URL of the outdated / missing doc.
+      placeholder: docs/guides/troubleshooting.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is wrong, missing, or conflicting?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed fix
+      description: What should the doc say instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Primary audience
+      options:
+        - End user
+        - Contributor
+        - AI agent
+        - Releaser / dogfooder
+    validations:
+      required: true

@@ -59,6 +59,7 @@ See [GitHub Copilot provider docs](docs/providers/github-copilot.md) and the
 | User guide | [docs/guides/user-guide.md](docs/guides/user-guide.md) |
 | Troubleshooting | [docs/guides/troubleshooting.md](docs/guides/troubleshooting.md) |
 | Known issues | [docs/release/known-issues.md](docs/release/known-issues.md) |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) · [AGENTS.md](AGENTS.md) |
 | Support / Security | [SUPPORT.md](SUPPORT.md) · [SECURITY.md](SECURITY.md) |
 | License / Ownership / CoC | [LICENSE](LICENSE) · [OWNERSHIP.md](OWNERSHIP.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
 

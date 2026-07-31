@@ -652,7 +652,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | Master Prompt phase | Status | Commit message |
 | --- | --- | --- |
 | 1 — Repository governance | **Completed** 2026-07-31 | `docs: add repository governance` |
-| 2 — Community & contributor experience | Pending | `docs: add contributor documentation` |
+| 2 — Community & contributor experience | **Completed** 2026-07-31 | `docs: add contributor documentation` |
 | 3 — Documentation foundation | Pending | `docs: organize documentation structure` |
 | 4 — Engineering standard | Pending | `docs: add engineering standards` |
 | 5 — Project blueprint | Pending | `docs: add project blueprint` |
@@ -664,3 +664,8 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 
 Added: `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`,
 `OWNERSHIP.md`; README quick links updated.
+
+### Phase 2 notes
+
+Added: `CONTRIBUTING.md`, `AGENTS.md`, `.github/CODEOWNERS`,
+`.github/PULL_REQUEST_TEMPLATE.md`, issue templates (bug, feature, docs, CI).

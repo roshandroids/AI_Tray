@@ -1,0 +1,83 @@
+name: Feature request
+description: Propose a feature, enhancement, or non-trivial refactor
+title: "feat: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        AI Tray is solo-maintained. Features need clear motivation, acceptance criteria, and Product Owner alignment.
+        See [CONTRIBUTING.md](https://github.com/roshandroids/AI_Tray/blob/main/CONTRIBUTING.md) and product decisions in `docs/project/DECISION_LOG.md`.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What problem does this solve for users?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should happen when the feature is done?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable checklist.
+      placeholder: |
+        - [ ] …
+        - [ ] …
+        - [ ] Tests / docs updated as applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What is explicitly out of scope?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Tray / dashboard UI
+        - Claude Code provider
+        - GitHub Copilot / sidecar
+        - Settings / diagnostics / logs
+        - Refresh / cache / resilience
+        - Packaging / release
+        - CI / DevOps
+        - Docs / process
+        - Multiple / unknown
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraint check
+      options:
+        - label: Does not require Cursor personal quota (blocked by PD-023)
+          required: true
+        - label: Does not require a Flutter Web tray playground (blocked by PD-025)
+          required: true
+        - label: Does not invent usage values or scrape undocumented APIs
+          required: true
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks
+      description: Architecture, provider stability, Windows Experimental, ADR needs.
+    validations:
+      required: true

@@ -14,7 +14,7 @@ effort.
 | Copilot provider | [docs/providers/github-copilot.md](docs/providers/github-copilot.md) |
 | Bug report | GitHub Issues (use the bug template when available) |
 | Security | [SECURITY.md](SECURITY.md) — **not** public issues |
-| Contributing | See repository `CONTRIBUTING.md` when present |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md) |
 
 ## What to include in a bug report
 

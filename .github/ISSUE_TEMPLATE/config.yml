@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support / troubleshooting
+    url: https://github.com/roshandroids/AI_Tray/blob/main/SUPPORT.md
+    about: Install, usage, and troubleshooting pointers before filing an issue
+  - name: Security vulnerability
+    url: https://github.com/roshandroids/AI_Tray/blob/main/SECURITY.md
+    about: Report security issues privately — do not open a public issue
+  - name: Contributing guide
+    url: https://github.com/roshandroids/AI_Tray/blob/main/CONTRIBUTING.md
+    about: Day-1 setup and contribution workflow

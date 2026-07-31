@@ -1,0 +1,119 @@
+name: Bug report
+description: Report a defect or regression in AI Tray
+title: "bug: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check [SUPPORT.md](https://github.com/roshandroids/AI_Tray/blob/main/SUPPORT.md) and [known issues](https://github.com/roshandroids/AI_Tray/blob/main/docs/release/known-issues.md) first.
+        Security issues: [SECURITY.md](https://github.com/roshandroids/AI_Tray/blob/main/SECURITY.md) — do not file publicly.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph symptom description.
+      placeholder: When I…, the tray…
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Blocker — app unusable / wrong usage invented
+        - High — major workflow broken
+        - Medium — workaround exists
+        - Low — minor / cosmetic
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: AI Tray version
+      description: Release tag or commit SHA.
+      placeholder: v1.3.3 or abc1234
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS arm64
+        - Windows x64
+        - Other / unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider involved
+      options:
+        - Claude Code
+        - GitHub Copilot
+        - Both
+        - Neither / app shell only
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal numbered steps.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Is this a regression?
+      options:
+        - "Yes"
+        - "No"
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Screenshots, logs from the in-app Logs screen (redact secrets).
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: acknowledgements
+    attributes:
+      label: Acknowledgements
+      options:
+        - label: I redacted secrets / tokens from logs and screenshots
+          required: true
+        - label: This is not a security vulnerability (those go to SECURITY.md)
+          required: true
