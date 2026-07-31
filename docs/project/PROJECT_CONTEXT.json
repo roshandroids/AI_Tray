@@ -7,7 +7,7 @@
   "current_phase": "EP-004A on main; docs Master Prompt Phases 1-8 complete; dogfood + branch protection pending",
   "branch": {
     "name": "main",
-    "commit": "065ce3b",
+    "commit": "ff84b9a",
     "base": "main"
   },
   "release": {
@@ -30,7 +30,7 @@
   "repository_state": {
     "default_branch": "main",
     "active_branch": "main",
-    "active_branch_commit": "065ce3b",
+    "active_branch_commit": "ff84b9a",
     "merged_pull_requests": [
       {
         "number": 7,
