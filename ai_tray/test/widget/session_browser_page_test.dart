@@ -1,7 +1,9 @@
 import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_browser_page.dart';
 import 'package:ai_tray/features/sessions/data/repositories/fake_session_repository.dart';
+import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
+import 'package:ai_tray/features/sessions/domain/models/session_token_totals.dart';
 import 'package:ai_tray/features/sessions/session_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -192,5 +194,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Live'), findsOneWidget);
+  });
+
+  testWidgets('tapping a session tile opens its detail page', (tester) async {
+    final repository = FakeSessionRepository(
+      sessions: [
+        summary(sessionId: 'abc', projectPath: '/home/claude/ai-tray'),
+      ],
+    )..setSession(
+      const ClaudeSession(
+        sessionId: 'abc',
+        sanitizedProjectDirName: '-home-claude-ai-tray',
+        projectPath: '/home/claude/ai-tray',
+        messageCount: 3,
+        tokenTotals: SessionTokenTotals(),
+        isComplete: true,
+        model: 'claude-opus-5',
+      ),
+    );
+
+    await pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('/home/claude/ai-tray'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('claude-opus-5'), findsOneWidget);
   });
 }

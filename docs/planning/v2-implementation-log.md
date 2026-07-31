@@ -478,3 +478,140 @@ issues on every new/modified file in this feature.
   were failing before this feature (see "Branch note" above for why).
 
 ---
+
+#### Feature 1.2.2 — Session Detail View — ✅ Complete
+
+**Stories completed:** Detail page · Graceful incomplete-session
+rendering.
+
+**Files added:**
+- `lib/features/sessions/detail/presentation/session_detail_controller.dart`
+  — `sessionDetailProvider`, a `FutureProvider.family<ClaudeSession,
+  String>` (not an `AsyncNotifierProvider.family` — see discoveries
+  below), plus `SessionLoadException` (carries the original
+  `FailureCode`, extends `Error`)
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  renders model, git branch, last activity, message count, token totals
+  via `SectionCard`/`InfoRow` (`core/components/section_chrome.dart`,
+  already used by 1.2.1); live badge reuses `StatusBadge`/
+  `TrayStatusKind.live` exactly as the browser tile does; incomplete
+  banner is a small local widget (the "graceful incomplete rendering"
+  story); "session no longer available" state is its own distinct
+  branch, keyed off `SessionLoadException.code == sessionNotFound`
+- `test/unit/sessions/session_detail_controller_test.dart`,
+  `test/widget/session_detail_page_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/domain/repositories/session_repository.dart` —
+  added `readSession(String sessionId)`. This is the method Feature
+  1.2.1's log entry deliberately deferred ("nothing needs them yet") —
+  this feature is the first and only caller.
+- `lib/features/sessions/data/repositories/file_system_session_repository.dart`
+  — implements `readSession()`: re-enumerates session files (no new
+  lookup table — consistent with §9's "no cache, re-derive live each
+  call"), matches by `sessionId`, and only then reads/parses the single
+  matching file's full content. Returns `FailureCode.sessionNotFound`
+  when no file matches — the real listing-vs-opening race §21 names for
+  this exact feature.
+- `lib/features/sessions/data/repositories/fake_session_repository.dart`
+  — added `setSession()`/`setSessionFailure()` for the detail path,
+  mirroring the existing `setSessions()`/`setFailure()` pair
+- `test/unit/sessions/file_system_session_repository_test.dart` — added
+  a `readSession` group (4 new cases)
+- `lib/features/sessions/browser/presentation/session_browser_page.dart`
+  — tiles are now wrapped in `InkWell` and push `SessionDetailPage`,
+  matching the bare `Navigator.push(MaterialPageRoute)` pattern already
+  used everywhere else in this codebase (no router)
+- `test/widget/session_browser_page_test.dart` — added a
+  tile-tap-opens-detail-page test
+
+**Deviations from the roadmap:** None in shape or intent — `readSession()`
+lands exactly where 1.2.1's log entry predicted it would.
+
+**Implementation discoveries for later milestones (both significant —
+read before building Feature 2.2.1's `ClaudeSessionService.resume()` or
+any other new provider):**
+
+1. **`AsyncNotifierProvider.family` does not exist in this project's
+   installed `riverpod` (3.3.2) manual API.** Checked the installed
+   package source directly (not assumed): `AsyncNotifierProvider` has no
+   `static const family = ...Builder()` the way `Provider`,
+   `FutureProvider`, and `StreamProvider` all do — a family notifier is
+   codegen-only (`@riverpod`-annotated classes via `riverpod_generator`),
+   which this codebase doesn't use anywhere (no `.g.dart` files, no
+   `build_runner` dependency). `session_detail_controller.dart` therefore
+   uses `FutureProvider.family` instead — same `AsyncValue` loading/data/
+   error shape, no controller mutation methods needed since this feature
+   has no "refresh" story. **Trigger for revisiting:** if a future
+   feature needs a per-argument controller with mutation methods (not
+   just a one-shot load), that is the point to either add
+   `riverpod_generator` as a new dependency (a real decision, not a
+   silent one) or hand-roll a family-keyed state map inside a
+   non-family `AsyncNotifier` — not to reach for
+   `AsyncNotifierProvider.family` again, since it isn't available.
+2. **Riverpod 3.x retries a provider's failed `create` call automatically
+   — up to 10× with exponential backoff — unless the thrown object `is
+   Error`** (`ProviderContainer.defaultRetry`, checked directly in the
+   installed package source: `if (error is ProviderException || error is
+   Error) return null;`). Throwing `SessionLoadException` as a plain
+   `implements Exception` type reproduced this as a real, reproduced
+   test hang (30s timeout), not a hypothetical — the failure was logged
+   immediately, but `.future` didn't settle until the retry backoff
+   window was exhausted (well past any reasonable test/UI wait).
+   Changing it to `extends Error` fixed it immediately. This retroactively
+   explains *why* `SessionBrowserController._load()` (Feature 1.2.1) and
+   `SettingsNotifier`/`ProviderSelectionNotifier` (pre-v2) all already
+   throw `StateError` rather than a custom `Exception` type — their own
+   comments cited only the `only_throw_errors` lint, but throwing a
+   `StateError` (an `Error` subclass) also incidentally avoided this
+   retry behavior. **This is a load-bearing rule for every future
+   provider in this codebase, not just sessions:** a provider's `build`/
+   `create` callback must throw something that `is Error` for an
+   intentionally terminal failure — never a bare `Exception` implementer
+   — or it will silently retry for up to ~30+ seconds before surfacing.
+   Worth a shared note if this codebase adds more providers with typed
+   failure information going forward.
+3. Evaluated and reverted `FutureProvider.autoDispose` for
+   `sessionDetailProvider`: a plain `ref.read(provider.future)`/
+   `container.read(provider.future)` call — used by both the page and
+   tests — has no active `ref.watch`/`container.listen` keeping it
+   alive, so an autoDispose provider gets scheduled for disposal while
+   its future is still pending, producing a `disposed during loading
+   state` error (also reproduced directly, not assumed). No other
+   provider in this codebase uses `autoDispose`, so keeping this one
+   consistent (no autoDispose) was the simpler, lower-risk choice over
+   teaching every read site to hold a keep-alive subscription.
+
+**Regression found:** None. `InkWell`-wrapping the browser tile and
+adding `SessionDetailPage` navigation only touches
+`session_browser_page.dart`, already covered by Feature 1.2.1's own
+widget tests (all still pass) plus the new tap-navigation test.
+
+**ADR changes required:** None. `readSession()`'s shape and behavior
+match §9 exactly; the retry/family discoveries above are riverpod-version
+implementation details, not architectural decisions this roadmap governs.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 4 repository cases (`readSession` group), 5
+  `session_detail_controller_test.dart` cases (loads by id, keyed
+  independently per id, `sessionNotFound` surfaces as
+  `SessionLoadException` with the right code, other failures surface
+  their own code, — 4 total plus the keying test), 5
+  `session_detail_page_test.dart` widget cases (renders detail fields,
+  session-not-found state, incomplete indicator shown/not-shown, live
+  badge), and 1 new browser-page test (tap opens detail).
+- Sessions-scoped suite (`test/unit/sessions/` + both session widget test
+  files): **95/95 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **280
+  passed, 1 failed** — the single failure is the same pre-existing,
+  unrelated `shared_surfaces_controller_test.dart` timing test recorded
+  under Feature 1.2.1's log entry; nothing new.
+
+**M1 exit criteria:** met. Session Browser (list + detail) is read-only —
+independently verifiable by grep: no `--resume`, no write call anywhere
+under `lib/features/sessions/`.
+
+---

@@ -6,6 +6,7 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_browser_controller.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_list_filter.dart';
+import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
@@ -129,38 +130,46 @@ final class _SessionListTile extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    projectLabel,
-                    style: type.body,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: Spacing.xs),
-                  Text(
-                    '${UsageStatusMapper.relativeUpdated(
-                      summary.lastActivityAt,
-                    )} · ${summary.messageCount} messages',
-                    style: type.caption,
-                  ),
-                ],
+      child: InkWell(
+        borderRadius: BorderRadius.circular(RadiusTokens.md),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => SessionDetailPage(sessionId: summary.sessionId),
+          ),
+        ),
+        child: SectionCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      projectLabel,
+                      style: type.body,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      '${UsageStatusMapper.relativeUpdated(
+                        summary.lastActivityAt,
+                      )} · ${summary.messageCount} messages',
+                      style: type.caption,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // A live badge appears only when `agents --json --all` matched
-            // this session — absence (false or unconfirmed) is never shown
-            // as "not live" (design principle 3): there is no visual
-            // distinction between false and null.
-            if (summary.isLive ?? false) ...[
-              const SizedBox(width: Spacing.sm),
-              const StatusBadge(kind: TrayStatusKind.live, compact: true),
+              // A live badge appears only when `agents --json --all`
+              // matched this session — absence (false or unconfirmed) is
+              // never shown as "not live" (design principle 3): there is
+              // no visual distinction between false and null.
+              if (summary.isLive ?? false) ...[
+                const SizedBox(width: Spacing.sm),
+                const StatusBadge(kind: TrayStatusKind.live, compact: true),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

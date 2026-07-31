@@ -126,4 +126,75 @@ void main() {
       expect(result.failureOrNull?.code, FailureCode.unknown);
     },
   );
+
+  group('readSession', () {
+    test('parses the full transcript for a matching session id', () async {
+      fileSystem.addFile(
+        '/root/-home-claude-proj/abc.jsonl',
+        lines: [
+          jsonEncode({
+            'type': 'user',
+            'timestamp': '2026-07-30T00:00:00Z',
+            'gitBranch': 'main',
+          }),
+          jsonEncode({
+            'type': 'assistant',
+            'timestamp': '2026-07-30T00:01:00Z',
+            'message': {
+              'model': 'claude-x',
+              'usage': {'input_tokens': 10, 'output_tokens': 5},
+            },
+          }),
+        ],
+      );
+
+      final result = await repository.readSession('abc');
+
+      expect(result.isSuccess, isTrue);
+      final session = result.valueOrNull!;
+      expect(session.sessionId, 'abc');
+      expect(session.model, 'claude-x');
+      expect(session.gitBranch, 'main');
+      expect(session.messageCount, 2);
+      expect(session.isComplete, isTrue);
+    });
+
+    test('merges liveness onto the read session', () async {
+      fileSystem.addFile('/root/-home-claude-proj/live.jsonl', lines: const []);
+      liveSessions(['live']);
+
+      final result = await repository.readSession('live');
+
+      expect(result.valueOrNull?.isLive, isTrue);
+    });
+
+    test(
+      'returns sessionNotFound when no file matches the id — a real race '
+      'between listing and opening a session, not hypothetical',
+      () async {
+        fileSystem.addFile(
+          '/root/-home-claude-proj/other.jsonl',
+          lines: const [],
+        );
+
+        final result = await repository.readSession('missing');
+
+        expect(result.failureOrNull?.code, FailureCode.sessionNotFound);
+      },
+    );
+
+    test(
+      'a genuine enumeration failure propagates for readSession too',
+      () async {
+        fileSystem.listFailure = const AppFailure(
+          code: FailureCode.unknown,
+          message: 'boom',
+        );
+
+        final result = await repository.readSession('abc');
+
+        expect(result.failureOrNull?.code, FailureCode.unknown);
+      },
+    );
+  });
 }
