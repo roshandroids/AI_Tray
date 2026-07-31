@@ -4,7 +4,8 @@
 
 Audience switchboard for the docs tree. Rules:
 [DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) · Process: [process/](process/) ·
-Engineering: [ENGINEERING_STANDARD.md](ENGINEERING_STANDARD.md)
+Blueprint: [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md) · Engineering:
+[ENGINEERING_STANDARD.md](ENGINEERING_STANDARD.md)
 
 ---
 
