@@ -709,3 +709,130 @@ issues on every new/modified file in this feature.
   Feature 1.2.1/1.2.2's log entries; nothing new.
 
 ---
+
+### Epic 2.2 — Resume Execution
+
+#### Feature 2.2.1 — Manual Resume Action — ✅ Complete
+
+**This is the first *acting* feature in the codebase** — every prior
+feature (M1, Epic 2.1) was read-only. Design principle 2's safety model
+was applied from the first line, not bolted on after: attended
+"Resume now" continues in place (`forkSession: false`), never forks,
+never requires a budget cap (that requirement is scoped to *unattended*
+execution — Feature 2.2.2's queue — per §2 principle 2's own wording and
+user journey 2's text, neither of which mention a cap for manual resume).
+
+**Stories completed:** `ClaudeSessionService.resume()` · "Resume now"
+wired from Session Detail · Result surfaced in-app.
+
+**Files added:**
+- `lib/features/sessions/domain/models/resume_outcome.dart` —
+  `ResumeOutcome` (sessionId, isError, costUsd, tokens, numTurns,
+  stopReason, resultText), mapped from the CLI's confirmed
+  `--output-format json` result envelope (capability report §3D); reuses
+  `SessionTokenTotals` for the `usage` block rather than a new type
+- `lib/features/sessions/resume/presentation/resume_controller.dart` —
+  `ResumeController` (`AsyncNotifier<ResumeAttempt?>`) + `ResumeAttempt`
+  (tags an outcome with the session id it belongs to — see discoveries)
+- `test/unit/sessions/resume_controller_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/data/process/claude_session_service.dart` —
+  added `resume()` alongside the existing `listLiveSessions()`, per §7's
+  "ONE class, two capabilities" design. Builds the confirmed
+  `--resume <id> -p "<prompt>" --output-format json [--max-budget-usd
+  <cap>] [--fork-session] [--fallback-model <list>]` grammar (§2/§3D/§15);
+  10-minute default timeout (explicit, not `ProcessRunner`'s 8s default);
+  tolerates a non-zero exit (bogus session id — confirmed live in the
+  capability report to fail with plain stderr, not JSON), malformed JSON,
+  and a non-object JSON shape, matching `listLiveSessions()`'s existing
+  defensive-parsing discipline.
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  added a "Resume now" section: a prompt field + button, disabled with no
+  `ClaudeSession.projectPath` (never guesses a `cwd` — design principle
+  3) and while a resume is in flight; renders cost/tokens/turns/stop
+  reason/result text on success, an error message on failure.
+- `lib/features/providers/data/process/fake_process_runner.dart` —
+  `calls` now records `timeout`/`workingDirectory` alongside
+  `executable`/`arguments` (previously only the latter two) — needed to
+  actually verify `resume()` forwards the non-default timeout and the
+  session's `cwd` correctly, which no existing test needed before.
+  Confirmed no existing test depended on the old 2-tuple shape (grepped
+  `test/` for `.calls` — the only hits were this feature's own new
+  tests), so this was a safe, non-breaking enhancement, not a migration.
+- `test/unit/sessions/claude_session_service_test.dart` — added a
+  `resume` group (14 cases)
+- `test/widget/session_detail_page_test.dart` — added 5 cases for the
+  new "Resume now" section
+
+**Deviations from the roadmap:** None in shape or intent. One explicit
+scope decision, stated because it's easy to misread as an omission: this
+story's UI has **no budget-cap input field** — confirmed intentional by
+re-reading §2 principle 2 ("mandatory... on every *queued or scheduled*
+resume") and user journey 2 (manual resume shows cost only *after*
+completion, no pre-flight cap). `resume()` itself *does* accept an
+optional `maxBudgetUsd` parameter — the queue executor (Feature 2.2.2)
+will be the caller that always supplies one.
+
+**Implementation discoveries for later milestones:**
+- **`ResumeController` is a single, app-wide `AsyncNotifier`, not a
+  family provider** — deliberately, continuing the same reasoning
+  Feature 1.2.2 already established (`AsyncNotifierProvider.family`
+  isn't available in this codebase's non-codegen riverpod usage). Unlike
+  `sessionDetailProvider` (which *loads* per-id data), `resume()` is an
+  imperative action that takes the session id as a call argument — the
+  same shape `SettingsNotifier.save(settings)` already uses — so no
+  family provider was needed at all, not even a `FutureProvider.family`
+  workaround. The one wrinkle this shape introduces: a single app-wide
+  controller means its last result would leak across different sessions'
+  detail pages if not scoped somehow. Solved with `ResumeAttempt`
+  (outcome + the session id it belongs to) — the page only renders a
+  stored result when `attempt.sessionId == this page's sessionId`. Worth
+  reusing this exact tagged-result shape for Feature 2.2.2's queue
+  executor if it ever needs a similarly-shaped "last result, scoped to
+  which item it's for" pattern.
+- Confirmed live in the capability report and now covered by a
+  regression test: a bogus/deleted session id fails the CLI call
+  *before* any JSON envelope is built — plain stderr text, exit code 1,
+  even when `--output-format json` was requested. `resume()` must check
+  `exitCode != 0` **before** attempting `jsonDecode` (matches
+  `listLiveSessions()`'s existing order of checks) — got this right the
+  first time here because the capability report flagged it explicitly,
+  but worth calling out for Feature 2.2.2, which will hit the identical
+  case for a queue item whose session was deleted after being enqueued.
+- `FakeProcessRunner.calls` gained `timeout`/`workingDirectory` fields
+  (see "Files modified" above) — this is now the place to look for
+  verifying *any* future `ProcessRunner` caller's non-default
+  timeout/cwd, not just this feature's.
+
+**Regression found:** None. `FakeProcessRunner.calls`'s shape change was
+verified safe (see above) and the full suite confirms it.
+
+**ADR changes required:** None. This story implements ADR-006's safety
+model exactly as specified for the *attended* path — the unattended/queue
+half of ADR-006 (mandatory cap, fork-by-default, stale-`cwd` fail-fast)
+is Feature 2.2.2's remit, not touched here.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 14 `claude_session_service_test.dart` `resume` cases (confirmed
+  grammar, workingDirectory/timeout forwarding, fork-session
+  presence/absence, budget cap presence/absence, fallback-model joining,
+  full parse of cost/tokens/turns/stopReason/resultText, an `is_error`
+  result still parses fully, a bogus-id non-zero exit, malformed JSON,
+  non-object JSON, timeout, process launch failure, custom executable
+  path), 3 `resume_controller_test.dart` cases (populates state tagged by
+  session id, a failure surfaces as `AsyncError`, a second concurrent
+  call is a no-op), 5 new `session_detail_page_test.dart` cases (button
+  disabled until a prompt is entered, full result renders on success, an
+  error renders on failure, unavailable state with no decoded project
+  path) — 22 new, all passing.
+- Sessions-scoped suite (`test/unit/sessions/` + both session widget test
+  files): **116/116 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **309
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test; nothing new.
+
+---

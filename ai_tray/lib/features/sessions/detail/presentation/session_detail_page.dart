@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
@@ -5,6 +7,8 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_controller.dart';
 import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
+import 'package:ai_tray/features/sessions/domain/models/resume_outcome.dart';
+import 'package:ai_tray/features/sessions/resume/presentation/resume_controller.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
@@ -122,10 +126,151 @@ final class _SessionDetailBody extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: Spacing.md),
+              _ResumeSection(
+                sessionId: session.sessionId,
+                workingDirectory: session.projectPath,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Attended "Resume now" action (Feature 2.2.1) — continues the session
+/// in place (never forks; only unattended/queued execution does). Never
+/// enabled without a real, decoded [workingDirectory]: design principle 3
+/// forbids guessing a `cwd`, so resume is simply unavailable when
+/// [ClaudeSession.projectPath] is `null`.
+final class _ResumeSection extends ConsumerStatefulWidget {
+  const _ResumeSection({
+    required this.sessionId,
+    required this.workingDirectory,
+  });
+
+  final String sessionId;
+  final String? workingDirectory;
+
+  @override
+  ConsumerState<_ResumeSection> createState() => _ResumeSectionState();
+}
+
+final class _ResumeSectionState extends ConsumerState<_ResumeSection> {
+  final _prompt = TextEditingController();
+
+  @override
+  void dispose() {
+    _prompt.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    final resumeState = ref.watch(resumeControllerProvider);
+    final attempt = resumeState.value;
+    final showResult =
+        attempt != null && attempt.sessionId == widget.sessionId;
+    final isBusy = resumeState.isLoading;
+    final workingDirectory = widget.workingDirectory;
+    final canResume =
+        workingDirectory != null && !isBusy && _prompt.text.trim().isNotEmpty;
+
+    return SectionCard(
+      title: 'Resume now',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (workingDirectory == null)
+            Text(
+              'Resume is unavailable — the project path for this session '
+              "couldn't be determined.",
+              style: type.caption,
+            )
+          else ...[
+            TextField(
+              key: const ValueKey('resume-prompt-field'),
+              controller: _prompt,
+              maxLines: 3,
+              style: type.body,
+              enabled: !isBusy,
+              decoration: const InputDecoration(hintText: 'Continue with…'),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                key: const ValueKey('resume-now-button'),
+                onPressed: canResume
+                    ? () => unawaited(
+                        ref
+                            .read(resumeControllerProvider.notifier)
+                            .resume(
+                              sessionId: widget.sessionId,
+                              prompt: _prompt.text.trim(),
+                              workingDirectory: workingDirectory,
+                            ),
+                      )
+                    : null,
+                child: isBusy
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Resume now'),
+              ),
+            ),
+          ],
+          if (resumeState.hasError && !isBusy) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              '${resumeState.error}',
+              key: const ValueKey('resume-error'),
+              style: type.caption.copyWith(color: context.colors.error),
+            ),
+          ],
+          if (showResult) ...[
+            const SizedBox(height: Spacing.md),
+            const SectionDivider(),
+            _ResumeResult(outcome: attempt.outcome),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+final class _ResumeResult extends StatelessWidget {
+  const _ResumeResult({required this.outcome});
+
+  final ResumeOutcome outcome;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    return Column(
+      key: const ValueKey('resume-result'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InfoRow(
+          label: 'Cost',
+          value: '\$${outcome.costUsd.toStringAsFixed(4)}',
+        ),
+        InfoRow(
+          label: 'Tokens',
+          value:
+              '${outcome.tokens.inputTokens} in / '
+              '${outcome.tokens.outputTokens} out',
+        ),
+        InfoRow(label: 'Turns', value: '${outcome.numTurns}'),
+        InfoRow(label: 'Stop reason', value: outcome.stopReason ?? '—'),
+        const SizedBox(height: Spacing.sm),
+        Text(outcome.resultText, style: type.body),
+      ],
     );
   }
 }
