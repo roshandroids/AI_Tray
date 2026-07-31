@@ -37,7 +37,9 @@ consider Phase 3 release timing or targeted-cleanup import PRs.
 2. Update branch protection (drop `Build macOS`).
 3. Run [`docs/dogfood/POST_EP002_MACOS_ARM64.md`](../dogfood/POST_EP002_MACOS_ARM64.md).
 4. If cleanup is approved: canonicalize imports to `core/` + `copilot/` only.
-5. Do not add a Flutter Web playground for AI Tray.
+5. If PO wants docs parity: start Phase 1 only from
+   [`docs/reports/v2-refactor-plan.md`](../reports/v2-refactor-plan.md).
+6. Do not add a Flutter Web playground for AI Tray; do not Melos-split for parity.
 
 ## Do not do next
 

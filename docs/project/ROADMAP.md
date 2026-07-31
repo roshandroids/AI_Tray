@@ -22,6 +22,8 @@
 
 ## Upcoming
 
+- Optional: Document Platform engineering/docs parity phases
+  (`docs/reports/v2-refactor-plan.md`) — Phase 1 governance first; no Melos
 - Targeted cleanup: deprecate `domain/` and `data/copilot/` aliases; enrich
   capability/recovery/diagnostics metadata; single retry owner
 - Signed/notarized macOS

@@ -158,7 +158,8 @@
     "EP-004 assessment and ADR-004 targeted cleanup decision",
     "EP-004A Local First CI (quality/docs/release/maintenance; no PR desktop)",
     "PD-025 demo strategy and showcase demos.json contract",
-    "D-017 Quality CI + Release CD hardening (ubuntu-only guardrail)"
+    "D-017 Quality CI + Release CD hardening (ubuntu-only guardrail)",
+    "Document Platform parity gap analysis (docs/reports/v2-refactor-plan.md)"
   ],
   "product_decisions": [
     {

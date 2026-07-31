@@ -26,6 +26,7 @@
 | [devops/CI_AUDIT.md](devops/CI_AUDIT.md) | EP-004A CI audit + post-change status |
 | [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
 | [release/known-issues.md](release/known-issues.md) | Open issues + dogfood log template |
+| [reports/v2-refactor-plan.md](reports/v2-refactor-plan.md) | Document Platform engineering/docs parity plan (analysis only) |
 
 ## Product & process (historical SoT)
 

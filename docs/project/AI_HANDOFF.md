@@ -58,10 +58,9 @@ Always re-run `git status` before changing anything.
 
 ## Completed this session
 
-- Hardened Quality CI + Release CD workflow headers and policy comments
-- Added Ubuntu-only guardrail in Quality `Validate workflows` job
-- Documentation path filter includes `showcase/**`
-- Synced `docs/release/CI-CD.md` + `docs/devops/LOCAL_DEVELOPMENT.md`
+- Analysis-only: Document Platform vs AI Tray engineering/docs parity plan
+  (`docs/reports/v2-refactor-plan.md`) — no code changes
+- Prior: Quality CI + Release CD hardening, ubuntu guardrail, DEMO_STRATEGY
 
 ## Immediate next actions
 
@@ -69,7 +68,8 @@ Always re-run `git status` before changing anything.
    Format / Analyze / Test / Validate workflows.
 2. Land/merge EP-004A CI branch onto `main` (deletes legacy `ci.yml`).
 3. Execute macOS arm64 dogfood checklist.
-4. Optional: start targeted-cleanup import canonicalization (no rewrite).
+4. Optional: start Phase 1 of `docs/reports/v2-refactor-plan.md` (governance
+   files only) when Product Owner approves — do not Melos-split or add web demo.
 
 ## Verification baseline
 

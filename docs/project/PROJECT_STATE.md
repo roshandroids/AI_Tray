@@ -36,6 +36,8 @@ RSProjects only. See `docs/devops/DEMO_STRATEGY.md`.
 - EP-004A Quality CI + Release CD redesign (`ci.yml` removed on branch)
 - Demo/Showcase standardization (product-as-demo in `demos.json` + reusable web workflow)
 - Quality CI ubuntu-only guardrail + CI-CD docs sync (2026-07-31)
+- Document Platform parity gap analysis → `docs/reports/v2-refactor-plan.md`
+  (analysis only; phased adoption not started)
 
 ## In progress / unmerged
 
