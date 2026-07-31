@@ -1,31 +1,45 @@
 # CI/CD & Release Automation
 
 Foundation for continuous integration and desktop release automation for AI Tray
-(PD-016, evolved by **EP-004A** into **Quality CI + Release CD**).
+(PD-016 → **EP-004A Quality CI + Release CD** → **D-019 shared scripts**).
 
 **Model:**
 
 | Lane | When | Runners | What |
 |------|------|---------|------|
-| **Quality CI** | `pull_request` / `push` → `main` | **Ubuntu only** | Format, Analyze, Test, Validate workflows |
+| **Quality CI** | `pull_request` / `push` → `main` | **Ubuntu only** | Invokes `./scripts/format.sh`, `analyze.sh`, `test.sh`, `check.sh workflows` |
 | **Documentation** | Docs / markdown / showcase path changes | **Ubuntu only** | Handoff JSON, relative links (no Flutter) |
-| **Release CD** | SemVer tag `vX.Y.Z` / `workflow_dispatch` | Ubuntu + **macOS** + **Windows** | Desktop builds, zip, GitHub Release assets |
+| **Release CD** | SemVer tag / `workflow_dispatch` | Ubuntu + **macOS** + **Windows** | `./scripts/build.sh` + `./scripts/package.sh` + GitHub Release |
 | **Maintenance** | Weekly cron + dispatch | **Ubuntu only** | Outdated package reports (never builds app) |
 
 **Hard rules:**
 - macOS / Windows runners **never** run on `pull_request` or branch `push`.
 - Desktop binaries are built **only** in [`release.yml`](../../.github/workflows/release.yml).
+- Workflow YAML is thin orchestration; commands live under [`scripts/`](../../scripts/).
+- [`.ci/config`](../../.ci/config) `CI_MODE` is **local DX / docs only** — Actions ignores it.
 - Quality CI must stay fast (target wall-clock &lt;10 minutes).
 
-**Out of scope:** Code signing, notarization, Sparkle auto-update, security scanning
-(future `security.yml` placeholder only — do not invent scanners without evidence).
+**Out of scope:** Code signing, notarization, Sparkle auto-update, security scanning.
 **Not published:** macOS Intel / x64 artifacts (D-007). Linux desktop not shipped.
 
-Aligned with house conventions from **CELPIP** (job naming, Flutter pin, concurrency)
-and **MBO Research** (CHANGELOG-as-release-notes, SemVer on pubspec, tag `vX.Y.Z`).
+Local DX guide: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md).  
+Demo / Showcase: [docs/devops/DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 
-Local validation: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md).  
-Demo / Showcase policy: [docs/devops/DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
+---
+
+## Shared scripts (one command surface)
+
+Local maintainers and GitHub Actions call the same entrypoints:
+
+```text
+./scripts/doctor.sh | bootstrap.sh | clean.sh
+./scripts/format.sh | analyze.sh | test.sh | check.sh
+./scripts/build.sh | package.sh
+./scripts/publish.sh          # canonical bump/tag/push
+./scripts/release.sh          # orchestrator (--check-only, --local-only, --publish)
+```
+
+Implementations live in `scripts/ci/` (except publish → `scripts/release/publish.sh`).
 
 ---
 
@@ -34,44 +48,44 @@ Demo / Showcase policy: [docs/devops/DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.m
 ```mermaid
 flowchart TB
   subgraph PR["Quality CI — PR / push → main"]
-    F[Format]
-    A[Analyze]
-    T[Test]
-    W[Validate workflows]
+    F["./scripts/format.sh"]
+    A["./scripts/analyze.sh"]
+    T["./scripts/test.sh"]
+    W["./scripts/check.sh workflows"]
     D[Documentation — docs paths]
   end
 
-  subgraph REL["Release CD — tag vX.Y.Z or workflow_dispatch"]
+  subgraph REL["Release CD — tag or workflow_dispatch"]
     V[Validate pubspec]
-    MA[Build macOS arm64]
-    WIN[Build Windows x64]
+    MA["./scripts/build.sh macos"]
+    WIN["./scripts/build.sh windows"]
     GH[GitHub Release + assets]
     V --> MA & WIN --> GH
   end
 
-  subgraph M["Maintenance — schedule / dispatch"]
-    DEP[Dependency audit]
+  subgraph local [Local DX]
+    check["./scripts/check.sh"]
+    pub["./scripts/publish.sh"]
   end
 
-  PR -->|squash or merge| main
-  PUB[publish.sh] -->|commit + tag + push| REL
+  check -.->|same commands| PR
+  pub -->|tag push| REL
 ```
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
-| **Quality** | [`.github/workflows/quality.yml`](../../.github/workflows/quality.yml) | PR + push → `main` | Format / Analyze / Test / workflow YAML — **no desktop** |
+| **Quality** | [`.github/workflows/quality.yml`](../../.github/workflows/quality.yml) | PR + push → `main` | Shared scripts — **no desktop** |
 | **Documentation** | [`.github/workflows/documentation.yml`](../../.github/workflows/documentation.yml) | Docs / showcase / `*.md` paths | Handoff + JSON + relative links |
 | **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or dispatch | **Only** desktop builds + GitHub Release |
 | **Maintenance** | [`.github/workflows/maintenance.yml`](../../.github/workflows/maintenance.yml) | Weekly + dispatch | Safe outdated reports |
 | **Reusable Flutter Web Demo** | [`.github/workflows/reusable-flutter-web-demo.yml`](../../.github/workflows/reusable-flutter-web-demo.yml) | `workflow_call` only | Template for other RSProjects — **not invoked by AI Tray** |
 
-**Flutter:** `3.38.9` (stable) · **App directory:** `ai_tray/`
+**Flutter / Node pins:** [`.ci/toolchain.env`](../../.ci/toolchain.env) (single source of truth).  
+**App directory:** `ai_tray/`
 
 **Removed:** `.github/workflows/ci.yml` (replaced by Quality; PR macOS build deleted).
 
-**Demos:** AI Tray is a product repository — the desktop app is the demo
-([`showcase/demos.json`](../../showcase/demos.json) `id: main`, `type: desktop`).
-No Flutter Web playground. See [DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
+**Demos:** Product-as-demo ([`showcase/demos.json`](../../showcase/demos.json) `id: main`). See [DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 
 ---
 
@@ -81,7 +95,7 @@ No Flutter Web playground. See [DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 |--------|--------|--------------|---------------------|
 | Quality workflow | `CI` | `ci` | `Quality` (`quality.yml`) |
 | Job names (branch protection) | Format, Analyze, Test, Build Web | Analyze, Format, Test, Corpus | Format, Analyze, Test, Validate workflows |
-| Flutter pin | `3.38.9` env | `3.38.9` inline | `3.38.9` env |
+| Flutter pin | `3.38.9` env | `3.38.9` inline | `.ci/toolchain.env` → Actions |
 | `subosito/flutter-action@v2` + cache | Yes | Yes | Yes (+ `pub-cache-key` from `pubspec.lock`) |
 | Concurrency cancel-in-progress | Yes | No | Yes (Quality / Docs / Maintenance) |
 | Deploy on merge | Firebase Hosting | N/A | GitHub Release on **tag or dispatch only** |
@@ -95,22 +109,17 @@ No Flutter Web playground. See [DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 
 | Check name | Command / behavior |
 |------------|--------------------|
-| `Format` | `dart format --set-exit-if-changed .` (skipped no-op if no code paths) |
-| `Analyze` | `flutter analyze --fatal-infos` |
-| `Test` | Bridge `npm run check` + `flutter test --exclude-tags golden,screenshot` |
-| `Validate workflows` | Ruby YAML parse of `.github/workflows/*.yml` |
+| `Format` | `./scripts/format.sh` |
+| `Analyze` | `./scripts/analyze.sh` |
+| `Test` | `./scripts/ci/bridge.sh` + `./scripts/test.sh` |
+| `Validate workflows` | `./scripts/check.sh workflows` |
 
 **Do not require:** `Build macOS` (removed), Release, Maintenance.
 
-Run locally before opening a PR (or enable Lefthook — see Local Development):
+Run locally before opening a PR:
 
 ```bash
-cd ai_tray
-flutter pub get
-dart format --set-exit-if-changed .
-flutter analyze --fatal-infos
-flutter test --exclude-tags golden,screenshot
-cd tool/copilot_sdk_bridge && npm run check
+./scripts/check.sh          # Quality CI parity (format/analyze/bridge/test/workflows)
 ```
 
 Desktop builds are **release-only**. Do not expect a PR macOS binary.
@@ -146,24 +155,36 @@ No Flutter SDK install.
 3. Run from repo root:
 
 ```bash
-./scripts/release/publish.sh patch    # 1.0.0 → 1.0.1
-./scripts/release/publish.sh minor    # 1.0.0 → 1.1.0
-./scripts/release/publish.sh major    # 1.0.0 → 2.0.0
-./scripts/release/publish.sh 1.0.0    # pin exact version (e.g. GA from RC)
-./scripts/release/publish.sh patch --pre rc.1   # pre-release
-./scripts/release/publish.sh patch --dry-run    # preview only
+./scripts/publish.sh patch    # 1.0.0 → 1.0.1
+./scripts/publish.sh minor    # 1.0.0 → 1.1.0
+./scripts/publish.sh major    # 1.0.0 → 2.0.0
+./scripts/publish.sh 1.0.0    # pin exact version (e.g. GA from RC)
+./scripts/publish.sh patch --pre rc.1   # pre-release
+./scripts/publish.sh patch --dry-run    # preview only
+
+# Orchestrator equivalents:
+./scripts/release.sh --check-only
+./scripts/release.sh --local-only          # dogfood host zip under dist/
+./scripts/release.sh --publish patch
 ```
 
 4. Script actions:
-   - Bumps `ai_tray/pubspec.yaml` (single source of truth)
-   - Moves `[Unreleased]` → `[X.Y.Z] — date` in CHANGELOG
-   - Commits, creates annotated tag `vX.Y.Z`, pushes commit + tag
+   - Bumps `ai_tray/pubspec.yaml` (version / build)
+   - Moves `[Unreleased]` → `[X.Y.Z] — date` in CHANGELOG (**notes SoT**)
+   - Regenerates `ai_tray/assets/release_history.json` (derived; never hand-edit)
+   - Commits pubspec + CHANGELOG + release history, creates annotated tag `vX.Y.Z`, pushes commit + tag
 5. **Release** workflow triggers automatically:
    - Validates tag ↔ pubspec
    - Builds and packages:
      - `AI-Tray-macOS-arm64.zip`
      - `AI-Tray-Windows-x64.zip`
-   - Creates GitHub Release with CHANGELOG body
+   - Creates GitHub Release with CHANGELOG body (`extract_changelog.sh`)
+
+**Release notes SoT (D-020):** Edit `## [Unreleased]` in [`CHANGELOG.md`](../../CHANGELOG.md) only.
+Do **not** hand-edit `ai_tray/assets/release_history.json`. Re-run
+`./scripts/release/sync_release_history.sh` (or `./scripts/publish.sh`) to regenerate.
+The app Settings → About / Diagnostics read live version via `package_info_plus`
+and What’s New / history from the generated asset.
 
 Manual re-run: Actions → **Release** → **Run workflow** (`workflow_dispatch`).
 
@@ -184,8 +205,8 @@ Manual re-run: Actions → **Release** → **Run workflow** (`workflow_dispatch`
 
 | Asset | Runner | Build command |
 |-------|--------|---------------|
-| `AI-Tray-macOS-arm64.zip` | `macos-latest` | `flutter build macos --release` (arm64) |
-| `AI-Tray-Windows-x64.zip` | `windows-latest` | `flutter build windows --release` |
+| `AI-Tray-macOS-arm64.zip` | `macos-latest` | `./scripts/build.sh macos` + `./scripts/package.sh` |
+| `AI-Tray-Windows-x64.zip` | `windows-latest` | `./scripts/build.sh windows` + `./scripts/package.sh` |
 
 macOS zip contains `AI Tray.app`. Windows zip contains the `Release/` folder contents.
 
@@ -277,4 +298,5 @@ publish minor    # → 1.1.0
 publish major    # → 2.0.0
 ```
 
-AI Tray implements this today via `./scripts/release/publish.sh`.
+AI Tray implements this today via `./scripts/publish.sh` (wrapper around
+`./scripts/release/publish.sh`).

@@ -31,7 +31,8 @@ Merge into main
 
 ## Rules
 
-1. Do **not** push directly to `main` when branch protection is enabled; use a PR.
+1. Do **not** push directly to `main`; always open a pull request and merge
+   (active ruleset — see [BRANCH_PROTECTION.md](BRANCH_PROTECTION.md)).
 2. Link Issues from PRs when work is non-trivial (`Closes` / `Refs`).
 3. Architectural changes require an ADR under [`docs/adr/`](../adr/) and a
    DECISION_LOG entry.
@@ -43,6 +44,6 @@ Merge into main
 
 ## Solo-maintainer note
 
-This repository is solo-maintained. “Owner approval” means the Product Owner /
-maintainer reviews before merge. Trivial typo-only docs may skip a new Issue
-when the maintainer explicitly allows a fast path; still prefer a PR.
+This repository is solo-maintained. PRs are **required**; approval count is
+**0** so you can merge your own PRs after Quality CI is green. Re-enable
+required approvals / CODEOWNERS when co-maintainers join.

@@ -1,114 +1,139 @@
-# Local development & Quality CI + Release CD
+# Local development & dual CI (Local DX + Remote Actions)
 
-**Policy (EP-004A):** Validate locally first. GitHub Actions uses **Quality CI +
-Release CD**:
+AI Tray supports **two equally valid workflows** that share one command surface
+under [`scripts/`](../../scripts/):
 
-- **Quality CI** (PR / push → `main`): format, analyze, unit/widget tests,
-  workflow YAML — **Ubuntu only**. No macOS/Windows builds.
-- **Release CD** (SemVer tag / `workflow_dispatch`): the **only** place that
-  builds desktop binaries.
-- Docs-only changes skip Flutter-heavy Quality steps; Documentation workflow
-  validates handoff without Flutter.
+| Mode | Who | What |
+|------|-----|------|
+| **Local DX** | Maintainers (recommended) | Run `./scripts/check.sh` (and optional Lefthook) before push |
+| **Remote CI** | Contributors + merge gate | GitHub Actions Quality always re-verifies on PR/push |
 
-App package root: **`ai_tray/`** (not the repository root).
+**GitHub Actions is the merge source of truth.** Local scripts catch issues
+earlier; they never replace repository CI. Branch protection still requires
+`Format` | `Analyze` | `Test` | `Validate workflows`.
 
----
-
-## Quick validation (before every PR)
-
-```bash
-cd ai_tray
-flutter pub get
-dart format --set-exit-if-changed .
-flutter analyze --fatal-infos
-flutter test --exclude-tags golden,screenshot
-```
-
-Copilot bridge (required for Test job parity):
-
-```bash
-cd ai_tray/tool/copilot_sdk_bridge
-npm ci
-npm run check
-```
-
-Optional before release / golden work (macOS):
-
-```bash
-cd ai_tray
-flutter test --tags golden
-flutter build macos --release
-```
-
-AI handoff consistency:
-
-```bash
-bash scripts/ci/validate_handoff.sh
-```
+App package root: **`ai_tray/`**.
 
 ---
 
-## Lefthook (optional local hooks)
+## CI_MODE (local preference only)
 
-Hooks are **not** installed by cloning the repo. Enable them per clone:
+[`.ci/config`](../../.ci/config):
 
 ```bash
-# Install Lefthook once on the machine (pick one):
-brew install lefthook
-# or: npm install -g @evilmartians/lefthook
-# or: go install github.com/evilmartians/lefthook@latest
+CI_MODE=local   # or: remote
+```
 
-# From the repository root:
+| Value | Meaning |
+|-------|---------|
+| `local` | Prefer running `./scripts/check.sh` / Lefthook before push |
+| `remote` | You may lean on GHA for verification; scripts remain available |
+
+**GitHub Actions ignores `CI_MODE` completely.** There is no workflow
+conditional on this setting. Override for a single shell: `CI_MODE=remote ./scripts/doctor.sh`.
+
+## Toolchain pins (single source of truth)
+
+[`.ci/toolchain.env`](../../.ci/toolchain.env) pins Flutter / Node / npm for both
+local scripts (`scripts/ci/_lib.sh`) and GitHub Actions
+(`scripts/ci/export_toolchain.sh`). Bump versions **only** in that file.
+
+---
+
+## Script surface
+
+Thin wrappers in `scripts/` → implementations in `scripts/ci/` (except publish):
+
+| Command | Purpose |
+|---------|---------|
+| `./scripts/doctor.sh` | Validate Flutter/Dart/Node/git/gh/Xcode/etc. |
+| `./scripts/bootstrap.sh` | `flutter pub get` + bridge `npm ci` |
+| `./scripts/clean.sh` | `flutter clean` + remove `dist/` |
+| `./scripts/format.sh` | `dart format --set-exit-if-changed` |
+| `./scripts/analyze.sh` | `flutter analyze --fatal-infos` |
+| `./scripts/test.sh` | Unit/widget tests (excludes golden/screenshot) |
+| `./scripts/check.sh` | Aggregate gate — default `all` = Quality CI parity |
+| `./scripts/build.sh [macos\|windows]` | Host-gated desktop release build (default: host OS) |
+| `./scripts/package.sh [macos\|windows]` | Zip + SHA-256 into `dist/` (default: host OS) |
+| `./scripts/publish.sh` | Canonical bump/tag/push → Release CD |
+| `./scripts/release.sh` | Orchestrator (`--check-only`, `--local-only`, `--publish`, …) |
+
+Examples:
+
+```bash
+./scripts/doctor.sh
+./scripts/bootstrap.sh
+./scripts/check.sh              # same validations as Quality CI
+./scripts/check.sh full         # Quality + handoff
+./scripts/check.sh format
+./scripts/release.sh --check-only
+./scripts/release.sh --local-only          # dogfood: check → build → package (no tags)
+./scripts/release.sh --publish patch       # check → tag/push → GHA builds both OSes
+```
+
+**Parity:** `./scripts/check.sh` ≡ Quality jobs Format + Analyze + bridge + Test +
+Validate workflows. Handoff validation is Documentation workflow / `check.sh full`
+/ Lefthook pre-push — not part of Quality.
+---
+
+## Local vs remote — when to use which
+
+**Prefer local (maintainers):**
+- Fast iteration without burning Actions minutes
+- Same commands GHA will run
+- Enable Lefthook for pre-commit/pre-push hooks
+
+**Prefer remote (contributors / CI-only machines):**
+- No need to mirror every tool version locally for day-to-day PRs
+- Still encouraged to run `./scripts/check.sh` when possible
+- Merge remains blocked until GHA Quality is green
+
+**Relationship:** Local DX ⊆ Remote CI command surface. Shipping macOS **and**
+Windows artifacts is always **Release CD** after a SemVer tag (one machine
+cannot build both platforms).
+
+---
+
+## Lefthook (optional)
+
+```bash
+brew install lefthook   # or npm/go install
 lefthook install
 ```
 
-Configured in [`lefthook.yml`](../../lefthook.yml):
+Hooks call `./scripts/format.sh`, `./scripts/analyze.sh`, `./scripts/test.sh`,
+and bridge/handoff helpers — the same scripts as Actions.
 
-| Hook | What runs |
-|------|-----------|
-| **pre-commit** | `dart format`, `flutter analyze`, quick unit tests (under `ai_tray/`) |
-| **commit-msg** | Conventional Commits via `scripts/ci/check_conventional_commit.sh` |
-| **pre-push** | Full unit tests (non-golden), bridge `npm run check`, handoff validation |
-
-Skip once (emergency only): `LEFTHOOK=0 git commit ...` or `git commit --no-verify`.
-
-Uninstall hooks: `lefthook uninstall`.
+Skip once: `LEFTHOOK=0 git commit …` or `--no-verify` (emergency only).
 
 ---
 
-## CI workflow map
+## Typical flows
 
-| Workflow | File | When | What |
-|----------|------|------|------|
-| **Quality** | `.github/workflows/quality.yml` | PR + push → `main` | Format, Analyze, Test, Validate workflows — **no desktop builds** |
-| **Documentation** | `.github/workflows/documentation.yml` | Docs / markdown paths | Handoff + JSON + relative links |
-| **Release** | `.github/workflows/release.yml` | Tag `v*` or dispatch | macOS arm64 + Windows x64 package + GitHub Release |
-| **Maintenance** | `.github/workflows/maintenance.yml` | Weekly + dispatch | Informational `pub` / `npm` outdated reports |
-| **Security** | — | Future | Placeholder only; no fake scanners |
+### Before a PR
 
-Path filters: Flutter jobs no-op when the PR does not touch `ai_tray/**`,
-`scripts/**`, or `lefthook.yml` (checks still report success for branch
-protection). See [CI-CD.md](../release/CI-CD.md) and [CI_AUDIT.md](CI_AUDIT.md).
+```bash
+./scripts/check.sh          # Quality CI parity
+# optional: ./scripts/check.sh full   # also handoff
+```
+### Dogfood a host build (no tag)
 
----
+```bash
+./scripts/release.sh --local-only
+# → dist/AI-Tray-macOS-arm64.zip (on macOS) or Windows zip on Windows
+```
 
-## Branch protection (required checks)
+### Ship a release
 
-Require on `main` (after EP-004A):
+```bash
+# Ensure ## [Unreleased] notes exist in CHANGELOG.md (SoT for release notes)
+./scripts/release.sh --publish patch
+# or: ./scripts/publish.sh patch
+```
 
-- `Format`
-- `Analyze`
-- `Test`
-- `Validate workflows`
-
-**Remove** any required check named `Build macOS` (desktop moved to Release).
-
-Do **not** require Release, Documentation, or Maintenance for merge.
-
----
-
-## Related
-
-- [CI-CD.md](../release/CI-CD.md) — operator release guide
-- [CI_AUDIT.md](CI_AUDIT.md) — EP-004A audit + post-change notes
-- [docs/project/AI_HANDOFF.md](../project/AI_HANDOFF.md)
+`publish.sh` bumps pubspec, finalizes CHANGELOG, regenerates
+`ai_tray/assets/release_history.json` (do not hand-edit), then tags and pushes.
+GitHub Actions Release CD builds macOS arm64 + Windows x64 and publishes
+assets. Settings → About shows version/build (via `package_info_plus`) plus
+What’s New / previous releases from the generated asset. See
+[CI-CD.md](../release/CI-CD.md).

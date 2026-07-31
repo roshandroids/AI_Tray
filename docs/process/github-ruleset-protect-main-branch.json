@@ -1,5 +1,5 @@
 {
-  "name": "Protect main (EP-004A Quality CI)",
+  "name": "Protect main (require PR)",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
@@ -12,9 +12,9 @@
     {
       "type": "pull_request",
       "parameters": {
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": true,
+        "require_code_owner_review": false,
         "require_last_push_approval": false,
         "required_review_thread_resolution": false
       }
@@ -34,8 +34,10 @@
     },
     {
       "type": "non_fast_forward"
+    },
+    {
+      "type": "deletion"
     }
   ],
-  "bypass_actors": [],
-  "_comment": "Do NOT add Build macOS or Build Windows. Desktop builds are Release CD only (EP-004A / D-017)."
+  "bypass_actors": []
 }

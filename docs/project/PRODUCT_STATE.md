@@ -5,7 +5,8 @@
 **Positioning:** Desktop usage and health companion for AI developer tools
 **Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004)
 **Demo posture:** Product-as-demo via GitHub Releases (`demos.json` id `main`); no Flutter Web embed (PD-025)
-**CI posture:** Quality CI + Release CD (D-017) on `main` — desktop builds only on tag/dispatch
+**CI posture:** Quality CI + Release CD (D-017) + shared scripts (D-019) on `main` — desktop builds only on tag/dispatch; `CI_MODE` does not affect Actions
+**Release notes:** CHANGELOG.md SoT; Settings About / Diagnostics show live version + What’s New (D-020)
 **Docs posture:** Governance + process + engineering standard + blueprint (D-018)
 
 ## Supported experience
@@ -19,6 +20,7 @@
 | Dark / light / system themes | Implemented |
 | Tray/menu-bar status | Implemented |
 | Settings, diagnostics, logs | Implemented |
+| In-app What’s New / release history | Implemented (D-020; from CHANGELOG-derived asset) |
 | Accessibility and golden coverage | Implemented; continue manual QA |
 
 ## Provider status

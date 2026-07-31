@@ -3,7 +3,7 @@
 **Updated:** 2026-07-31
 **Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, provider-platform docs,
 EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017),
-`docs/ENGINEERING_STANDARD.md`, `docs/PROJECT_BLUEPRINT.md`
+shared scripts (D-019), `docs/ENGINEERING_STANDARD.md`, `docs/PROJECT_BLUEPRINT.md`
 
 ## System shape
 
@@ -73,15 +73,18 @@ boundary. Graceful degradation is required.
 - Node sidecar toolchain is pinned and assembled per release target.
 - Release artifacts: macOS arm64 and Windows x64.
 - **No Flutter Web platform** for the product app (tray/CLI/sidecar native).
-- **CI (Quality CI + Release CD / EP-004A / D-017):** `quality.yml` on PR/main
-  (format/analyze/test/validate; Ubuntu only; no desktop binaries);
-  `documentation.yml` for docs/showcase paths; `release.yml` on version tags or
-  manual dispatch only (sole macOS/Windows builder); `maintenance.yml` weekly
-  outdated checks. Quality asserts companions stay ubuntu-only. Optional
-  Lefthook locally — see `docs/devops/LOCAL_DEVELOPMENT.md`.
+- **CI (Quality CI + Release CD / EP-004A / D-017 / D-019):** `quality.yml` on
+  PR/main invokes `./scripts/format.sh`, `analyze.sh`, `test.sh`,
+  `check.sh workflows` (Ubuntu only; no desktop); `release.yml` calls
+  `./scripts/build.sh` + `package.sh` on tag/dispatch only; `.ci/config`
+  `CI_MODE` is local preference only (Actions ignores it). Optional Lefthook
+  — see `docs/devops/LOCAL_DEVELOPMENT.md`.
 - **Showcase demos:** `showcase/demos.json` lists product `main` (`type: desktop`).
   Callable `reusable-flutter-web-demo.yml` is unused by AI Tray.
   See `docs/devops/DEMO_STRATEGY.md`.
+- **Release notes (D-020):** `CHANGELOG.md` is SoT; `publish.sh` regenerates
+  `ai_tray/assets/release_history.json` for Settings About / Diagnostics;
+  runtime version/build via `package_info_plus`. Never hand-edit the JSON.
 
 ## Invariants
 
