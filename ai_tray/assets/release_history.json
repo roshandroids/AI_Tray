@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "CHANGELOG.md",
+  "releases": [
+    {
+      "version": "1.3.3",
+      "date": "2026-07-17",
+      "notesMarkdown": "### Fixed\n- Claude usage parsing no longer fails with `parserFailure` when the CLI omits\n  the session reset suffix (e.g. `Current session: 0% used`); the session reset\n  clause is now optional, matching the weekly-line behavior.\n\n### Changed\n- Release pipeline no longer builds or publishes macOS x64 (Rosetta/Intel);\n  GitHub Releases ship macOS arm64 and Windows x64 only."
+    },
+    {
+      "version": "1.3.2",
+      "date": "2026-07-17",
+      "notesMarkdown": "### Fixed\n- macOS release jobs now select their Copilot sidecar payload explicitly,\n  preventing Rosetta x64 builds from requesting the arm64 payload."
+    },
+    {
+      "version": "1.3.1",
+      "date": "2026-07-17",
+      "notesMarkdown": "### Fixed\n- Windows release assembly now stages Copilot sidecar payloads on the output\n  volume, preventing cross-drive `EXDEV` rename failures in GitHub Actions."
+    },
+    {
+      "version": "1.3.0",
+      "date": "2026-07-17",
+      "notesMarkdown": "### Added\n- GitHub Copilot provider foundation with official SDK sidecar, quota mapping,\n  health/diagnostics, and provider-scoped refresh/cache isolation (EP-002).\n- Shared multi-provider dashboard surfaces: persisted provider selection,\n  capability-driven metric cards, circular usage indicator states, Copilot\n  settings/diagnostics/logs filters, and actionable empty states.\n- Deterministic macOS and Windows Copilot sidecar packaging in CI/release.\n\n### Changed\n- Provider registry and usage pipeline now support normalized provider contracts\n  while preserving the existing Claude Code experience."
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-07-13",
+      "notesMarkdown": "### Added\n- Official design system tokens and shared desktop components (PD-021).\n- Circular macOS tray usage ring; Settings left rail; redesigned Diagnostics/Logs.\n\n### Changed\n- JetBrains Mono typography and GitHub-dark / intentional light palettes throughout."
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-07-13",
+      "notesMarkdown": "### Added\n- Diagnostics page and in-app log viewer with export / copy (PD-020).\n- Dynamic macOS tray icons with status badges (live / cached / error / refreshing / waiting).\n\n### Changed\n- Terminal-inspired developer UX: ASCII separators, dense dashboard, developer settings (PD-020).\n- Status colors aligned to neon Live/Cached/Error/Refreshing palette."
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-07-12",
+      "notesMarkdown": "### Added\n- GitHub Actions CI (Format, Analyze, Test, Build macOS) and tagged Release workflow (PD-016).\n- One-command release script: `scripts/release/publish.sh`.\n- Rich tray dashboard with session/week usage at a glance (PD-015).\n\n### Changed\n- Claude-inspired visual refresh and dynamic light/dark/system theming (PD-013, PD-014)."
+    },
+    {
+      "version": "1.0.0-rc.2",
+      "date": "2026-07-12",
+      "notesMarkdown": "### Added\n- Dogfooding policy (PD-011) and RC2 release packaging.\n- Release `.app` sandbox and PATH fixes for packaged macOS builds.\n\n### Fixed\n- Gatekeeper guidance for unsigned Release builds.\n- App lifecycle: tray persists when main window is hidden."
+    },
+    {
+      "version": "1.0.0-rc.1",
+      "date": "2026-07-12",
+      "notesMarkdown": "### Added\n- Claude Code usage pipeline: CLI adapter, parser, validator, cache, refresh service.\n- macOS menu bar / Windows system tray shell with settings and usage dashboard.\n- Stabilization suite: parser hardening, long-running refresh tests, packaging docs."
+    }
+  ]
+}

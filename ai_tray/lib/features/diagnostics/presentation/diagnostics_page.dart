@@ -15,6 +15,7 @@ import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/copilot/diagnostics/copilot_diagnostics.dart';
 import 'package:ai_tray/features/providers/core/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/settings/release_history_providers.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
@@ -30,8 +31,6 @@ import 'package:local_notifier/local_notifier.dart';
 final class DiagnosticsPage extends ConsumerWidget {
   const DiagnosticsPage({super.key});
 
-  static const _appVersion = '1.1.0+4';
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final repository = ref.watch(usageRepositoryProvider);
@@ -39,6 +38,12 @@ final class DiagnosticsPage extends ConsumerWidget {
     final themePref = ref.watch(themeControllerProvider).value;
     final selectedProvider = ref.watch(selectedAIProviderProvider);
     final copilotDiagnostics = ref.watch(copilotDiagnosticsProvider);
+    final packageInfo = ref.watch(packageInfoProvider);
+    final appVersionLabel = packageInfo.when(
+      data: (info) => '${info.version}+${info.buildNumber}',
+      loading: () => '…',
+      error: (_, _) => 'unavailable',
+    );
 
     return StreamBuilder<RefreshStatus>(
       stream: repository.watchStatus(),
@@ -86,9 +91,9 @@ final class DiagnosticsPage extends ConsumerWidget {
                       title: 'Application',
                       child: Column(
                         children: [
-                          const InfoRow(
+                          InfoRow(
                             label: 'App version',
-                            value: _appVersion,
+                            value: appVersionLabel,
                           ),
                           InfoRow(
                             label: '${selectedProvider.displayName} CLI',
@@ -266,6 +271,7 @@ final class DiagnosticsPage extends ConsumerWidget {
                             onPressed: () => unawaited(
                               _copyDiagnostics(
                                 context,
+                                appVersion: appVersionLabel,
                                 status: status,
                                 settings: settings,
                                 theme: themePref,
@@ -363,6 +369,7 @@ final class DiagnosticsPage extends ConsumerWidget {
 
   static Future<void> _copyDiagnostics(
     BuildContext context, {
+    required String appVersion,
     required RefreshStatus status,
     required AppSettings? settings,
     required AppThemePreference? theme,
@@ -372,7 +379,7 @@ final class DiagnosticsPage extends ConsumerWidget {
     final result = status.lastResult;
     final buffer = StringBuffer()
       ..writeln('AI Tray Diagnostics')
-      ..writeln('version=$_appVersion')
+      ..writeln('version=$appVersion')
       ..writeln('platform=${_platformLabel()}')
       ..writeln('build=${kReleaseMode ? 'release' : 'debug'}')
       ..writeln('theme=${theme?.label ?? settings?.themeMode.label}')
