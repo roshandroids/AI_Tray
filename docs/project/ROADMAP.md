@@ -12,7 +12,7 @@
 - EP-004 assessment → **targeted cleanup** (ADR-004 / PD-024)
 - EP-004A Quality CI + Release CD on `main` (PR #11; D-017)
 - PD-025 / D-016 demo strategy: product-as-demo (`demos.json` id `main`, desktop)
-- Docs/engineering upgrade Master Prompt Phases 1–7 (D-018)
+- Docs/engineering upgrade Master Prompt Phases 1–8 (D-018)
 
 ## Current milestone
 
@@ -20,7 +20,6 @@
 2. Execute macOS arm64 dogfood checklist.
 3. Product Owner decides whether/when to publish a release including Phase 3.
 4. Optional: begin targeted-cleanup import canonicalization.
-5. Finish docs Master Prompt Phase 8 validation report.
 
 ## Upcoming
 

@@ -21,13 +21,12 @@ v1.3.3 (Phase 3 not yet tagged).
 ## Current phase
 
 - Completed: **EP-002**, **post-EP-002 stabilization**, **EP-004A on main**,
-  **docs upgrade Phases 1–7**
+  **docs upgrade Phases 1–8**
 - Architecture posture: **EP-004 targeted cleanup** (not full rewrite)
 - Showcase: **product-as-demo** (`demos.json` → `main` desktop)
 - Research: **EP-003 / EP-003A** complete; no Cursor production code
 - Current objective: confirm GitHub branch protection (no `Build macOS`),
-  macOS arm64 dogfood, then Product Owner release timing; finish docs
-  Phase 8 validation
+  macOS arm64 dogfood, then Product Owner release timing
 
 ## Repository state
 
@@ -59,7 +58,7 @@ Always re-run `git status` before changing anything.
 
 ## Completed this session
 
-- Documentation upgrade Master Prompt Phases 1–7 (governance through cleanup)
+- Documentation upgrade Master Prompt Phases 1–8 (governance through validation)
 - Prior: Quality CI + Release CD on `main`, DEMO_STRATEGY / PD-025
 
 ## Immediate next actions
@@ -67,10 +66,9 @@ Always re-run `git status` before changing anything.
 1. Confirm GitHub branch protection: drop required `Build macOS`; keep
    Format / Analyze / Test / Validate workflows
    (`docs/process/BRANCH_PROTECTION.md`).
-2. Finish Master Prompt Phase 8 validation report if not yet committed.
-3. Execute macOS arm64 dogfood checklist.
-4. Optional: targeted-cleanup import canonicalization (ADR-004).
-
+2. Execute macOS arm64 dogfood checklist.
+3. Optional: targeted-cleanup import canonicalization (ADR-004).
+4. Push docs upgrade commits to origin when Product Owner requests.
 ## Verification baseline
 
 ```bash

@@ -14,8 +14,7 @@
 ## Current objective
 
 Confirm branch protection matches EP-004A, complete macOS arm64 dogfood, then
-consider Phase 3 release timing or targeted-cleanup import PRs. Finish docs
-upgrade Phase 8 validation if still open.
+consider Phase 3 release timing or targeted-cleanup import PRs.
 
 ## Prerequisites
 
@@ -24,7 +23,7 @@ upgrade Phase 8 validation if still open.
 - ADR-004 / PD-024: targeted cleanup, not full rewrite
 - PD-023: no Cursor quota provider
 - PD-025: product-as-demo (`demos.json` id `main`)
-- Docs Master Prompt Phases 1–7 complete on `main`
+- Docs Master Prompt Phases 1–8 complete on `main`
 
 ## Blockers
 
@@ -54,4 +53,4 @@ upgrade Phase 8 validation if still open.
 - Showcase `demos.json` lists product `main` + DEMO_STRATEGY consistent with PD-025
 - Handoff JSON/Markdown consistent
 - No Cursor quota code
-- Docs validation report present after Phase 8
+- Docs validation report present (`docs/reports/documentation-validation-report.md`)

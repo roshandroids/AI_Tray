@@ -1,7 +1,7 @@
 # AI Tray v2 — Engineering & Documentation Parity Plan
 
 **Created:** 2026-07-31  
-**Status:** Implementation in progress (Master Prompt phases)  
+**Status:** Implementation complete (Master Prompt Phases 1–8)  
 **Phase tracker:** see [Master Prompt phase status](#11-master-prompt-phase-status)  
 **Sources:**
 
@@ -658,7 +658,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | 5 — Project blueprint | **Completed** 2026-07-31 | `docs: add project blueprint` |
 | 6 — Cursor rules | **Completed** 2026-07-31 | `docs: refine cursor rules` |
 | 7 — Documentation cleanup | **Completed** 2026-07-31 | `docs: cleanup documentation` |
-| 8 — Validation | Pending | `docs: finalize documentation upgrade` |
+| 8 — Validation | **Completed** 2026-07-31 | `docs: finalize documentation upgrade` |
 
 ### Phase 1 notes
 
@@ -698,3 +698,8 @@ security, self-audit. Documented non-adopted DP rules in `.cursor/README.md`.
 Fixed broken PD-015/016/021 links; updated architecture overview provider
 wording; deprecated root `AI_Tray_*.md` as historical; refreshed handoff for
 EP-004A-on-main + D-018; wrote `documentation-cleanup-summary.md`.
+
+### Phase 8 notes
+
+Validation report: `documentation-validation-report.md` — PASS (links,
+governance, process, handoff script, CI model non-regressions).

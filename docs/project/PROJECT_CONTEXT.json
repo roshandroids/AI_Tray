@@ -2,12 +2,12 @@
   "schema_version": 1,
   "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "ep004a_on_main_docs_upgrade_phases_1_7_dogfood_pending",
+  "project_status": "ep004a_on_main_docs_upgrade_complete_dogfood_pending",
   "current_epic": "ep004-targeted-cleanup-and-docs-upgrade",
-  "current_phase": "EP-004A on main; docs Master Prompt Phases 1-7 done; Phase 8 + dogfood + branch protection pending",
+  "current_phase": "EP-004A on main; docs Master Prompt Phases 1-8 complete; dogfood + branch protection pending",
   "branch": {
     "name": "main",
-    "commit": "e95f814",
+    "commit": "065ce3b",
     "base": "main"
   },
   "release": {
@@ -30,7 +30,7 @@
   "repository_state": {
     "default_branch": "main",
     "active_branch": "main",
-    "active_branch_commit": "e95f814",
+    "active_branch_commit": "065ce3b",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -160,11 +160,12 @@
   },
   "documentation": {
     "upgrade_decision": "D-018",
-    "master_prompt_phases_completed": [1, 2, 3, 4, 5, 6, 7],
+    "master_prompt_phases_completed": [1, 2, 3, 4, 5, 6, 7, 8],
     "engineering_standard": "docs/ENGINEERING_STANDARD.md",
     "project_blueprint": "docs/PROJECT_BLUEPRINT.md",
     "process": "docs/process/",
-    "cursor_rules": ".cursor/README.md"
+    "cursor_rules": ".cursor/README.md",
+    "validation_report": "docs/reports/documentation-validation-report.md"
   },
   "completed": [
     "EP-002 Phase 3 merge",
@@ -175,7 +176,7 @@
     "EP-004A Local First CI on main (PR #11)",
     "PD-025 demo strategy and showcase demos.json contract",
     "D-017 Quality CI + Release CD hardening",
-    "Docs upgrade Master Prompt Phases 1-7 (D-018)"
+    "Docs upgrade Master Prompt Phases 1-8 (D-018)"
   ],
   "product_decisions": [
     {
@@ -210,7 +211,6 @@
   "current_work": [
     "Confirm GitHub branch protection matches EP-004A",
     "Execute macOS arm64 dogfood checklist",
-    "Docs Master Prompt Phase 8 validation",
     "Product Owner release timing for Phase 3"
   ],
   "risks": [
@@ -234,7 +234,6 @@
   "next_recommended_tasks": [
     "Update/verify branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
     "Run macOS arm64 dogfood checklist",
-    "Finish docs Phase 8 validation report",
     "Optionally start targeted-cleanup import canonicalization",
     "Keep Windows Experimental until hardware checklist passes",
     "Do not add a Flutter Web playground for AI Tray"

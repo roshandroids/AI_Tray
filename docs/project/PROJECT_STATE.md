@@ -4,15 +4,15 @@
 **Current release:** v1.3.3 (`1.3.3+9`)
 **Default branch:** `main`
 **Active development branch:** `main`
-**Current milestone:** EP-004A on main; docs upgrade Phases 1–7; dogfood + release timing pending
+**Current milestone:** EP-004A on main; docs upgrade Phases 1–8 complete; dogfood + release timing pending
 **Overall progress:** EP-002 merged; Phase 3 not yet published
 
 ## Current status
 
 Post-EP-002 stabilization is complete. **Quality CI + Release CD (EP-004A)**
 is on `main` (PR #11; legacy `ci.yml` removed). Documentation upgrade Master
-Prompt Phases 1–7 are on `main` (governance, contributor templates, process,
-engineering standard, blueprint, Cursor rules, cleanup).
+Prompt Phases 1–8 are on `main` (governance, contributor templates, process,
+engineering standard, blueprint, Cursor rules, cleanup, validation).
 
 **CI/CD strategy (Quality CI + Release CD):**
 - Quality: PR/push → `main`, Ubuntu only (Format / Analyze / Test / Validate workflows)
@@ -33,14 +33,13 @@ See `docs/devops/DEMO_STRATEGY.md`.
 - EP-004 assessment recommending targeted cleanup
 - EP-004A Quality CI + Release CD on `main` (PR #11)
 - PD-025 product-as-demo + DEMO_STRATEGY
-- Document Platform parity plan + Master Prompt Phases 1–7
+- Document Platform parity plan + Master Prompt Phases 1–8
 
 ## In progress
 
 - GitHub branch protection alignment (drop `Build macOS` if still required)
 - macOS arm64 dogfood execution
 - Windows runtime verification (Experimental)
-- Docs Master Prompt Phase 8 validation
 
 ## Health
 
