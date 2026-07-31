@@ -18,6 +18,10 @@ export 'package:ai_tray/features/providers/presentation/provider_selection_contr
         selectedProviderIdProvider;
 export 'package:ai_tray/features/providers/provider_providers.dart'
     show processRunnerProvider, providerRegistryProvider;
+export 'package:ai_tray/features/sessions/browser/presentation/session_browser_controller.dart'
+    show sessionBrowserControllerProvider;
+export 'package:ai_tray/features/sessions/session_providers.dart'
+    show sessionRepositoryProvider;
 export 'package:ai_tray/features/settings/settings_providers.dart'
     show settingsRepositoryProvider, sharedPreferencesProvider;
 

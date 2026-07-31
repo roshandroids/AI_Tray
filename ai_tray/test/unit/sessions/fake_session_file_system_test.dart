@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/features/sessions/data/fs/fake_session_file_system.dart';
 import 'package:ai_tray/features/sessions/domain/ports/session_file_system.dart';
@@ -79,6 +80,20 @@ void main() {
       final ref = SessionFileRef.fromPath('/root/-proj/missing.jsonl');
 
       await expectLater(fs.readLines(ref).toList(), throwsStateError);
+    });
+
+    test('listFailure forces listSessionFiles to fail', () async {
+      final fs = FakeSessionFileSystem()
+        ..addFile('/root/-proj/a.jsonl', lines: const ['x'])
+        ..listFailure = const AppFailure(
+          code: FailureCode.unknown,
+          message: 'boom',
+        );
+
+      final result = await fs.listSessionFiles(rootPath: '/root');
+
+      expect(result.isFailure, isTrue);
+      expect(result.failureOrNull?.code, FailureCode.unknown);
     });
 
     test('records calls for assertion', () async {

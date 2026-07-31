@@ -297,3 +297,184 @@ issues on `lib/features/sessions/` and `test/unit/sessions/`.
   none, do not fix it inside a sessions story.
 
 ---
+
+## Milestone 1 — Session Visibility (read-only)
+
+### Epic 1.2 — Session Browser UI
+
+#### Feature 1.2.1 — Session List Page — ✅ Complete
+
+**Stories completed:** `SessionBrowserController` + list UI · Search/filter
+by project path.
+
+**Files added:**
+- `lib/features/sessions/domain/repositories/session_repository.dart` —
+  port with a single `listSessions()` method. `readSession()`/
+  `refreshIndex()` from §9's port sketch are deliberately **not** added
+  yet — nothing in this feature needs them (Feature 1.2.2's detail view
+  does), so building them now would be untested, unused surface. This
+  fills the gap Feature 1.1.2's log entry flagged: "the locked roadmap has
+  no explicit story for assembling `SessionRepository` itself... implied
+  to happen inside Feature 1.2.1."
+- `lib/features/sessions/data/repositories/file_system_session_repository.dart`
+  — composes Feature 1.1.1's `SessionFileSystem`, Feature 1.1.2's
+  `JsonlSessionParser.summarize()`, and Feature 1.1.3's
+  `ClaudeSessionService`/`mergeSessionLiveness` — no new filesystem or CLI
+  logic
+- `lib/features/sessions/data/repositories/fake_session_repository.dart` —
+  in-memory test double (mirrors `FakeProcessRunner`/
+  `FakeSessionFileSystem`'s configurable-response shape), with a
+  `holdNextResponse()`/`releaseResponse()` gate for deterministic
+  loading-state widget tests
+- `lib/features/sessions/session_providers.dart` — DI wiring
+  (`sessionFileSystemProvider`, `claudeSessionServiceProvider`,
+  `sessionRepositoryProvider`), same shape as `settings_providers.dart`;
+  reuses the existing `processRunnerProvider` singleton rather than
+  constructing a second one
+- `lib/features/sessions/browser/presentation/session_browser_controller.dart`
+  — `AsyncNotifier<List<SessionSummary>>`, same shape as
+  `SettingsNotifier`/`ProviderSelectionNotifier`
+- `lib/features/sessions/browser/presentation/session_list_filter.dart` —
+  standalone pure `filterSessionsByProjectPath()` function (not a
+  controller method), so filtering is unit-testable in isolation and
+  never mutates or discards the controller's loaded list
+- `lib/features/sessions/browser/presentation/session_browser_page.dart` —
+  list page reusing `SectionCard` (`core/components/section_chrome.dart`)
+  for tiles and `StatusBadge`/`TrayStatusKind.live`
+  (`core/components/status_badge.dart`) for the live indicator; empty
+  state mirrors `tray_empty_state.dart`'s visual pattern (Semantics +
+  title/body via `type.emptyTitle`/`type.bodySmall`) rather than
+  instantiating that widget directly, since its constructor is
+  usage/provider-specific and doesn't fit a session list
+- `test/unit/sessions/{session_list_filter_test.dart, file_system_session_repository_test.dart, session_browser_controller_test.dart}`
+- `test/widget/session_browser_page_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/data/fs/fake_session_file_system.dart` — added a
+  `listFailure` field so tests can simulate a genuine enumeration error
+  (permission denied / I/O error), distinct from the already-covered "no
+  sessions yet" empty-success case; Feature 1.1.1's fake had no seam for
+  this because nothing needed it until the repository's error-propagation
+  path did
+- `test/unit/sessions/fake_session_file_system_test.dart` — one new test
+  for the above
+- `lib/features/usage/presentation/usage_page.dart` — added a "Sessions"
+  toolbar `IconButton` (`Icons.history_outlined`) next to Diagnostics,
+  pushing `SessionBrowserPage` via the same bare
+  `Navigator.push(MaterialPageRoute)` pattern already used for
+  Settings/Diagnostics/Logs. Not named as a story in the roadmap, but
+  without it the page is unreachable dead code; this is the minimal,
+  pattern-following wiring, not a new navigation abstraction.
+- `lib/core/di/providers.dart` — exports `sessionRepositoryProvider` and
+  `sessionBrowserControllerProvider`, mirroring how
+  `selectedProviderIdProvider` (an `AsyncNotifierProvider`, not just a
+  plain repository provider) is already re-exported from this barrel.
+
+**Deviations from the roadmap:** None in shape or intent. As anticipated
+by Feature 1.1.2's log entry, this feature is where `SessionRepository`
+itself got built — the roadmap named the port's eventual shape (§9:
+`listSessions()`, `readSession(id)`, `refreshIndex()`) but not which story
+assembles it; building only `listSessions()` now (see above) is a scope
+decision, not a deviation, since `readSession`/`refreshIndex` have no
+caller yet.
+
+**Implementation discoveries for later milestones:**
+- `SessionRepository` owns no cache (§9), so there is no meaningful
+  difference between the initial load and a "refresh" — both are exactly
+  the same `listSessions()` call. `SessionBrowserController.refresh()`
+  simply re-invokes it; no separate `refreshIndex()` port method exists or
+  is needed. Worth confirming this still holds once Feature 1.2.2 is
+  built — if the detail view's `readSession()` ever needs its own
+  re-scan semantics, that is the point to revisit, not now.
+- A per-file `stat()` failure (a session deleted between listing and
+  reading its metadata — the same race Feature 1.1.1's port already
+  documented) is treated at the repository level exactly like Feature
+  1.1.2 treats a malformed transcript line: skip that one item, log a
+  warning, keep going. This is a second, independent application of the
+  same tolerate-and-degrade discipline, at a different layer.
+- `only_throw_errors` (analyzer, info-level) rejects throwing a raw
+  `AppFailure` from `SessionBrowserController._load()` since `AppFailure`
+  doesn't extend `Exception`/`Error` (deliberately, per its own doc
+  comment). `ProviderSelectionNotifier`/`SettingsNotifier` already solve
+  this by throwing a `StateError` with just the user-safe message and
+  logging the full `AppFailure` separately — followed the identical
+  pattern here rather than inventing a new one. Worth carrying into
+  Feature 1.2.2's detail-page controller, which will hit the same lint.
+- `UsageStatusMapper` (`features/usage/presentation/usage_status.dart`) is
+  already reused outside `features/usage/` (by `core/components/`,
+  `features/tray/`, `features/diagnostics/`) despite the bounded-context
+  module structure in §7 — reusing `.relativeUpdated()` and
+  `TrayStatusKind.live`/`StatusBadge` for the session tile's timestamp and
+  live indicator follows that existing precedent rather than duplicating a
+  relative-time formatter or inventing a session-specific status badge.
+
+**Regression found:** None. The three tests that reference `UsagePage`
+(`shared_dashboard_usage_test.dart`, `provider_selection_usage_test.dart`,
+`ep002_ui_quality_test.dart`) were all already failing to compile before
+this feature's changes (see Feature 1.1.3's log entry) for reasons
+unrelated to sessions — none asserted anything about the toolbar's icon
+set, so adding the Sessions `IconButton` carried no regression risk for
+them.
+
+**Branch note, recorded so it isn't mistaken for scope creep later:**
+between this feature's implementation and its final verification, PR #13
+squash-merged `feat/personalization-flex-theme` (which carried both this
+work's Feature 1.1.1–1.1.3 commit and the unrelated theme-personalization
+commit) into `main`; the working tree's checked-out branch moved to `main`
+accordingly (confirmed via `git log`/`git branch -vv` — `main` is at
+`5ebb037`, whose parent history shows the squashed commit message
+containing both original commit bodies verbatim). This resolved the
+previously-failing `UsagePage` compile errors (the personalization
+work's own fixes landed as part of that merge) — not something done by,
+or in the scope of, this feature.
+
+One pre-existing, unrelated failure was discovered during final
+verification: `test/unit/ui/shared_surfaces_controller_test.dart`
+("settings load, save, timeout, and retry recover cleanly") fails with
+`Expected: true, Actual: <false>` at its `save()` assertion (line 51) —
+a `SettingsNotifier` test using a 40ms `operationTimeout`, unrelated to
+sessions in every way (no import, call, or provider this feature touches).
+Confirmed pre-existing, not caused by this feature's changes: `git stash
+push -u` set the working tree to exactly `main`'s committed state, and
+the same failure reproduced 3/3 runs before the stash was popped back.
+Likely a timing-sensitive test whose fixed 40ms budget doesn't leave
+enough margin under machine load — not a sessions concern, and not fixed
+here per the same "don't fix pre-existing unrelated failures inside a
+sessions story" rule Feature 1.1.1 established.
+
+**ADR changes required:** None. No locked architectural decision was
+challenged; `SessionRepository`'s shape and the "no cache" reasoning
+implement §9 exactly as specified.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 26 tests across 5 files, all passing — `session_list_filter_test.dart`
+  (7: empty query, narrows by substring, case-insensitive, falls back to
+  `sanitizedProjectDirName`, no-match, purity, determinism),
+  `file_system_session_repository_test.dart` (6: builds summaries from
+  seeded files, merges liveness onto matching sessions, a failed liveness
+  call leaves `isLive` null without failing the list, a file that
+  disappears between listing and stat is skipped, an empty directory
+  succeeds empty, a genuine enumeration failure propagates),
+  `session_browser_controller_test.dart` (5: populates state, surfaces a
+  repository failure as `AsyncError`, `refresh()` re-queries and updates
+  state, `refresh()` recovers from a prior error, `refresh()` is a no-op
+  while already in flight), one new case in
+  `fake_session_file_system_test.dart` (the new `listFailure` seam), and
+  `test/widget/session_browser_page_test.dart` (7: populated list with
+  path/activity/count, empty state, loading indicator via
+  `holdNextResponse()`/`releaseResponse()`, refresh reflects newly added
+  sessions, search narrows and clearing restores the list, no-match empty
+  state, live badge shown only for `isLive == true`).
+- Sessions-scoped suite (`test/unit/sessions/` +
+  `test/widget/session_browser_page_test.dart`): **81/81 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **266
+  passed, 1 failed** — the single failure is the pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test described above
+  (verified independent of this feature via `git stash`); every other
+  test passes, including the three `UsagePage`-referencing tests that
+  were failing before this feature (see "Branch note" above for why).
+
+---

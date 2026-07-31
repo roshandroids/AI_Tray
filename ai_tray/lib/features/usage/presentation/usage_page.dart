@@ -11,6 +11,7 @@ import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
+import 'package:ai_tray/features/sessions/browser/presentation/session_browser_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/presentation/settings_page.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
@@ -78,6 +79,10 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
     MaterialPageRoute<void>(builder: (_) => const DiagnosticsPage()),
   );
 
+  Future<void> _openSessions() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const SessionBrowserPage()),
+  );
+
   Future<void> _openLogs() => Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => const LogsPage()),
   );
@@ -142,6 +147,11 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
                 tooltip: 'Diagnostics',
                 onPressed: () => unawaited(_openDiagnostics()),
                 icon: const Icon(Icons.monitor_heart_outlined),
+              ),
+              IconButton(
+                tooltip: 'Sessions',
+                onPressed: () => unawaited(_openSessions()),
+                icon: const Icon(Icons.history_outlined),
               ),
               IconButton(
                 tooltip: 'Settings (⌘,)',
