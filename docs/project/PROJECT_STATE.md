@@ -14,10 +14,11 @@ is on `main` (PR #11; legacy `ci.yml` removed). Documentation upgrade Master
 Prompt Phases 1–8 are on `main` (governance, contributor templates, process,
 engineering standard, blueprint, Cursor rules, cleanup, validation).
 
-**CI/CD strategy (Quality CI + Release CD):**
-- Quality: PR/push → `main`, Ubuntu only (Format / Analyze / Test / Validate workflows)
+**CI/CD strategy (Quality CI + Release CD + shared scripts / D-019):**
+- Quality: PR/push → `main`, Ubuntu only — invokes `./scripts/format|analyze|test|check`
 - Documentation: docs/showcase/markdown paths, no Flutter
-- Release CD: tag / `workflow_dispatch` only — sole owner of macOS/Windows builds
+- Release CD: tag / `workflow_dispatch` only — `./scripts/build.sh` + `package.sh`
+- Local DX: same `scripts/` surface; `.ci/config` `CI_MODE` is preference only (Actions ignores it)
 - Maintenance: weekly + dispatch outdated reports
 See `docs/devops/LOCAL_DEVELOPMENT.md` and `docs/release/CI-CD.md`.
 
@@ -34,6 +35,8 @@ See `docs/devops/DEMO_STRATEGY.md`.
 - EP-004A Quality CI + Release CD on `main` (PR #11)
 - PD-025 product-as-demo + DEMO_STRATEGY
 - Document Platform parity plan + Master Prompt Phases 1–8
+- D-019 shared `scripts/` Local DX + Remote CI (thin Actions orchestration)
+- D-020 CHANGELOG SoT + generated `release_history.json` + in-app About/history
 
 ## In progress
 

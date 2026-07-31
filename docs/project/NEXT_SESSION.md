@@ -6,51 +6,36 @@
 
 1. Read `AI_HANDOFF.md` and `PROJECT_CONTEXT.json`.
 2. `git status`, `git branch --show-current`, `git log -5 --oneline`.
-3. Verify required checks are `Format` | `Analyze` | `Test` | `Validate workflows`
-   and that `Build macOS` is **not** required
-   ([BRANCH_PROTECTION.md](../process/BRANCH_PROTECTION.md)).
-4. Skim `docs/devops/DEMO_STRATEGY.md` (PD-025) and `AGENTS.md`.
+3. Run `./scripts/doctor.sh` and skim `docs/devops/LOCAL_DEVELOPMENT.md` (D-019).
+4. Confirm branch protection: ruleset **Protect main (require PR)** active;
+   required checks `Format` | `Analyze` | `Test` | `Validate workflows`
+   (never `Build macOS`). Never push directly to `main` — always PR → merge.
 
 ## Current objective
 
-Confirm branch protection matches EP-004A, complete macOS arm64 dogfood, then
-consider Phase 3 release timing or targeted-cleanup import PRs.
+Verify D-020 in-app release history on a dogfood build, confirm branch
+protection, land any remaining D-019 shared-scripts commit, then Phase 3
+release timing or targeted cleanup.
 
 ## Prerequisites
 
-- Stabilization merged to `main` (PR #9)
-- EP-004A Quality CI + Release CD on `main` (PR #11)
-- ADR-004 / PD-024: targeted cleanup, not full rewrite
-- PD-023: no Cursor quota provider
-- PD-025: product-as-demo (`demos.json` id `main`)
-- Docs Master Prompt Phases 1–8 complete on `main`
-
-## Blockers
-
-- Windows Experimental until hardware checklist is completed
-- Phase 3 still unpublished; release needs Product Owner timing
-- GitHub branch protection may still list stale `Build macOS` until updated
+- EP-004A on `main` (PR #11)
+- D-019 shared scripts (Local DX + Remote CI; CI_MODE ignored by Actions)
+- D-020 CHANGELOG SoT + `release_history.json` + Settings About
+- PD-025 product-as-demo
 
 ## Recommended next task
 
-1. Apply/verify branch protection ruleset
-   ([`docs/process/github-ruleset-protect-main-branch.json`](../process/github-ruleset-protect-main-branch.json)).
-2. Run [`docs/dogfood/POST_EP002_MACOS_ARM64.md`](../dogfood/POST_EP002_MACOS_ARM64.md).
-3. If cleanup is approved: canonicalize imports to `core/` + `copilot/` only.
-4. Do not add a Flutter Web playground; do not Melos-split for parity.
-
-## Do not do next
-
-- Cursor personal quota provider
-- Provider-folder rewrite / refresh-cache-sidecar redesign
-- Docs-only or governance-only release
-- Flutter Web “demo” of the tray app
-- Re-adding desktop builds to Quality CI
+1. Commit D-020 release-notes work (and D-019 CI scripts if still uncommitted).
+2. Apply/verify branch protection ruleset.
+3. `./scripts/release.sh --local-only` for dogfood; open Settings → About.
+4. Do not re-add desktop builds to Quality CI.
+5. Never hand-edit `ai_tray/assets/release_history.json`.
 
 ## Acceptance criteria
 
-- Branch protection matches EP-004A required checks
-- Showcase `demos.json` lists product `main` + DEMO_STRATEGY consistent with PD-025
-- Handoff JSON/Markdown consistent
-- No Cursor quota code
-- Docs validation report present (`docs/reports/documentation-validation-report.md`)
+- Settings About shows live version/build and What’s New from history asset
+- Diagnostics App version matches PackageInfo (not hardcoded)
+- `./scripts/check.sh workflows` passes
+- No CI_MODE conditionals in workflow YAML
+- Handoff consistent (D-020 recorded)

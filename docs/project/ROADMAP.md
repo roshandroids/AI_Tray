@@ -11,6 +11,8 @@
 - Post-EP-002 stabilization (lifecycle, races, sidecar, dogfood checklists)
 - EP-004 assessment → **targeted cleanup** (ADR-004 / PD-024)
 - EP-004A Quality CI + Release CD on `main` (PR #11; D-017)
+- D-019 shared `scripts/` Local DX + Remote CI
+- D-020 CHANGELOG SoT + in-app release history (`release_history.json`)
 - PD-025 / D-016 demo strategy: product-as-demo (`demos.json` id `main`, desktop)
 - Docs/engineering upgrade Master Prompt Phases 1–8 (D-018)
 

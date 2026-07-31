@@ -1,30 +1,36 @@
 ---
-description: Git/GitHub — Issue, branch, Conventional Commits, PR; Quality CI only on PRs
+description: Git/GitHub — never push main; always branch → PR → merge
 alwaysApply: true
 ---
 
 # Git & GitHub Workflow
 
 Canonical: `CONTRIBUTING.md` · `docs/process/REPOSITORY_GOVERNANCE.md` ·
-`docs/process/CI_REQUIRED_CHECKS.md`
+`docs/process/BRANCH_PROTECTION.md` · `docs/process/CI_REQUIRED_CHECKS.md`
 
 ```text
-Issue → Branch → Implementation → Commit → Pull Request → Maintainer → Merge
+Issue → Branch → Implementation → Commit → Pull Request → Quality CI → Merge
 ```
 
-Do not push or merge unless the user explicitly asks. Prefer feature branches
-over committing directly to `main` when protection is enabled.
+## Protect `main`
+
+- **`main` is protected.** Never `git push` commits directly to `main`.
+- Always work on a feature/fix branch, open a **pull request**, wait for
+  required checks (**Format** | **Analyze** | **Test** | **Validate workflows**),
+  then **merge** the PR (`gh pr merge` or GitHub UI).
+- Do not force-push or delete `main`.
+- Do not commit or merge unless the user explicitly asks (or an approved plan
+  requests it). When the user asks to land work: branch → commit → PR → merge.
 
 ## Commits
 
 - Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, …).
 - Stage intentional paths only — never `git add .` / `-A` unless the user
   explicitly asks for a broad commit.
-- Commit when the user or an approved execution plan (e.g. Master Prompt
-  phase commits) requests it.
 
 ## PRs
 
 - Link Issues (`Closes` / `Refs`) for non-trivial work.
 - Fill the PR template; expect Format / Analyze / Test / Validate workflows.
 - Do **not** require or reintroduce PR desktop builds (Build macOS / Windows).
+- After merge, prefer deleting the head branch.

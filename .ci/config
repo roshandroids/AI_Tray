@@ -1,0 +1,8 @@
+# Preferred maintainer workflow. Documentation and local scripts only.
+#
+# GitHub Actions IGNORES this file entirely. Branch protection and Quality CI
+# always run Format / Analyze / Test / Validate workflows regardless of CI_MODE.
+#
+# local  = run ./scripts/check.sh (and Lefthook) before push; GHA re-verifies
+# remote = you may lean on GHA for verification; local scripts still available
+CI_MODE=local

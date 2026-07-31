@@ -2,9 +2,9 @@
   "schema_version": 1,
   "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "ep004a_on_main_docs_upgrade_complete_dogfood_pending",
+  "project_status": "d020_release_notes_sot_d019_shared_scripts_dogfood_pending",
   "current_epic": "ep004-targeted-cleanup-and-docs-upgrade",
-  "current_phase": "EP-004A on main; docs Master Prompt Phases 1-8 complete; dogfood + branch protection pending",
+  "current_phase": "D-020 in-app release history landed; D-019 scripts may still be uncommitted; dogfood + branch protection pending",
   "branch": {
     "name": "main",
     "commit": "ff84b9a",
@@ -96,7 +96,7 @@
     ],
     "ep004_posture": "targeted_cleanup",
     "ci_local_first": true,
-    "ci_model": "quality_ci_plus_release_cd",
+    "ci_model": "quality_ci_plus_release_cd_shared_scripts",
     "demo_strategy": "product_as_demo_desktop_releases",
     "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
     "provider_catalog": "ProviderRegistry",
@@ -112,7 +112,14 @@
   "ci_cd": {
     "strategy": "quality_ci_plus_release_cd",
     "epic": "EP-004A",
-    "decision": "D-017",
+    "decision": "D-019",
+    "release_notes_decision": "D-020",
+    "release_notes_sot": "CHANGELOG.md",
+    "release_history_asset": "ai_tray/assets/release_history.json",
+    "shared_scripts": "scripts/",
+    "ci_mode_config": ".ci/config",
+    "toolchain_config": ".ci/toolchain.env",
+    "ci_mode_affects_github_actions": false,
     "workflows": {
       "quality": ".github/workflows/quality.yml",
       "documentation": ".github/workflows/documentation.yml",
@@ -137,6 +144,19 @@
       "Build macOS"
     ],
     "lefthook": "optional_per_clone",
+    "entrypoints": [
+      "scripts/doctor.sh",
+      "scripts/bootstrap.sh",
+      "scripts/clean.sh",
+      "scripts/format.sh",
+      "scripts/analyze.sh",
+      "scripts/test.sh",
+      "scripts/check.sh",
+      "scripts/build.sh",
+      "scripts/package.sh",
+      "scripts/publish.sh",
+      "scripts/release.sh"
+    ],
     "docs": [
       "docs/devops/LOCAL_DEVELOPMENT.md",
       "docs/devops/CI_AUDIT.md",
@@ -176,7 +196,9 @@
     "EP-004A Local First CI on main (PR #11)",
     "PD-025 demo strategy and showcase demos.json contract",
     "D-017 Quality CI + Release CD hardening",
-    "Docs upgrade Master Prompt Phases 1-8 (D-018)"
+    "Docs upgrade Master Prompt Phases 1-8 (D-018)",
+    "D-019 shared scripts Local DX + Remote CI",
+    "D-020 CHANGELOG SoT + release_history.json + in-app About/history"
   ],
   "product_decisions": [
     {
@@ -209,8 +231,9 @@
     }
   ],
   "current_work": [
+    "Commit D-020 release-notes / D-019 shared-scripts if still uncommitted",
     "Confirm GitHub branch protection matches EP-004A",
-    "Execute macOS arm64 dogfood checklist",
+    "Execute macOS arm64 dogfood checklist (Settings → About)",
     "Product Owner release timing for Phase 3"
   ],
   "risks": [
@@ -233,7 +256,8 @@
   ],
   "next_recommended_tasks": [
     "Update/verify branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
-    "Run macOS arm64 dogfood checklist",
+    "Run macOS arm64 dogfood checklist; verify Settings About What’s New",
+    "Never hand-edit ai_tray/assets/release_history.json",
     "Optionally start targeted-cleanup import canonicalization",
     "Keep Windows Experimental until hardware checklist passes",
     "Do not add a Flutter Web playground for AI Tray"

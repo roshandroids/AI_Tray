@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/errors/app_failure.dart';
@@ -13,10 +14,13 @@ import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart'
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/settings/domain/models/release_history.dart';
 import 'package:ai_tray/features/settings/presentation/settings_controller.dart';
+import 'package:ai_tray/features/settings/release_history_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Settings with left navigation rail (PD-021).
 class SettingsPage extends ConsumerStatefulWidget {
@@ -453,16 +457,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       ],
       SettingsSection.about => [
-        SettingsGroup(
-          title: 'About',
-          children: [
-            Text('AI Tray 1.1.0', style: context.typography.monoData),
-            const SizedBox(height: Spacing.sm),
-            Text(
-              'Terminal-inspired desktop companion for AI coding providers.',
-              style: context.typography.caption,
-            ),
-          ],
+        _AboutSettingsGroup(
+          packageInfo: ref.watch(packageInfoProvider),
+          history: ref.watch(releaseHistoryProvider),
         ),
       ],
       SettingsSection.diagnostics || SettingsSection.logs => const [],
@@ -642,6 +639,113 @@ final class _InlineError extends StatelessWidget {
           TextButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
+    );
+  }
+}
+
+/// Settings → About: live version/build + What’s New from release history.
+final class _AboutSettingsGroup extends StatelessWidget {
+  const _AboutSettingsGroup({
+    required this.packageInfo,
+    required this.history,
+  });
+
+  final AsyncValue<PackageInfo> packageInfo;
+  final AsyncValue<ReleaseHistory> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final info = packageInfo.value;
+    final releaseHistory = history.value;
+    final version = info?.version;
+    final current = version == null
+        ? null
+        : releaseHistory?.entryForVersion(version);
+    final previous = version == null || releaseHistory == null
+        ? const <ReleaseEntry>[]
+        : releaseHistory.previousReleases(currentVersion: version);
+
+    return SettingsGroup(
+      title: 'About',
+      children: [
+        Text(
+          'Terminal-inspired desktop companion for AI coding providers.',
+          style: context.typography.caption,
+        ),
+        const SizedBox(height: Spacing.sm),
+        if (packageInfo.isLoading && info == null)
+          const InfoRow(label: 'Version', value: '…')
+        else if (packageInfo.hasError && info == null)
+          const InfoRow(label: 'Version', value: 'unavailable')
+        else ...[
+          InfoRow(
+            label: 'Version',
+            value: version == null ? '—' : 'AI Tray $version',
+          ),
+          InfoRow(
+            label: 'Build',
+            value: info?.buildNumber ?? '—',
+          ),
+          InfoRow(
+            label: 'Released',
+            value: current?.date ?? '—',
+          ),
+        ],
+        const SizedBox(height: Spacing.md),
+        Text('What’s New', style: context.typography.section),
+        const SizedBox(height: Spacing.xs),
+        if (history.isLoading && releaseHistory == null)
+          Text('Loading release notes…', style: context.typography.caption)
+        else if (history.hasError && releaseHistory == null)
+          Text(
+            'Release notes could not be loaded.',
+            style: context.typography.caption.copyWith(
+              color: context.colors.error,
+            ),
+          )
+        else if (current == null || current.notesMarkdown.trim().isEmpty)
+          Text(
+            'No notes for this build yet. Edit CHANGELOG.md Unreleased '
+            'before the next publish.',
+            style: context.typography.caption,
+          )
+        else
+          SelectableText(
+            current.notesMarkdown,
+            style: context.typography.monoData.copyWith(fontSize: 12),
+          ),
+        if (previous.isNotEmpty) ...[
+          const SizedBox(height: Spacing.md),
+          Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              title: Text(
+                'Previous releases',
+                style: context.typography.section,
+              ),
+              children: [
+                for (final entry in previous) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '${entry.version} — ${entry.date}',
+                      style: context.typography.monoData,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  SelectableText(
+                    entry.notesMarkdown,
+                    style: context.typography.monoData.copyWith(fontSize: 12),
+                  ),
+                  const SizedBox(height: Spacing.md),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

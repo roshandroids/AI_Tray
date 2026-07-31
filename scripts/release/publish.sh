@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# One-command release prep: bump version, finalize CHANGELOG, commit, tag, push.
-# Triggers the Release workflow when the tag reaches GitHub.
+# One-command release prep: bump version, finalize CHANGELOG, sync in-app
+# release history, commit, tag, push. Triggers Release CD when the tag lands.
 #
 # Usage:
 #   ./scripts/release/publish.sh patch|minor|major [--pre rc.N] [--dry-run]
@@ -8,11 +8,15 @@
 #
 # Requires: clean working tree (except CHANGELOG edits you intend to make first),
 #           entries under ## [Unreleased] in CHANGELOG.md.
+#
+# Source of truth for notes: CHANGELOG.md. Derived asset (do not hand-edit):
+#   ai_tray/assets/release_history.json
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 PUBSPEC="$ROOT/ai_tray/pubspec.yaml"
 CHANGELOG="$ROOT/CHANGELOG.md"
+RELEASE_HISTORY="$ROOT/ai_tray/assets/release_history.json"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 RED='\033[0;31m'
@@ -21,7 +25,7 @@ NC='\033[0m'
 
 usage() {
   cat <<'EOF'
-Publish AI Tray — bump, changelog, commit, tag, push.
+Publish AI Tray — bump, changelog, sync release history, commit, tag, push.
 
 Usage:
   publish.sh patch|minor|major [--pre rc.N] [--dry-run]
@@ -31,6 +35,9 @@ Examples:
   publish.sh patch          # 1.0.0-rc.2 → 1.0.1 (stable bump)
   publish.sh 1.0.0          # pin GA version explicitly
   publish.sh patch --pre rc.3
+
+Edit ## [Unreleased] in CHANGELOG.md only — never hand-edit
+ai_tray/assets/release_history.json (regenerated here).
 
 After push, GitHub Actions builds macOS + Windows and publishes the release.
 EOF
@@ -133,19 +140,28 @@ PY
 
 log "Updated CHANGELOG.md → [$VERSION_NAME]"
 
+log "Syncing in-app release history from CHANGELOG…"
+"$SCRIPT_DIR/sync_release_history.sh" "$CHANGELOG"
+
 if $DRY_RUN; then
-  log "Dry run — reverting pubspec and CHANGELOG edits"
+  log "Dry run — reverting pubspec, CHANGELOG, and release_history edits"
   git checkout -- "$PUBSPEC" "$CHANGELOG"
+  if git ls-files --error-unmatch "$RELEASE_HISTORY" >/dev/null 2>&1; then
+    git checkout -- "$RELEASE_HISTORY"
+  else
+    rm -f "$RELEASE_HISTORY"
+  fi
   log "Would commit, tag $TAG, and push to origin"
   exit 0
 fi
 
-git add "$PUBSPEC" "$CHANGELOG"
+git add "$PUBSPEC" "$CHANGELOG" "$RELEASE_HISTORY"
 git commit -m "$(cat <<EOF
 chore(release): prepare $TAG
 
 - Bump version to $NEW_VERSION
 - Update CHANGELOG for $VERSION_NAME
+- Sync ai_tray/assets/release_history.json
 EOF
 )"
 
@@ -161,7 +177,7 @@ ${GREEN}Published $TAG locally and pushed to origin.${NC}
 
 GitHub Actions will:
   1. Validate pubspec version
-  2. Build AI-Tray-macOS-arm64.zip, AI-Tray-macOS-x64.zip, AI-Tray-Windows-x64.zip
+  2. Build AI-Tray-macOS-arm64.zip and AI-Tray-Windows-x64.zip
   3. Create the GitHub Release with CHANGELOG notes
 
 Monitor: https://github.com/roshandroids/AI_Tray/actions/workflows/release.yml
