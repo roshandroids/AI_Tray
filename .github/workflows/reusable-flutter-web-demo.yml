@@ -25,10 +25,10 @@ on:
         required: true
         type: string
       flutter_version:
-        description: Flutter SDK version (stable channel)
+        description: Flutter SDK version (stable). Empty = .ci/toolchain.env FLUTTER_VERSION
         required: false
         type: string
-        default: "3.38.9"
+        default: ""
       base_href:
         description: Optional --base-href for flutter build web
         required: false
@@ -55,6 +55,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Load toolchain pins
+        run: bash scripts/ci/export_toolchain.sh
+
       - name: Resolve artifact name
         id: meta
         run: echo "artifact_name=flutter-web-demo-${{ inputs.demo_id }}" >> "$GITHUB_OUTPUT"
@@ -62,7 +65,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ inputs.flutter_version }}
+          flutter-version: ${{ inputs.flutter_version != '' && inputs.flutter_version || env.FLUTTER_VERSION }}
           channel: stable
           cache: true
 

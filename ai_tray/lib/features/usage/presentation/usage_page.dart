@@ -636,6 +636,7 @@ final class _DashboardBody extends ConsumerWidget {
         final displayKind = !showStale && kind == TrayStatusKind.cached
             ? TrayStatusKind.live
             : kind;
+        final statusValue = '● ${UsageStatusMapper.label(displayKind)}';
         final mode = settings == null
             ? '—'
             : settings.autoRefreshEnabled
@@ -726,10 +727,7 @@ final class _DashboardBody extends ConsumerWidget {
                               children: [
                                 InfoRow(
                                   label: 'Status',
-                                  value:
-                                      '● ${UsageStatusMapper.label(
-                                        displayKind,
-                                      )}',
+                                  value: statusValue,
                                   valueColor: context.colors.success,
                                 ),
                                 InfoRow(
@@ -791,7 +789,7 @@ final class _DashboardBody extends ConsumerWidget {
                         children: [
                           InfoRow(
                             label: 'Status',
-                            value: '● ${UsageStatusMapper.label(displayKind)}',
+                            value: statusValue,
                           ),
                           InfoRow(
                             label: 'Source',

@@ -5,3 +5,6 @@
 __pycache__/
 *.pyc
 .venv_icons/
+dist/
+AI-Tray-*.zip
+AI-Tray-*.zip.sha256

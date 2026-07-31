@@ -1,11 +1,12 @@
-# Lefthook — local-first validation for AI Tray (EP-004A)
+# Lefthook — local DX hooks (optional per clone).
+# Calls the same ./scripts/* surface as GitHub Actions Quality CI.
 #
-# Hooks are NOT installed automatically by cloning this repo.
 # Enable once per clone:
-#   brew install lefthook   # or: go install / npm i -g @evilmartians/lefthook
+#   brew install lefthook
 #   lefthook install
 #
 # See docs/devops/LOCAL_DEVELOPMENT.md
+# Note: CI_MODE in .ci/config does not affect GitHub Actions.
 
 min_version: 1.5.0
 
@@ -13,17 +14,14 @@ pre-commit:
   parallel: false
   commands:
     format:
-      root: ai_tray
       glob: "*.{dart}"
-      run: dart format --set-exit-if-changed lib test
+      run: bash scripts/format.sh
     analyze:
-      root: ai_tray
       glob: "*.{dart}"
-      run: flutter analyze --fatal-infos
+      run: bash scripts/analyze.sh
     quick-tests:
-      root: ai_tray
       glob: "*.{dart}"
-      run: flutter test --exclude-tags golden,screenshot --reporter compact
+      run: bash scripts/test.sh
 
 commit-msg:
   commands:
@@ -34,10 +32,8 @@ pre-push:
   parallel: false
   commands:
     unit-tests:
-      root: ai_tray
-      run: flutter test --exclude-tags golden,screenshot
+      run: bash scripts/test.sh
     bridge-check:
-      root: ai_tray/tool/copilot_sdk_bridge
-      run: npm run check
+      run: bash scripts/ci/bridge.sh
     handoff:
       run: bash scripts/ci/validate_handoff.sh

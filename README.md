@@ -53,7 +53,7 @@ See [GitHub Copilot provider docs](docs/providers/github-copilot.md) and the
 | Provider architecture | [docs/architecture/provider-platform.md](docs/architecture/provider-platform.md) |
 | Docs index | [docs/README.md](docs/README.md) |
 | Releases | [GitHub Releases](https://github.com/roshandroids/AI_Tray/releases) |
-| **CI/CD** | [docs/release/CI-CD.md](docs/release/CI-CD.md) · [Local First](docs/devops/LOCAL_DEVELOPMENT.md) |
+| **CI/CD** | [docs/release/CI-CD.md](docs/release/CI-CD.md) · [Local + Remote CI](docs/devops/LOCAL_DEVELOPMENT.md) · `./scripts/check.sh` |
 | **Demos / Showcase** | [docs/devops/DEMO_STRATEGY.md](docs/devops/DEMO_STRATEGY.md) · [showcase/](showcase/) |
 | Install | [docs/guides/installation.md](docs/guides/installation.md) |
 | User guide | [docs/guides/user-guide.md](docs/guides/user-guide.md) |
