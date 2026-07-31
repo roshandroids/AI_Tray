@@ -8,7 +8,6 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/core/theme/theme_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
@@ -16,7 +15,14 @@ import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/models/release_history.dart';
 import 'package:ai_tray/features/settings/presentation/settings_controller.dart';
+import 'package:ai_tray/features/settings/presentation/widgets/app_icon_preset_picker.dart';
+import 'package:ai_tray/features/settings/presentation/widgets/font_preset_picker.dart';
+import 'package:ai_tray/features/settings/presentation/widgets/theme_mode_picker.dart';
+import 'package:ai_tray/features/settings/presentation/widgets/theme_preset_picker.dart';
 import 'package:ai_tray/features/settings/release_history_providers.dart';
+import 'package:ai_tray/theme/app_icons.dart';
+import 'package:ai_tray/theme/personalization_controller.dart';
+import 'package:ai_tray/theme/personalization_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,12 +74,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _setTheme(AppThemePreference mode) async {
-    await ref.read(themeControllerProvider.notifier).setPreference(mode);
+    await ref
+        .read(personalizationControllerProvider.notifier)
+        .setThemeMode(mode);
   }
 
   @override
   Widget build(BuildContext context) {
-    final themePref = ref.watch(themeControllerProvider).value;
+    final personalization =
+        ref.watch(personalizationControllerProvider).value ??
+        PersonalizationState.defaults();
+    final iconSwitcher = ref.watch(appIconSwitcherProvider);
     final selectedProvider = ref.watch(selectedAIProviderProvider);
     final settingsState = ref.watch(settingsControllerProvider);
     final settings =
@@ -96,7 +107,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   _binaryController.text = settings.claudeBinaryPath ?? '';
                   _binaryInitialized = true;
                 }
-                final selectedTheme = themePref ?? settings.themeMode;
 
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,7 +161,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           const SizedBox(height: Spacing.md),
                           ..._buildSection(
                             settings,
-                            selectedTheme,
+                            personalization,
+                            iconSwitcher.isSupported,
                             selectedProvider,
                             settingsState.isLoading,
                           ),
@@ -167,65 +178,62 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   List<Widget> _buildSection(
     AppSettings settings,
-    AppThemePreference selectedTheme,
+    PersonalizationState personalization,
+    bool iconSwitchSupported,
     AIProvider selectedProvider,
     bool saving,
   ) {
     return switch (_section) {
       SettingsSection.appearance => [
         SettingsGroup(
-          title: 'Theme',
+          title: 'Theme mode',
           children: [
-            SegmentedButton<AppThemePreference>(
-              segments: const [
-                ButtonSegment(
-                  value: AppThemePreference.system,
-                  label: Text('System'),
-                ),
-                ButtonSegment(
-                  value: AppThemePreference.dark,
-                  label: Text('Dark'),
-                ),
-                ButtonSegment(
-                  value: AppThemePreference.light,
-                  label: Text('Light'),
-                ),
-              ],
-              selected: {selectedTheme},
-              onSelectionChanged: (selected) {
-                if (selected.isEmpty) return;
-                unawaited(_setTheme(selected.first));
-              },
+            ThemeModePicker(
+              selected: personalization.themeMode,
+              onChanged: (mode) => unawaited(_setTheme(mode)),
             ),
-            const SizedBox(height: Spacing.sm),
-            Text('Accent', style: context.typography.label),
-            const SizedBox(height: Spacing.sm),
-            Wrap(
-              spacing: Spacing.sm,
-              children: [
-                for (final color in [
-                  context.colors.success,
-                  context.colors.warning,
-                  context.colors.highUsage,
-                  context.colors.error,
-                  context.colors.info,
-                  context.colors.purpleAccent,
-                  context.colors.cyanAccent,
-                ])
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: context.colors.border),
-                    ),
-                  ),
-              ],
+          ],
+        ),
+        const SizedBox(height: Spacing.md),
+        SettingsGroup(
+          title: 'Color theme',
+          children: [
+            ThemePresetPicker(
+              selected: personalization.themePreset,
+              onChanged: (preset) => unawaited(
+                ref
+                    .read(personalizationControllerProvider.notifier)
+                    .setThemePreset(preset),
+              ),
             ),
-            Text(
-              'Accent swatches are status palette (fixed in PD-021).',
-              style: context.typography.caption,
+          ],
+        ),
+        const SizedBox(height: Spacing.md),
+        SettingsGroup(
+          title: 'Font',
+          children: [
+            FontPresetPicker(
+              selected: personalization.fontPreset,
+              onChanged: (preset) => unawaited(
+                ref
+                    .read(personalizationControllerProvider.notifier)
+                    .setFontPreset(preset),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.md),
+        SettingsGroup(
+          title: 'App icon',
+          children: [
+            AppIconPresetPicker(
+              selected: personalization.appIconPreset,
+              isSupported: iconSwitchSupported,
+              onChanged: (preset) => unawaited(
+                ref
+                    .read(personalizationControllerProvider.notifier)
+                    .setAppIconPreset(preset),
+              ),
             ),
           ],
         ),
@@ -322,6 +330,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               claudeBinaryPath: settings.claudeBinaryPath,
                               selectedProviderId: settings.selectedProviderId,
                               themeMode: settings.themeMode,
+                              themePreset: settings.themePreset,
+                              fontPreset: settings.fontPreset,
+                              appIconPreset: settings.appIconPreset,
                               copilotEnabled: settings.copilotEnabled,
                             ),
                           ),
@@ -393,6 +404,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                   : value.trim(),
                               selectedProviderId: settings.selectedProviderId,
                               themeMode: settings.themeMode,
+                              themePreset: settings.themePreset,
+                              fontPreset: settings.fontPreset,
+                              appIconPreset: settings.appIconPreset,
                               copilotEnabled: settings.copilotEnabled,
                             ),
                           ),

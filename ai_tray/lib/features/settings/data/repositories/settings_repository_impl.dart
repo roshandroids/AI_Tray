@@ -6,6 +6,9 @@ import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
+import 'package:ai_tray/theme/app_icons.dart';
+import 'package:ai_tray/theme/font_presets.dart';
+import 'package:ai_tray/theme/theme_presets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final class SharedPreferencesSettingsRepository implements SettingsRepository {
@@ -45,6 +48,15 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         ),
         themeMode: AppThemePreference.fromStorage(
           _prefs.getString('${_prefix}themeMode'),
+        ),
+        themePreset: ThemePresetX.fromStorage(
+          _prefs.getString('${_prefix}themePreset'),
+        ),
+        fontPreset: FontPresetX.fromStorage(
+          _prefs.getString('${_prefix}fontPreset'),
+        ),
+        appIconPreset: AppIconPresets.fromStorage(
+          _prefs.getString('${_prefix}appIconPreset'),
         ),
         copilotEnabled:
             _prefs.getBool('${_prefix}copilotEnabled') ??
@@ -114,6 +126,24 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         _prefs.setString(
           '${_prefix}themeMode',
           settings.themeMode.storageValue,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}themePreset',
+          settings.themePreset.storageValue,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}fontPreset',
+          settings.fontPreset.storageValue,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}appIconPreset',
+          settings.appIconPreset.storageValue,
         ),
       );
       await _requireSaved(

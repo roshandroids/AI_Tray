@@ -1,22 +1,14 @@
 import 'package:ai_tray/core/theme/color_tokens.dart';
+import 'package:ai_tray/theme/font_presets.dart';
 import 'package:flutter/material.dart';
 
-/// Font families — JetBrains Mono primary, IBM Plex Mono fallback (PD-021).
+/// Font families — JetBrains Mono primary for mono roles (PD-021).
 abstract final class TrayFonts {
-  static const String monoFamily = 'JetBrainsMono';
-  static const List<String> monoFallbacks = [
-    'IBMPlexMono',
-    'Menlo',
-    'SF Mono',
-    'Monaco',
-    'Consolas',
-    'Cascadia Mono',
-    'Courier New',
-    'monospace',
-  ];
+  static const String monoFamily = TrayMonoFonts.family;
+  static const List<String> monoFallbacks = TrayMonoFonts.fallbacks;
 }
 
-/// Typography presets derived from semantic colors (PD-021).
+/// Typography presets derived from semantic colors and a [FontPreset].
 @immutable
 final class TrayTypography extends ThemeExtension<TrayTypography> {
   const TrayTypography({
@@ -33,7 +25,28 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
     required this.error,
   });
 
-  factory TrayTypography.fromColors(TrayColorTokens colors) {
+  factory TrayTypography.fromColors(
+    TrayColorTokens colors, {
+    FontPreset fontPreset = FontPresetX.defaultPreset,
+  }) {
+    TextStyle ui({
+      required double size,
+      required Color color,
+      FontWeight weight = FontWeight.w400,
+      double height = 1.5,
+      double? letterSpacing,
+    }) {
+      return TextStyle(
+        fontFamily: fontPreset.fontFamily,
+        fontFamilyFallback: fontPreset.fontFamilyFallback,
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        height: height,
+        letterSpacing: letterSpacing,
+      );
+    }
+
     TextStyle mono({
       required double size,
       required Color color,
@@ -53,37 +66,37 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
     }
 
     return TrayTypography(
-      display: mono(
+      display: ui(
         size: 18,
         weight: FontWeight.w700,
         color: colors.textPrimary,
         height: 28 / 18,
       ),
-      title: mono(
+      title: ui(
         size: 18,
         weight: FontWeight.w700,
         color: colors.textPrimary,
         height: 28 / 18,
       ),
-      section: mono(
+      section: ui(
         size: 14,
         weight: FontWeight.w600,
         color: colors.textPrimary,
         height: 20 / 14,
         letterSpacing: 0.4,
       ),
-      label: mono(
+      label: ui(
         size: 12,
         weight: FontWeight.w500,
         color: colors.textSecondary,
         height: 18 / 12,
       ),
-      body: mono(
+      body: ui(
         size: 12,
         color: colors.textPrimary,
         height: 18 / 12,
       ),
-      caption: mono(
+      caption: ui(
         size: 11,
         color: colors.textMuted,
         height: 16 / 11,
@@ -94,7 +107,7 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
         color: colors.textPrimary,
         height: 18 / 12,
       ),
-      status: mono(
+      status: ui(
         size: 12,
         weight: FontWeight.w600,
         color: colors.textPrimary,
@@ -105,13 +118,13 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
         color: colors.textSecondary,
         height: 18 / 12,
       ),
-      button: mono(
+      button: ui(
         size: 12,
         weight: FontWeight.w600,
         color: colors.onAccent,
         height: 18 / 12,
       ),
-      error: mono(
+      error: ui(
         size: 12,
         color: colors.error,
         height: 18 / 12,

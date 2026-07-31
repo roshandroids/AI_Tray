@@ -7,6 +7,7 @@
 **Demo posture:** Product-as-demo via GitHub Releases (`demos.json` id `main`); no Flutter Web embed (PD-025)
 **CI posture:** Quality CI + Release CD (D-017) + shared scripts (D-019) on `main` — desktop builds only on tag/dispatch; `CI_MODE` does not affect Actions
 **Release notes:** CHANGELOG.md SoT; Settings About / Diagnostics show live version + What’s New (D-020)
+**Appearance:** FlexColorScheme branded presets + bundled fonts + app-icon architecture (PD-026 / ADR-005)
 **Docs posture:** Governance + process + engineering standard + blueprint (D-018)
 
 ## Supported experience
@@ -18,6 +19,7 @@
 | macOS Intel/x64 | Not published |
 | Flutter Web / public embed | Not supported (PD-025) |
 | Dark / light / system themes | Implemented |
+| Branded theme / font / app-icon presets | Implemented (PD-026; icon switch unsupported on desktop) |
 | Tray/menu-bar status | Implemented |
 | Settings, diagnostics, logs | Implemented |
 | In-app What’s New / release history | Implemented (D-020; from CHANGELOG-derived asset) |

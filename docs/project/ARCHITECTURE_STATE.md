@@ -1,9 +1,10 @@
 # AI Tray — Architecture State
 
 **Updated:** 2026-07-31
-**Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, provider-platform docs,
+**Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, ADR-005, provider-platform docs,
 EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017),
-shared scripts (D-019), `docs/ENGINEERING_STANDARD.md`, `docs/PROJECT_BLUEPRINT.md`
+shared scripts (D-019), personalization (PD-026 / D-021), `docs/ENGINEERING_STANDARD.md`,
+`docs/PROJECT_BLUEPRINT.md`
 
 ## System shape
 
@@ -61,11 +62,20 @@ boundary. Graceful degradation is required.
 
 ## Persistence and resilience
 
-- SharedPreferences stores settings, selected provider, and LKG usage.
+- SharedPreferences stores settings, selected provider, LKG usage, and
+  personalization (`themeMode`, `themePreset`, `fontPreset`, `appIconPreset`).
 - Cache is provider-scoped; legacy Claude cache migration is preserved.
 - Refresh state distinguishes loading, live, cached, soft failure, hard failure.
 - Async UI actions check lifecycle safety before navigation/feedback.
 - Logs are structured and secret-safe with provider/category metadata.
+
+## Personalization (PD-026 / ADR-005)
+
+- Module: `ai_tray/lib/theme/`
+- `AppTheme` builds M3 themes via FlexColorScheme custom `FlexSchemeColor` only
+- `TrayColorTokens` / `TrayTypography` derived for existing UI call sites
+- `PersonalizationController` applies theme mode, color preset, font, and icon
+  immediately; icon switcher is unsupported on desktop by default
 
 ## Distribution
 

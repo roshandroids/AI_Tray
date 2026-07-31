@@ -3,16 +3,16 @@
 **Updated:** 2026-07-31
 **Current release:** v1.3.3 (`1.3.3+9`)
 **Default branch:** `main`
-**Active development branch:** `main`
-**Current milestone:** EP-004A on main; docs upgrade Phases 1–8 complete; dogfood + release timing pending
+**Active development branch:** `feat/personalization-flex-theme`
+**Current milestone:** PD-026 FlexColorScheme personalization on feature branch; dogfood + release timing pending
 **Overall progress:** EP-002 merged; Phase 3 not yet published
 
 ## Current status
 
 Post-EP-002 stabilization is complete. **Quality CI + Release CD (EP-004A)**
-is on `main` (PR #11; legacy `ci.yml` removed). Documentation upgrade Master
-Prompt Phases 1–8 are on `main` (governance, contributor templates, process,
-engineering standard, blueprint, Cursor rules, cleanup, validation).
+is on `main` (PR #11). Documentation upgrade Master Prompt Phases 1–8 are on
+`main`. **PD-026 / ADR-005** branded personalization (themes, fonts, app icons)
+is implemented on `feat/personalization-flex-theme`.
 
 **CI/CD strategy (Quality CI + Release CD + shared scripts / D-019):**
 - Quality: PR/push → `main`, Ubuntu only — invokes `./scripts/format|analyze|test|check`
@@ -37,16 +37,18 @@ See `docs/devops/DEMO_STRATEGY.md`.
 - Document Platform parity plan + Master Prompt Phases 1–8
 - D-019 shared `scripts/` Local DX + Remote CI (thin Actions orchestration)
 - D-020 CHANGELOG SoT + generated `release_history.json` + in-app About/history
+- PD-026 FlexColorScheme personalization (feature branch; pending PR)
 
 ## In progress
 
+- PR for `feat/personalization-flex-theme`
 - GitHub branch protection alignment (drop `Build macOS` if still required)
 - macOS arm64 dogfood execution
 - Windows runtime verification (Experimental)
 
 ## Health
 
-- Analyzer clean; 144 non-golden tests; 7 goldens; bridge npm check green
+- Analyzer clean; theme personalization unit/widget tests + goldens updated
 - No production `/copilot_internal`
 - Showcase JSON validates
 - Relative docs link audit clean after Phase 7 fixes

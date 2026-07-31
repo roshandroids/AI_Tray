@@ -6,36 +6,32 @@
 
 1. Read `AI_HANDOFF.md` and `PROJECT_CONTEXT.json`.
 2. `git status`, `git branch --show-current`, `git log -5 --oneline`.
-3. Run `./scripts/doctor.sh` and skim `docs/devops/LOCAL_DEVELOPMENT.md` (D-019).
-4. Confirm branch protection: ruleset **Protect main (require PR)** active;
-   required checks `Format` | `Analyze` | `Test` | `Validate workflows`
-   (never `Build macOS`). Never push directly to `main` — always PR → merge.
+3. Personalization lives on `feat/personalization-flex-theme` (PD-026 / ADR-005).
+4. Confirm branch protection: required checks `Format` | `Analyze` | `Test` |
+   `Validate workflows` (never `Build macOS`).
 
 ## Current objective
 
-Verify D-020 in-app release history on a dogfood build, confirm branch
-protection, land any remaining D-019 shared-scripts commit, then Phase 3
-release timing or targeted cleanup.
+Land FlexColorScheme personalization via PR, dogfood Appearance settings on
+macOS, then resume branch-protection / Phase 3 release timing.
 
 ## Prerequisites
 
-- EP-004A on `main` (PR #11)
-- D-019 shared scripts (Local DX + Remote CI; CI_MODE ignored by Actions)
-- D-020 CHANGELOG SoT + `release_history.json` + Settings About
-- PD-025 product-as-demo
+- EP-004A on `main`
+- D-019 / D-020 on `main`
+- PD-026 implementation on `feat/personalization-flex-theme`
 
 ## Recommended next task
 
-1. Commit D-020 release-notes work (and D-019 CI scripts if still uncommitted).
-2. Apply/verify branch protection ruleset.
-3. `./scripts/release.sh --local-only` for dogfood; open Settings → About.
-4. Do not re-add desktop builds to Quality CI.
-5. Never hand-edit `ai_tray/assets/release_history.json`.
+1. Commit personalization (Dart + bundled fonts/icons + docs/ADR).
+2. Open PR; wait for Quality CI; merge.
+3. Dogfood: Settings → Appearance (theme mode, preset, font, disabled icon).
+4. Leave unrelated sessions WIP separate if still present.
 
 ## Acceptance criteria
 
-- Settings About shows live version/build and What’s New from history asset
-- Diagnostics App version matches PackageInfo (not hardcoded)
-- `./scripts/check.sh workflows` passes
-- No CI_MODE conditionals in workflow YAML
-- Handoff consistent (D-020 recorded)
+- Appearance changes apply without restart
+- Prefs restore after relaunch (`settings_v1_themePreset|fontPreset|appIconPreset`)
+- App icon picker disabled with platform explanation on desktop
+- Analyzer clean; theme unit/widget tests + goldens green
+- Handoff records PD-026 / D-021 / ADR-005

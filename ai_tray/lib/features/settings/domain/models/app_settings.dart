@@ -1,5 +1,8 @@
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
+import 'package:ai_tray/theme/app_icons.dart';
+import 'package:ai_tray/theme/font_presets.dart';
+import 'package:ai_tray/theme/theme_presets.dart';
 import 'package:meta/meta.dart';
 
 /// User-configurable MVP preferences.
@@ -15,6 +18,9 @@ final class AppSettings {
     String? claudeBinaryPath,
     ProviderId selectedProviderId = ProviderId.claude,
     AppThemePreference themeMode = AppThemePreference.system,
+    ThemePreset themePreset = ThemePresetX.defaultPreset,
+    FontPreset fontPreset = FontPresetX.defaultPreset,
+    AppIconPreset appIconPreset = AppIconPresets.defaultIcon,
     bool copilotEnabled = true,
   }) {
     _validateRefreshInterval(refreshInterval);
@@ -33,6 +39,9 @@ final class AppSettings {
       selectedProviderId: selectedProviderId,
       showStaleIndicator: showStaleIndicator,
       themeMode: themeMode,
+      themePreset: themePreset,
+      fontPreset: fontPreset,
+      appIconPreset: appIconPreset,
       copilotEnabled: copilotEnabled,
     );
   }
@@ -47,6 +56,9 @@ final class AppSettings {
     required this.selectedProviderId,
     required this.showStaleIndicator,
     required this.themeMode,
+    required this.themePreset,
+    required this.fontPreset,
+    required this.appIconPreset,
     required this.copilotEnabled,
   });
 
@@ -74,6 +86,9 @@ final class AppSettings {
   final ProviderId selectedProviderId;
   final bool showStaleIndicator;
   final AppThemePreference themeMode;
+  final ThemePreset themePreset;
+  final FontPreset fontPreset;
+  final AppIconPreset appIconPreset;
   final bool copilotEnabled;
 
   AppSettings copyWith({
@@ -86,6 +101,9 @@ final class AppSettings {
     ProviderId? selectedProviderId,
     bool? showStaleIndicator,
     AppThemePreference? themeMode,
+    ThemePreset? themePreset,
+    FontPreset? fontPreset,
+    AppIconPreset? appIconPreset,
     bool? copilotEnabled,
   }) {
     return AppSettings(
@@ -99,6 +117,9 @@ final class AppSettings {
       selectedProviderId: selectedProviderId ?? this.selectedProviderId,
       showStaleIndicator: showStaleIndicator ?? this.showStaleIndicator,
       themeMode: themeMode ?? this.themeMode,
+      themePreset: themePreset ?? this.themePreset,
+      fontPreset: fontPreset ?? this.fontPreset,
+      appIconPreset: appIconPreset ?? this.appIconPreset,
       copilotEnabled: copilotEnabled ?? this.copilotEnabled,
     );
   }
@@ -115,6 +136,9 @@ final class AppSettings {
         other.selectedProviderId == selectedProviderId &&
         other.showStaleIndicator == showStaleIndicator &&
         other.themeMode == themeMode &&
+        other.themePreset == themePreset &&
+        other.fontPreset == fontPreset &&
+        other.appIconPreset == appIconPreset &&
         other.copilotEnabled == copilotEnabled;
   }
 
@@ -129,6 +153,9 @@ final class AppSettings {
     selectedProviderId,
     showStaleIndicator,
     themeMode,
+    themePreset,
+    fontPreset,
+    appIconPreset,
     copilotEnabled,
   );
 }

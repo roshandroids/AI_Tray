@@ -7,44 +7,41 @@
 
 AI Tray is a Flutter desktop companion for AI-provider subscription usage
 (Claude stable; Copilot experimental). EP-004A Quality CI + Release CD is on
-`main`. **D-019** shared `scripts/` Local DX + Remote CI (CI_MODE local-only).
-**D-020** keeps `CHANGELOG.md` as release-notes SoT; publish syncs
-`release_history.json` for Settings About / Diagnostics. Docs upgrade Phases
-1–8 (D-018) landed. Demo strategy PD-025: product-as-demo. Latest release
-v1.3.3 (Phase 3 not yet tagged).
+`main`. **D-019** shared `scripts/` Local DX + Remote CI. **D-020** CHANGELOG
+SoT + in-app release history. **PD-026 / D-021 / ADR-005** FlexColorScheme
+branded personalization (theme/font/icon presets) is on
+`feat/personalization-flex-theme`. Latest release v1.3.3.
 
 ## Current phase
 
-- Product: in-app release history (D-020)
-- DevOps: shared scripts Local DX + Remote CI (D-019)
-- Next: branch protection confirm, macOS dogfood, PO release timing
+- Product: FlexColorScheme personalization (PD-026) implementation branch
+- DevOps: branch protection confirm, macOS dogfood, PO release timing
 
 ## Repository state
 
-- Branch: **`main`**
+- Branch: **`feat/personalization-flex-theme`** (personalization work)
 - Showcase: `showcase/demos.json` → `id: main`
 - Scripts: `./scripts/check.sh`, `./scripts/release.sh`, `./scripts/publish.sh`
-- Toolchain pins: `.ci/toolchain.env` (Local DX + Actions)
-- Release notes SoT: `CHANGELOG.md` → `ai_tray/assets/release_history.json`
+- Theme module: `ai_tray/lib/theme/`
 
 ## Completed this session
 
-- D-020 release notes SoT + in-app What’s New / history
-- `sync_release_history.sh` wired into `publish.sh`
-- Settings About + Diagnostics use `package_info_plus`
+- FlexColorScheme custom theme presets (Cursor default + 7 others)
+- Bundled fonts (Inter, JetBrains Mono, Fira Code, IBM Plex Sans/Mono, Geist)
+- App icon catalog + unsupported platform switcher
+- PersonalizationController + Settings Appearance pickers
+- Unit/widget/golden coverage updated
 
 ## Immediate next actions
 
-1. Confirm branch protection (no `Build macOS`)
-2. macOS arm64 dogfood
-3. Commit D-019 shared-scripts work if still uncommitted (separate from D-020)
+1. Review/commit personalization branch; open PR to `main`
+2. Confirm branch protection (no `Build macOS`)
+3. macOS arm64 dogfood of Appearance settings
 
 ## Verification
 
 ```bash
-./scripts/release/sync_release_history.sh
-cd ai_tray && flutter test test/unit/release_history_test.dart \
-  test/widget/about_settings_test.dart
-./scripts/doctor.sh
-./scripts/check.sh workflows
+cd ai_tray && flutter analyze --fatal-infos
+flutter test test/unit/theme/ test/widget/personalization_pickers_test.dart
+flutter test --tags golden
 ```
