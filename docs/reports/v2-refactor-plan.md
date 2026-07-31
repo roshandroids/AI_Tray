@@ -1,7 +1,8 @@
 # AI Tray v2 — Engineering & Documentation Parity Plan
 
 **Created:** 2026-07-31  
-**Status:** Analysis only — no implementation  
+**Status:** Implementation in progress (Master Prompt phases)  
+**Phase tracker:** see [Master Prompt phase status](#11-master-prompt-phase-status)  
 **Sources:**
 
 | Repository | Path inspected |
@@ -641,4 +642,25 @@ Counts and paths were taken from filesystem inspection on 2026-07-31:
 - AI Tray: 1 Flutter package + sidecar, 4 ADRs, 0 wiki, 1 Cursor rule, 5 scripts, workflows without PR/issue templates, empty `docs/reports/` prior to this file.  
 - AI Tray strengths retained: handoff package, Lefthook, Quality/Release split, dogfood hub, PD-025 demo strategy.
 
-*End of analysis — no implementation performed beyond creating this report.*
+---
+
+## 11. Master Prompt phase status
+
+Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
+(phases differ slightly from §5 above; Master Prompt is the execution SoT).
+
+| Master Prompt phase | Status | Commit message |
+| --- | --- | --- |
+| 1 — Repository governance | **Completed** 2026-07-31 | `docs: add repository governance` |
+| 2 — Community & contributor experience | Pending | `docs: add contributor documentation` |
+| 3 — Documentation foundation | Pending | `docs: organize documentation structure` |
+| 4 — Engineering standard | Pending | `docs: add engineering standards` |
+| 5 — Project blueprint | Pending | `docs: add project blueprint` |
+| 6 — Cursor rules | Pending | `docs: refine cursor rules` |
+| 7 — Documentation cleanup | Pending | `docs: cleanup documentation` |
+| 8 — Validation | Pending | `docs: finalize documentation upgrade` |
+
+### Phase 1 notes
+
+Added: `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`,
+`OWNERSHIP.md`; README quick links updated.
