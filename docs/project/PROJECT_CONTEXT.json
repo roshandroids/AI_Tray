@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-07-19",
+  "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "stabilization_complete_ep004_targeted_cleanup_ep004a_ci_local_first",
-  "current_epic": "post-EP-002-stabilization",
-  "current_phase": "Stabilization complete; EP-004 targeted cleanup; EP-004A Local First CI in working tree",
+  "project_status": "stabilization_complete_ep004_targeted_cleanup_quality_ci_release_cd_d017_demo_strategy_pd025",
+  "current_epic": "ep004a-local-first-ci",
+  "current_phase": "Quality CI + Release CD (EP-004A/D-017) + PD-025 demo strategy; merge to main + dogfood pending",
   "branch": {
-    "name": "cursor/post-ep002-stabilization",
-    "commit": "2560ea1",
+    "name": "cursor/ep004a-local-first-ci",
+    "commit": "99a9f7f",
     "base": "main"
   },
   "release": {
@@ -29,9 +29,8 @@
   },
   "repository_state": {
     "default_branch": "main",
-    "default_branch_commit": "2885980",
-    "active_branch": "cursor/post-ep002-stabilization",
-    "active_branch_commit": "2560ea1",
+    "active_branch": "cursor/ep004a-local-first-ci",
+    "active_branch_commit": "99a9f7f",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -39,21 +38,28 @@
         "url": "https://github.com/roshandroids/AI_Tray/pull/7",
         "merge_commit": "2885980",
         "state_at_snapshot": "merged"
-      }
-    ],
-    "active_pull_requests": [
+      },
       {
         "number": 8,
         "title": "docs: close EP-002 and land EP-003 handoff package",
         "url": "https://github.com/roshandroids/AI_Tray/pull/8",
-        "state_at_snapshot": "open_or_merged"
+        "state_at_snapshot": "merged"
+      },
+      {
+        "number": 9,
+        "title": "Post-EP-002 stabilization",
+        "url": "https://github.com/roshandroids/AI_Tray/pull/9",
+        "merge_commit": "38045c9",
+        "state_at_snapshot": "merged"
       }
-    ]
+    ],
+    "active_pull_requests": []
   },
   "platforms": {
     "macos_arm64": "supported",
     "windows_x64": "experimental",
-    "macos_x64": "not_published"
+    "macos_x64": "not_published",
+    "flutter_web": "not_supported"
   },
   "providers": [
     {
@@ -83,6 +89,8 @@
     ],
     "ep004_posture": "targeted_cleanup",
     "ci_local_first": true,
+    "ci_model": "quality_ci_plus_release_cd",
+    "demo_strategy": "product_as_demo_desktop_releases",
     "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
     "provider_catalog": "ProviderRegistry",
     "resilience": [
@@ -95,18 +103,23 @@
     ]
   },
   "ci_cd": {
-    "strategy": "local_first",
+    "strategy": "quality_ci_plus_release_cd",
     "epic": "EP-004A",
+    "decision": "D-017",
     "workflows": {
       "quality": ".github/workflows/quality.yml",
       "documentation": ".github/workflows/documentation.yml",
       "release": ".github/workflows/release.yml",
-      "maintenance": ".github/workflows/maintenance.yml"
+      "maintenance": ".github/workflows/maintenance.yml",
+      "reusable_flutter_web_demo": ".github/workflows/reusable-flutter-web-demo.yml"
     },
     "removed": [
       ".github/workflows/ci.yml"
     ],
+    "quality_runners": ["ubuntu-latest"],
     "desktop_builds": "tag_or_workflow_dispatch_only",
+    "desktop_runners_allowed_only_in": "release.yml",
+    "web_demo_builds": "not_applicable_for_ai_tray",
     "pr_required_checks": [
       "Format",
       "Analyze",
@@ -120,10 +133,22 @@
     "docs": [
       "docs/devops/LOCAL_DEVELOPMENT.md",
       "docs/devops/CI_AUDIT.md",
+      "docs/devops/DEMO_STRATEGY.md",
       "docs/release/CI-CD.md"
     ],
     "actions_minutes_target_per_month": 300,
-    "actions_minutes_measured": null
+    "actions_minutes_measured": null,
+    "estimated_billable_minutes_per_pr_without_macos": "4-8",
+    "estimated_billable_minutes_saved_vs_legacy_pr_macos": "~60 per PR"
+  },
+  "showcase": {
+    "contract_path": "showcase/",
+    "metadata": "showcase/metadata.json",
+    "demos": "showcase/demos.json",
+    "demos_count": 1,
+    "primary_demo_id": "main",
+    "web_embed": "unavailable",
+    "runnable_experience": "product_releases"
   },
   "completed": [
     "EP-002 Phase 3 merge",
@@ -131,7 +156,9 @@
     "Post-EP-002 stabilization baseline and P0 lifecycle fixes",
     "Sidecar protocol hardening and assembly smoke",
     "EP-004 assessment and ADR-004 targeted cleanup decision",
-    "EP-004A Local First CI (quality/docs/release/maintenance; no PR desktop)"
+    "EP-004A Local First CI (quality/docs/release/maintenance; no PR desktop)",
+    "PD-025 demo strategy and showcase demos.json contract",
+    "D-017 Quality CI + Release CD hardening (ubuntu-only guardrail)"
   ],
   "product_decisions": [
     {
@@ -153,11 +180,18 @@
       "decision": "Treat EP-004 as targeted cleanup, not a full provider-platform rewrite",
       "rationale": "Stabilization fixed shared orchestration defects without a rewrite; full-epic triggers unmet",
       "impact": "Canonicalize imports, deprecate aliases, enrich metadata, choose one retry owner"
+    },
+    {
+      "id": "PD-025",
+      "date": "2026-07-27",
+      "status": "approved_implemented",
+      "decision": "Product-as-demo: showcase/demos.json lists AI Tray (id main, type desktop) via GitHub Releases; no duplicate playground or Flutter Web embed",
+      "rationale": "RSProjects Demo Standard: application repositories use the product as the demo; tray/CLI/sidecar cannot embed on web",
+      "impact": "demos.json product entry; reusable-flutter-web-demo.yml for other RSProjects only; DEMO_STRATEGY.md"
     }
   ],
   "current_work": [
-    "Land EP-004A CI changes and update branch protection",
-    "Land stabilization PR",
+    "Merge Quality CI + Release CD to main; update branch protection",
     "Execute macOS arm64 dogfood checklist",
     "Product Owner release timing for Phase 3"
   ],
@@ -181,11 +215,11 @@
   ],
   "next_recommended_tasks": [
     "Update branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
-    "Commit/land EP-004A Local First CI when Product Owner asks",
-    "Merge post-EP-002 stabilization PR",
+    "Merge EP-004A Quality CI + Release CD onto main (deletes legacy ci.yml)",
     "Run macOS arm64 dogfood checklist",
     "Optionally start targeted-cleanup import canonicalization",
-    "Keep Windows Experimental until hardware checklist passes"
+    "Keep Windows Experimental until hardware checklist passes",
+    "Do not add a Flutter Web playground for AI Tray"
   ],
   "verification": {
     "last_recorded": {
@@ -193,7 +227,8 @@
       "non_golden_tests": 144,
       "golden_tests": 7,
       "bridge_npm_check": "pass",
-      "production_copilot_internal_references": 0
+      "production_copilot_internal_references": 0,
+      "showcase_json": "valid"
     },
     "commands": [
       "dart format --set-exit-if-changed lib test",

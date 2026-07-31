@@ -1,6 +1,6 @@
 # AI Tray — AI Handoff
 
-**Updated:** 2026-07-19  
+**Updated:** 2026-07-31  
 **Read first:** This file, then `PROJECT_CONTEXT.json` and `NEXT_SESSION.md`.
 
 ## Executive summary
@@ -8,31 +8,32 @@
 AI Tray is a Flutter desktop companion that shows AI-provider subscription
 usage and health in one shared macOS menu-bar / Windows tray experience.
 Claude is stable; GitHub Copilot is experimental through the official SDK.
-EP-002 Phase 3 is merged (`2885980`). Post-EP-002 stabilization completed on
-`cursor/post-ep002-stabilization`: lifecycle/race fixes, sidecar protocol
-hardening, dogfood checklists, and an EP-004 assessment recommending
-**targeted cleanup** (ADR-004 / PD-024). **EP-004A Local First CI** is
-implemented in the working tree: Quality / Documentation / Release /
-Maintenance workflows; PR desktop builds removed; Lefthook + local-dev docs
-added. Cursor personal quota remains blocked (PD-023). Latest published
-release remains v1.3.3 (Phase 3 not yet tagged).
+EP-002 Phase 3 is merged (`2885980`). Post-EP-002 stabilization completed;
+EP-004 posture is **targeted cleanup** (ADR-004 / PD-024). **CI/CD model is
+Quality CI + Release CD (EP-004A):** Ubuntu-only Quality on PR/push; desktop
+(macOS/Windows) builds **only** in Release on tag/`workflow_dispatch`;
+`ci.yml` removed; Lefthook optional locally. **Demo strategy (PD-025):** the
+product is the demo (`showcase/demos.json` → `id: main`, `type: desktop`);
+no Flutter Web playground. Cursor personal quota remains blocked (PD-023).
+Latest published release remains v1.3.3 (Phase 3 not yet tagged).
 
 ## Current phase
 
 - Completed: **EP-002** (all phases) and **post-EP-002 stabilization**
 - Architecture posture: **EP-004 targeted cleanup** (not full rewrite)
-- DevOps: **EP-004A Local First CI** (quality on PR; desktop on tag/dispatch only)
+- DevOps: **Quality CI + Release CD** (EP-004A) — hardened; awaiting merge to `main`
+- Showcase: **product-as-demo** (`demos.json` → `main` desktop)
 - Research: **EP-003 / EP-003A** complete; no Cursor production code
-- Current objective: land stabilization + CI PRs, run macOS dogfood, then
-  optional targeted-cleanup chores; Product Owner decides release timing
+- Current objective: land CI branch on `main`, update branch protection, dogfood,
+  then Product Owner release timing
 
 ## Repository state
 
 - Current release: **v1.3.3** (`1.3.3+9`)
-- Main: `2885980` (merge of PR #7); docs PR #8 may already be merged or open
-- Active branch: `cursor/post-ep002-stabilization` (upstream may be gone —
+- Main: still has legacy `ci.yml` with PR macOS builds until EP-004A merges
+- Active branch: `cursor/ep004a-local-first-ci` (upstream may be gone —
   verify with `git status` / `git branch -vv`)
-- Related: [#8 docs handoff](https://github.com/roshandroids/AI_Tray/pull/8)
+- Showcase contract: `showcase/metadata.json` + `showcase/demos.json`
 
 Always re-run `git status` before changing anything.
 
@@ -41,7 +42,8 @@ Always re-run `git status` before changing anything.
 - **Claude Code:** stable CLI usage + LKG cache
 - **GitHub Copilot:** experimental SDK sidecar + quota RPC
 - **Cursor Agent:** research only (PD-023)
-- Artifacts: macOS arm64 + Windows x64 only (Release workflow only)
+- Artifacts: macOS arm64 + Windows x64 only (Release CD only)
+- **Public demo:** Product desktop app via GitHub Releases (`demos.json` id `main`)
 
 ## Architecture invariants
 
@@ -56,25 +58,18 @@ Always re-run `git status` before changing anything.
 
 ## Completed this session
 
-- EP-002 docs closeout + EP-003/EP-003A/handoff on docs branch (PR #8)
-- Stabilization baseline: format/analyze/144 non-golden/7 golden/bridge check
-- Lifecycle fixes: dispose safety, ABA stale rejection, provider-scoped backoff,
-  cache-write logging, resume overdue hook
-- Sidecar protocol tests + CI/Release `smoke_protocol.mjs`
-- macOS/Windows dogfood checklists; Windows remains Experimental
-- EP-004 assessment + ADR-004: targeted cleanup
-- **EP-004A:** Local First CI (`quality.yml`, `documentation.yml`,
-  `maintenance.yml`; removed `ci.yml` / PR macOS build; Lefthook;
-  `docs/devops/LOCAL_DEVELOPMENT.md`)
+- Hardened Quality CI + Release CD workflow headers and policy comments
+- Added Ubuntu-only guardrail in Quality `Validate workflows` job
+- Documentation path filter includes `showcase/**`
+- Synced `docs/release/CI-CD.md` + `docs/devops/LOCAL_DEVELOPMENT.md`
 
 ## Immediate next actions
 
 1. Update GitHub branch protection: drop required `Build macOS`; keep
    Format / Analyze / Test / Validate workflows.
-2. Commit/land EP-004A CI changes when Product Owner asks.
-3. Merge stabilization PR after checks.
-4. Execute macOS arm64 dogfood checklist.
-5. Optional: start targeted-cleanup import canonicalization (no rewrite).
+2. Land/merge EP-004A CI branch onto `main` (deletes legacy `ci.yml`).
+3. Execute macOS arm64 dogfood checklist.
+4. Optional: start targeted-cleanup import canonicalization (no rewrite).
 
 ## Verification baseline
 
@@ -87,6 +82,7 @@ flutter test --tags golden
 cd tool/copilot_sdk_bridge && npm run check
 ```
 
-Local First policy and Lefthook: `docs/devops/LOCAL_DEVELOPMENT.md`.
+Quality CI + Release CD / Lefthook: `docs/devops/LOCAL_DEVELOPMENT.md`.  
+Demo strategy: `docs/devops/DEMO_STRATEGY.md`.
 
 Last recorded: analyzer clean, **144** non-golden, **7** golden, bridge 16 pass / 1 skip.

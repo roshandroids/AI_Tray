@@ -1,7 +1,12 @@
 name: Maintenance
 
-# Local First (EP-004A): scheduled / manual dependency hygiene.
+# =============================================================================
+# Maintenance (schedule / manual only — EP-004A)
+# =============================================================================
+# Informational dependency outdated reports.
+# Never builds the application. Never uses macOS/Windows runners.
 # Safe read-only checks only — no cache deletion or destructive runner ops.
+# =============================================================================
 on:
   schedule:
     # Mondays 09:00 UTC

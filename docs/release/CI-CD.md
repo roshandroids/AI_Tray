@@ -1,23 +1,31 @@
 # CI/CD & Release Automation
 
 Foundation for continuous integration and desktop release automation for AI Tray
-(PD-016, evolved by **EP-004A Local First**).
+(PD-016, evolved by **EP-004A** into **Quality CI + Release CD**).
 
-**Scope today (Local First):**
-- **PRs / push → `main`:** Quality only — Format, Analyze, Test, Validate workflows.
-  Path filters skip Flutter setup for docs-only changes. **No desktop binary builds.**
-- **Docs / markdown paths:** Documentation workflow (handoff JSON, links) without Flutter.
-- **Tagged releases / `workflow_dispatch`:** macOS arm64 + Windows x64 build, package, publish.
-- **Weekly maintenance:** Informational dependency outdated reports.
+**Model:**
+
+| Lane | When | Runners | What |
+|------|------|---------|------|
+| **Quality CI** | `pull_request` / `push` → `main` | **Ubuntu only** | Format, Analyze, Test, Validate workflows |
+| **Documentation** | Docs / markdown / showcase path changes | **Ubuntu only** | Handoff JSON, relative links (no Flutter) |
+| **Release CD** | SemVer tag `vX.Y.Z` / `workflow_dispatch` | Ubuntu + **macOS** + **Windows** | Desktop builds, zip, GitHub Release assets |
+| **Maintenance** | Weekly cron + dispatch | **Ubuntu only** | Outdated package reports (never builds app) |
+
+**Hard rules:**
+- macOS / Windows runners **never** run on `pull_request` or branch `push`.
+- Desktop binaries are built **only** in [`release.yml`](../../.github/workflows/release.yml).
+- Quality CI must stay fast (target wall-clock &lt;10 minutes).
 
 **Out of scope:** Code signing, notarization, Sparkle auto-update, security scanning
 (future `security.yml` placeholder only — do not invent scanners without evidence).
-**Not published:** macOS Intel / x64 artifacts (D-007).
+**Not published:** macOS Intel / x64 artifacts (D-007). Linux desktop not shipped.
 
 Aligned with house conventions from **CELPIP** (job naming, Flutter pin, concurrency)
 and **MBO Research** (CHANGELOG-as-release-notes, SemVer on pubspec, tag `vX.Y.Z`).
 
-Local validation: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md).
+Local validation: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT.md).  
+Demo / Showcase policy: [docs/devops/DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 
 ---
 
@@ -25,7 +33,7 @@ Local validation: [docs/devops/LOCAL_DEVELOPMENT.md](../devops/LOCAL_DEVELOPMENT
 
 ```mermaid
 flowchart TB
-  subgraph PR["Pull Request / push → main"]
+  subgraph PR["Quality CI — PR / push → main"]
     F[Format]
     A[Analyze]
     T[Test]
@@ -33,7 +41,7 @@ flowchart TB
     D[Documentation — docs paths]
   end
 
-  subgraph REL["git tag vX.Y.Z or workflow_dispatch"]
+  subgraph REL["Release CD — tag vX.Y.Z or workflow_dispatch"]
     V[Validate pubspec]
     MA[Build macOS arm64]
     WIN[Build Windows x64]
@@ -41,7 +49,7 @@ flowchart TB
     V --> MA & WIN --> GH
   end
 
-  subgraph M["schedule / dispatch"]
+  subgraph M["Maintenance — schedule / dispatch"]
     DEP[Dependency audit]
   end
 
@@ -52,13 +60,18 @@ flowchart TB
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
 | **Quality** | [`.github/workflows/quality.yml`](../../.github/workflows/quality.yml) | PR + push → `main` | Format / Analyze / Test / workflow YAML — **no desktop** |
-| **Documentation** | [`.github/workflows/documentation.yml`](../../.github/workflows/documentation.yml) | Docs / `*.md` paths | Handoff + JSON + relative links |
-| **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or dispatch | Desktop builds + GitHub Release |
+| **Documentation** | [`.github/workflows/documentation.yml`](../../.github/workflows/documentation.yml) | Docs / showcase / `*.md` paths | Handoff + JSON + relative links |
+| **Release** | [`.github/workflows/release.yml`](../../.github/workflows/release.yml) | Tag `v*.*.*` or dispatch | **Only** desktop builds + GitHub Release |
 | **Maintenance** | [`.github/workflows/maintenance.yml`](../../.github/workflows/maintenance.yml) | Weekly + dispatch | Safe outdated reports |
+| **Reusable Flutter Web Demo** | [`.github/workflows/reusable-flutter-web-demo.yml`](../../.github/workflows/reusable-flutter-web-demo.yml) | `workflow_call` only | Template for other RSProjects — **not invoked by AI Tray** |
 
 **Flutter:** `3.38.9` (stable) · **App directory:** `ai_tray/`
 
 **Removed:** `.github/workflows/ci.yml` (replaced by Quality; PR macOS build deleted).
+
+**Demos:** AI Tray is a product repository — the desktop app is the demo
+([`showcase/demos.json`](../../showcase/demos.json) `id: main`, `type: desktop`).
+No Flutter Web playground. See [DEMO_STRATEGY.md](../devops/DEMO_STRATEGY.md).
 
 ---
 
@@ -72,7 +85,7 @@ flowchart TB
 | `subosito/flutter-action@v2` + cache | Yes | Yes | Yes (+ `pub-cache-key` from `pubspec.lock`) |
 | Concurrency cancel-in-progress | Yes | No | Yes (Quality / Docs / Maintenance) |
 | Deploy on merge | Firebase Hosting | N/A | GitHub Release on **tag or dispatch only** |
-| Desktop on PR | N/A (web) | N/A | **No** (Local First / EP-004A) |
+| Desktop on PR | N/A (web) | N/A | **No** (Quality CI + Release CD / D-017) |
 
 ---
 

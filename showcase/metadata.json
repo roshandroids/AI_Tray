@@ -1,0 +1,115 @@
+{
+  "id": "ai_tray",
+  "name": "AI Tray",
+  "tagline": "Native desktop companion for Claude Code and GitHub Copilot usage",
+  "description": "AI Tray is a native desktop companion for Claude Code and GitHub Copilot subscription usage (macOS menu bar / Windows system tray), with provider dashboards, session and week rings, diagnostics, and settings.",
+  "version": "1.3.3",
+  "status": "active",
+  "category": "app",
+  "platforms": ["macos", "windows"],
+  "featured": false,
+  "repositoryUrl": "https://github.com/roshandroids/AI_Tray",
+  "docsUrl": "https://github.com/roshandroids/AI_Tray/blob/main/README.md",
+  "tags": ["claude", "copilot", "desktop", "tray", "flutter"],
+  "showcase": {
+    "heroMedia": {
+      "kind": "image",
+      "alt": "AI Tray dashboard (dark)"
+    },
+    "problem": "Tracking Claude Code and Copilot subscription usage usually means leaving your flow for a browser or CLI — and Windows/macOS tray experiences are inconsistent.",
+    "solution": "A lightweight Flutter tray app that surfaces provider health, session/week usage rings, diagnostics, and settings from the menu bar or system tray.",
+    "features": [
+      {
+        "title": "Multi-provider usage",
+        "description": "Claude Code (stable) and GitHub Copilot (experimental) dashboards.",
+        "icon": "platform"
+      },
+      {
+        "title": "Tray rings",
+        "description": "Live, cached, refreshing, and error states in the menu bar / tray.",
+        "icon": "workflow"
+      },
+      {
+        "title": "Diagnostics and logs",
+        "description": "In-app diagnostics and log views for support and dogfood.",
+        "icon": "schema"
+      }
+    ],
+    "demo": {
+      "available": true,
+      "kind": "external",
+      "url": "https://github.com/roshandroids/AI_Tray/releases/latest",
+      "note": "Product is the demo (desktop). Download macOS arm64 / Windows x64 from GitHub Releases. No Flutter Web embed. Index: showcase/demos.json (id: main)."
+    },
+    "media": [
+      {
+        "kind": "image",
+        "alt": "AI Tray dashboard (dark)",
+        "caption": "Claude dashboard with session / week rings"
+      },
+      {
+        "kind": "image",
+        "alt": "AI Tray Copilot dashboard",
+        "caption": "GitHub Copilot quota dashboard (experimental)"
+      },
+      {
+        "kind": "image",
+        "alt": "Tray ring states",
+        "caption": "Live · Cached · Refreshing · Error"
+      }
+    ],
+    "architecture": "Flutter desktop app under ai_tray/ with Riverpod state, tray_manager / window_manager, and provider-specific usage pipelines (Claude CLI, Copilot sidecar).",
+    "technologies": ["Flutter", "Dart", "Riverpod", "tray_manager", "window_manager"],
+    "platformSupport": [
+      {
+        "platform": "macos",
+        "notes": "arm64 supported; primary release target"
+      },
+      {
+        "platform": "windows",
+        "notes": "Experimental (see PD-010)"
+      }
+    ],
+    "installation": "Download macOS arm64 or Windows x64 builds from GitHub Releases, or run from source: cd ai_tray && flutter run -d macos",
+    "documentationLinks": [
+      {
+        "label": "README",
+        "url": "https://github.com/roshandroids/AI_Tray/blob/main/README.md"
+      },
+      {
+        "label": "GitHub Copilot provider",
+        "url": "https://github.com/roshandroids/AI_Tray/blob/main/docs/providers/github-copilot.md"
+      },
+      {
+        "label": "Changelog",
+        "url": "https://github.com/roshandroids/AI_Tray/blob/main/CHANGELOG.md"
+      }
+    ],
+    "roadmap": [
+      {
+        "item": "Windows tray stabilization",
+        "status": "planned"
+      },
+      {
+        "item": "Multi-provider platform (EP-002)",
+        "status": "done"
+      }
+    ],
+    "changelog": [
+      {
+        "version": "1.3.3",
+        "date": "2026-07-17",
+        "notes": "Claude usage parsing fix for missing session reset suffix; macOS arm64 + Windows x64 release pipeline."
+      }
+    ],
+    "downloads": [
+      {
+        "label": "GitHub Releases",
+        "url": "https://github.com/roshandroids/AI_Tray/releases",
+        "platform": "all"
+      }
+    ],
+    "relatedProjectIds": ["document_platform"],
+    "contributing": "Ideas for tray actions and provider adapters are welcome via GitHub issues."
+  }
+}

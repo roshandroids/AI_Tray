@@ -1,8 +1,20 @@
 name: Release
 
-# Triggered by version tags (vX.Y.Z or vX.Y.Z-prerelease).
-# Validates pubspec version, builds desktop artifacts, publishes GitHub Release.
-# Manual fallback: workflow_dispatch with tag input.
+# =============================================================================
+# Release CD (EP-004A / Quality CI + Release CD)
+# =============================================================================
+# ONLY workflow allowed to build desktop binaries (macOS / Windows).
+#
+# Triggers (exclusive):
+#   - push of SemVer tags: vX.Y.Z or vX.Y.Z-prerelease
+#   - workflow_dispatch with an existing tag
+#
+# NEVER triggered by pull_request or push to main/feature branches.
+#
+# Owns: flutter build macos/windows, zip, upload-artifact, GitHub Release assets.
+# Signing / notarization: future (out of scope today).
+# Linux desktop: not published for AI Tray.
+# =============================================================================
 on:
   push:
     tags:
