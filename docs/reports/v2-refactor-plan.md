@@ -654,7 +654,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | 1 — Repository governance | **Completed** 2026-07-31 | `docs: add repository governance` |
 | 2 — Community & contributor experience | **Completed** 2026-07-31 | `docs: add contributor documentation` |
 | 3 — Documentation foundation | **Completed** 2026-07-31 | `docs: organize documentation structure` |
-| 4 — Engineering standard | Pending | `docs: add engineering standards` |
+| 4 — Engineering standard | **Completed** 2026-07-31 | `docs: add engineering standards` |
 | 5 — Project blueprint | Pending | `docs: add project blueprint` |
 | 6 — Cursor rules | Pending | `docs: refine cursor rules` |
 | 7 — Documentation cleanup | Pending | `docs: cleanup documentation` |
@@ -676,3 +676,8 @@ Added: `docs/DOCUMENTATION_RULES.md`, `docs/process/` (governance, DoD, CI
 checks, branch protection, principles, bug handling, ruleset JSON),
 `docs/templates/`, audience switchboard `docs/README.md`, `docs/reports/`
 index; moved loose capability/intelligence reports under `docs/reports/`.
+
+### Phase 4 notes
+
+Added: `docs/ENGINEERING_STANDARD.md` (structure, naming, ADR, testing, CI,
+release, DoD, review checklist) with links to existing normative docs.

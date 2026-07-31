@@ -23,5 +23,5 @@ this page is the short list.
     (PD-023).
 12. **Handoff discipline** — significant work updates `docs/project/`.
 
-See also: [`architecture/`](../architecture/), [`adr/`](../adr/),
-and `docs/ENGINEERING_STANDARD.md` when present.
+See also: [`ENGINEERING_STANDARD.md`](../ENGINEERING_STANDARD.md),
+[`architecture/`](../architecture/), [`adr/`](../adr/).

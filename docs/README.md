@@ -3,7 +3,8 @@
 **Project:** AI Tray · **Release:** v1.3.3 · **Platforms:** macOS arm64 supported · Windows Experimental
 
 Audience switchboard for the docs tree. Rules:
-[DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) · Process: [process/](process/)
+[DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) · Process: [process/](process/) ·
+Engineering: [ENGINEERING_STANDARD.md](ENGINEERING_STANDARD.md)
 
 ---
 
