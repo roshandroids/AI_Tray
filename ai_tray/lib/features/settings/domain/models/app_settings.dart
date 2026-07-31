@@ -1,5 +1,6 @@
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
+import 'package:ai_tray/features/tray/domain/tray_display_mode.dart';
 import 'package:ai_tray/theme/app_icons.dart';
 import 'package:ai_tray/theme/font_presets.dart';
 import 'package:ai_tray/theme/theme_presets.dart';
@@ -22,12 +23,15 @@ final class AppSettings {
     FontPreset fontPreset = FontPresetX.defaultPreset,
     AppIconPreset appIconPreset = AppIconPresets.defaultIcon,
     bool copilotEnabled = true,
+    TrayDisplayMode trayDisplayMode = TrayDisplayModeX.defaultMode,
+    double trayPercentThreshold = defaultTrayPercentThreshold,
   }) {
     _validateRefreshInterval(refreshInterval);
     final threshold = notifyAtSessionPercent;
     if (threshold != null) {
       _requirePercent(threshold, 'notifyAtSessionPercent');
     }
+    _requirePercent(trayPercentThreshold, 'trayPercentThreshold');
     final path = claudeBinaryPath?.trim();
     return AppSettings._(
       autoRefreshEnabled: autoRefreshEnabled,
@@ -43,6 +47,8 @@ final class AppSettings {
       fontPreset: fontPreset,
       appIconPreset: appIconPreset,
       copilotEnabled: copilotEnabled,
+      trayDisplayMode: trayDisplayMode,
+      trayPercentThreshold: trayPercentThreshold,
     );
   }
 
@@ -60,6 +66,8 @@ final class AppSettings {
     required this.fontPreset,
     required this.appIconPreset,
     required this.copilotEnabled,
+    required this.trayDisplayMode,
+    required this.trayPercentThreshold,
   });
 
   /// MVP defaults aligned with planning (60s auto-refresh).
@@ -77,6 +85,9 @@ final class AppSettings {
   static const Duration maxRefreshInterval = Duration(seconds: 60);
   static const Duration defaultRefreshInterval = Duration(seconds: 60);
 
+  /// Default adaptive reveal threshold for the menu-bar title.
+  static const double defaultTrayPercentThreshold = 90;
+
   final bool autoRefreshEnabled;
   final Duration refreshInterval;
   final bool notificationsEnabled;
@@ -90,6 +101,49 @@ final class AppSettings {
   final FontPreset fontPreset;
   final AppIconPreset appIconPreset;
   final bool copilotEnabled;
+  final TrayDisplayMode trayDisplayMode;
+  final double trayPercentThreshold;
+
+  /// Full reconstruct helper when a nullable field must be cleared to null.
+  AppSettings replace({
+    bool? autoRefreshEnabled,
+    Duration? refreshInterval,
+    bool? notificationsEnabled,
+    Object? notifyAtSessionPercent = _unset,
+    bool? launchAtLogin,
+    Object? claudeBinaryPath = _unset,
+    ProviderId? selectedProviderId,
+    bool? showStaleIndicator,
+    AppThemePreference? themeMode,
+    ThemePreset? themePreset,
+    FontPreset? fontPreset,
+    AppIconPreset? appIconPreset,
+    bool? copilotEnabled,
+    TrayDisplayMode? trayDisplayMode,
+    double? trayPercentThreshold,
+  }) {
+    return AppSettings(
+      autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
+      refreshInterval: refreshInterval ?? this.refreshInterval,
+      notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
+      notifyAtSessionPercent: identical(notifyAtSessionPercent, _unset)
+          ? this.notifyAtSessionPercent
+          : notifyAtSessionPercent as double?,
+      launchAtLogin: launchAtLogin ?? this.launchAtLogin,
+      claudeBinaryPath: identical(claudeBinaryPath, _unset)
+          ? this.claudeBinaryPath
+          : claudeBinaryPath as String?,
+      selectedProviderId: selectedProviderId ?? this.selectedProviderId,
+      showStaleIndicator: showStaleIndicator ?? this.showStaleIndicator,
+      themeMode: themeMode ?? this.themeMode,
+      themePreset: themePreset ?? this.themePreset,
+      fontPreset: fontPreset ?? this.fontPreset,
+      appIconPreset: appIconPreset ?? this.appIconPreset,
+      copilotEnabled: copilotEnabled ?? this.copilotEnabled,
+      trayDisplayMode: trayDisplayMode ?? this.trayDisplayMode,
+      trayPercentThreshold: trayPercentThreshold ?? this.trayPercentThreshold,
+    );
+  }
 
   AppSettings copyWith({
     bool? autoRefreshEnabled,
@@ -105,6 +159,8 @@ final class AppSettings {
     FontPreset? fontPreset,
     AppIconPreset? appIconPreset,
     bool? copilotEnabled,
+    TrayDisplayMode? trayDisplayMode,
+    double? trayPercentThreshold,
   }) {
     return AppSettings(
       autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
@@ -121,6 +177,8 @@ final class AppSettings {
       fontPreset: fontPreset ?? this.fontPreset,
       appIconPreset: appIconPreset ?? this.appIconPreset,
       copilotEnabled: copilotEnabled ?? this.copilotEnabled,
+      trayDisplayMode: trayDisplayMode ?? this.trayDisplayMode,
+      trayPercentThreshold: trayPercentThreshold ?? this.trayPercentThreshold,
     );
   }
 
@@ -139,7 +197,9 @@ final class AppSettings {
         other.themePreset == themePreset &&
         other.fontPreset == fontPreset &&
         other.appIconPreset == appIconPreset &&
-        other.copilotEnabled == copilotEnabled;
+        other.copilotEnabled == copilotEnabled &&
+        other.trayDisplayMode == trayDisplayMode &&
+        other.trayPercentThreshold == trayPercentThreshold;
   }
 
   @override
@@ -157,8 +217,12 @@ final class AppSettings {
     fontPreset,
     appIconPreset,
     copilotEnabled,
+    trayDisplayMode,
+    trayPercentThreshold,
   );
 }
+
+const Object _unset = Object();
 
 void _validateRefreshInterval(Duration interval) {
   if (interval < AppSettings.minRefreshInterval ||

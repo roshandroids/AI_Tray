@@ -58,6 +58,10 @@ final class SettingsNotifier extends AsyncNotifier<AppSettings> {
       await ref
           .read(applyLaunchAtLoginProvider)(settings)
           .timeout(operationTimeout);
+      await ref
+          .read(trayControllerProvider)
+          .applyPresentationSettings()
+          .timeout(operationTimeout);
       _lastSettings = settings;
       state = AsyncData(settings);
 

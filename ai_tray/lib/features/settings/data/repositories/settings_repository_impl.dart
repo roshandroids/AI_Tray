@@ -5,6 +5,7 @@ import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/domain/repositories/settings_repository.dart';
+import 'package:ai_tray/features/tray/domain/tray_display_mode.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
 import 'package:ai_tray/theme/app_icons.dart';
 import 'package:ai_tray/theme/font_presets.dart';
@@ -61,6 +62,12 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         copilotEnabled:
             _prefs.getBool('${_prefix}copilotEnabled') ??
             defaults.copilotEnabled,
+        trayDisplayMode: TrayDisplayModeX.fromStorage(
+          _prefs.getString('${_prefix}trayDisplayMode'),
+        ),
+        trayPercentThreshold:
+            _prefs.getDouble('${_prefix}trayPercentThreshold') ??
+            defaults.trayPercentThreshold,
       );
     } on Exception {
       return AppSettings.defaults();
@@ -156,6 +163,18 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         _prefs.setBool(
           '${_prefix}copilotEnabled',
           settings.copilotEnabled,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setString(
+          '${_prefix}trayDisplayMode',
+          settings.trayDisplayMode.storageValue,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setDouble(
+          '${_prefix}trayPercentThreshold',
+          settings.trayPercentThreshold,
         ),
       );
       return const Result.success(Unit.unit);

@@ -30,6 +30,12 @@ flutter:
     - assets/release_history.json
     - assets/tray/tray_icon_32.png
     - assets/tray/tray_icon.ico
+    - assets/tray/tray_menubar_template.png
+    - assets/tray/tray_menubar_template_16.png
+    - assets/tray/tray_menubar_template_18.png
+    - assets/tray/tray_menubar_template_36.png
+    - assets/tray/tray_menubar_template_dim.png
+    - assets/tray/tray_menubar_template_dim_36.png
     - assets/tray/tray_icon_live.png
     - assets/tray/tray_icon_cached.png
     - assets/tray/tray_icon_error.png

@@ -1,4 +1,5 @@
 import 'package:ai_tray/theme/theme_presets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -15,15 +16,21 @@ void main() {
       }
     });
 
-    test('exposes metadata and light/dark FlexSchemeColor seeds', () {
+    test('exposes metadata and distinct light/dark palettes', () {
       for (final preset in ThemePreset.values) {
         expect(preset.displayName, isNotEmpty);
         expect(preset.description, isNotEmpty);
         expect(preset.previewColor, preset.dark.primary);
         expect(preset.light.primary, isNotNull);
         expect(preset.dark.primary, isNotNull);
-        expect(preset.light.secondary, isNotNull);
-        expect(preset.dark.secondary, isNotNull);
+        expect(
+          preset.light.background,
+          isNot(preset.dark.background),
+          reason: '${preset.displayName} light/dark backgrounds must differ',
+        );
+        expect(preset.paletteFor(Brightness.light), same(preset.light));
+        expect(preset.paletteFor(Brightness.dark), same(preset.dark));
+        expect(preset.light.previewStrip, hasLength(5));
       }
     });
 

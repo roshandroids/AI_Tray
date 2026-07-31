@@ -1,21 +1,24 @@
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/features/settings/presentation/widgets/theme_mode_picker.dart';
 import 'package:ai_tray/theme/app_icons.dart';
 import 'package:flutter/material.dart';
 
-/// App icon grid with live previews; disabled when platform unsupported.
+/// Compact expandable app-icon grid (Launchpad-style tiles).
 class AppIconPresetPicker extends StatelessWidget {
   const AppIconPresetPicker({
     required this.selected,
     required this.onChanged,
     required this.isSupported,
+    required this.expanded,
+    required this.onExpansionChanged,
     super.key,
   });
 
   final AppIconPreset selected;
   final ValueChanged<AppIconPreset> onChanged;
   final bool isSupported;
+  final bool expanded;
+  final ValueChanged<bool> onExpansionChanged;
 
   static const unsupportedMessage =
       'Changing the application icon is not currently supported '
@@ -23,50 +26,64 @@ class AppIconPresetPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final grid = GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: Spacing.sm,
-      crossAxisSpacing: Spacing.sm,
-      childAspectRatio: 0.85,
-      children: [
-        for (final preset in AppIconPresets.all)
-          _IconTile(
-            preset: preset,
-            selected: preset == selected,
-            enabled: isSupported,
-            onTap: () => onChanged(preset),
+    return ExpansionTile(
+      key: ValueKey('icon-$expanded'),
+      initiallyExpanded: expanded,
+      onExpansionChanged: onExpansionChanged,
+      title: Text('App Icon', style: context.typography.body),
+      subtitle: Text(selected.displayName, style: context.typography.caption),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            selected.previewAssetPath,
+            width: 22,
+            height: 22,
+            filterQuality: FilterQuality.medium,
           ),
-      ],
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+          const SizedBox(width: Spacing.xs),
+          Icon(
+            expanded ? Icons.expand_less : Icons.expand_more,
+            size: 18,
+            color: context.colors.textSecondary,
+          ),
+        ],
+      ),
       children: [
-        PickerDescription(selected.description),
         if (!isSupported) ...[
-          Container(
-            padding: const EdgeInsets.all(Spacing.sm),
-            decoration: BoxDecoration(
-              color: context.colors.surfaceAlt,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: context.colors.border),
-            ),
-            child: Text(
-              unsupportedMessage,
-              style: context.typography.caption,
-            ),
-          ),
+          Text(unsupportedMessage, style: context.typography.caption),
           const SizedBox(height: Spacing.sm),
         ],
-        if (isSupported)
-          grid
-        else
-          Opacity(
-            opacity: 0.55,
-            child: IgnorePointer(child: grid),
+        Opacity(
+          opacity: isSupported ? 1 : 0.55,
+          child: IgnorePointer(
+            ignoring: !isSupported,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final crossAxisCount = constraints.maxWidth < 320 ? 4 : 6;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: AppIconPresets.all.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    mainAxisSpacing: Spacing.sm,
+                    crossAxisSpacing: Spacing.sm,
+                    childAspectRatio: 0.9,
+                  ),
+                  itemBuilder: (context, index) {
+                    final preset = AppIconPresets.all[index];
+                    return _IconTile(
+                      preset: preset,
+                      selected: preset == selected,
+                      onTap: () => onChanged(preset),
+                    );
+                  },
+                );
+              },
+            ),
           ),
+        ),
       ],
     );
   }
@@ -76,50 +93,49 @@ class _IconTile extends StatelessWidget {
   const _IconTile({
     required this.preset,
     required this.selected,
-    required this.enabled,
     required this.onTap,
   });
 
   final AppIconPreset preset;
   final bool selected;
-  final bool enabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: context.colors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: selected ? context.colors.focus : context.colors.border,
-          width: selected ? 2 : 1,
-        ),
-      ),
+      color: Colors.transparent,
       child: InkWell(
-        onTap: enabled ? onTap : null,
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.sm),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                preset.previewAssetPath,
-                width: 40,
-                height: 40,
-                filterQuality: FilterQuality.medium,
-              ),
-              const SizedBox(height: Spacing.xs),
-              Text(
-                preset.displayName,
-                style: context.typography.caption,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SelectionCheck(selected: selected),
-            ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? context.colors.focus : context.colors.border,
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(Spacing.xs),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  preset.previewAssetPath,
+                  width: 28,
+                  height: 28,
+                  filterQuality: FilterQuality.medium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  preset.displayName,
+                  style: context.typography.caption.copyWith(fontSize: 10),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

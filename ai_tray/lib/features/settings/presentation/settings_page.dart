@@ -19,6 +19,7 @@ import 'package:ai_tray/features/settings/presentation/widgets/app_icon_preset_p
 import 'package:ai_tray/features/settings/presentation/widgets/font_preset_picker.dart';
 import 'package:ai_tray/features/settings/presentation/widgets/theme_mode_picker.dart';
 import 'package:ai_tray/features/settings/presentation/widgets/theme_preset_picker.dart';
+import 'package:ai_tray/features/settings/presentation/widgets/tray_display_settings.dart';
 import 'package:ai_tray/features/settings/release_history_providers.dart';
 import 'package:ai_tray/theme/app_icons.dart';
 import 'package:ai_tray/theme/personalization_controller.dart';
@@ -40,6 +41,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   late TextEditingController _binaryController;
   SettingsSection _section = SettingsSection.appearance;
   bool _binaryInitialized = false;
+  AppearanceExpandedSection _appearanceExpanded =
+      AppearanceExpandedSection.none;
 
   @override
   void initState() {
@@ -186,54 +189,88 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return switch (_section) {
       SettingsSection.appearance => [
         SettingsGroup(
-          title: 'Theme mode',
+          title: 'Appearance',
           children: [
+            Text('Theme Mode', style: context.typography.label),
+            const SizedBox(height: Spacing.sm),
             ThemeModePicker(
               selected: personalization.themeMode,
               onChanged: (mode) => unawaited(_setTheme(mode)),
             ),
-          ],
-        ),
-        const SizedBox(height: Spacing.md),
-        SettingsGroup(
-          title: 'Color theme',
-          children: [
+            const SizedBox(height: Spacing.sm),
             ThemePresetPicker(
               selected: personalization.themePreset,
+              expanded:
+                  _appearanceExpanded == AppearanceExpandedSection.colorTheme,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _appearanceExpanded = expanded
+                      ? AppearanceExpandedSection.colorTheme
+                      : AppearanceExpandedSection.none;
+                });
+              },
               onChanged: (preset) => unawaited(
                 ref
                     .read(personalizationControllerProvider.notifier)
                     .setThemePreset(preset),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: Spacing.md),
-        SettingsGroup(
-          title: 'Font',
-          children: [
             FontPresetPicker(
               selected: personalization.fontPreset,
+              expanded: _appearanceExpanded == AppearanceExpandedSection.font,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _appearanceExpanded = expanded
+                      ? AppearanceExpandedSection.font
+                      : AppearanceExpandedSection.none;
+                });
+              },
               onChanged: (preset) => unawaited(
                 ref
                     .read(personalizationControllerProvider.notifier)
                     .setFontPreset(preset),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: Spacing.md),
-        SettingsGroup(
-          title: 'App icon',
-          children: [
             AppIconPresetPicker(
               selected: personalization.appIconPreset,
               isSupported: iconSwitchSupported,
+              expanded:
+                  _appearanceExpanded == AppearanceExpandedSection.appIcon,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _appearanceExpanded = expanded
+                      ? AppearanceExpandedSection.appIcon
+                      : AppearanceExpandedSection.none;
+                });
+              },
               onChanged: (preset) => unawaited(
                 ref
                     .read(personalizationControllerProvider.notifier)
                     .setAppIconPreset(preset),
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.md),
+        SettingsGroup(
+          title: 'Menu Bar',
+          children: [
+            TrayDisplaySettingsGroup(
+              mode: settings.trayDisplayMode,
+              threshold: TrayDisplayThresholdOptions.coerce(
+                settings.trayPercentThreshold,
+              ),
+              enabled: !saving,
+              onModeChanged: (mode) {
+                unawaited(
+                  _save(settings.copyWith(trayDisplayMode: mode)),
+                );
+              },
+              onThresholdChanged: (threshold) {
+                unawaited(
+                  _save(settings.copyWith(trayPercentThreshold: threshold)),
+                );
+              },
             ),
           ],
         ),
@@ -319,22 +356,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     : (value) {
                         unawaited(
                           _save(
-                            AppSettings(
-                              autoRefreshEnabled: settings.autoRefreshEnabled,
-                              refreshInterval: settings.refreshInterval,
-                              notificationsEnabled:
-                                  settings.notificationsEnabled,
-                              launchAtLogin: settings.launchAtLogin,
-                              showStaleIndicator: settings.showStaleIndicator,
-                              notifyAtSessionPercent: value,
-                              claudeBinaryPath: settings.claudeBinaryPath,
-                              selectedProviderId: settings.selectedProviderId,
-                              themeMode: settings.themeMode,
-                              themePreset: settings.themePreset,
-                              fontPreset: settings.fontPreset,
-                              appIconPreset: settings.appIconPreset,
-                              copilotEnabled: settings.copilotEnabled,
-                            ),
+                            settings.replace(notifyAtSessionPercent: value),
                           ),
                         );
                       },
@@ -390,24 +412,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     : (value) {
                         unawaited(
                           _save(
-                            AppSettings(
-                              autoRefreshEnabled: settings.autoRefreshEnabled,
-                              refreshInterval: settings.refreshInterval,
-                              notificationsEnabled:
-                                  settings.notificationsEnabled,
-                              launchAtLogin: settings.launchAtLogin,
-                              showStaleIndicator: settings.showStaleIndicator,
-                              notifyAtSessionPercent:
-                                  settings.notifyAtSessionPercent,
+                            settings.replace(
                               claudeBinaryPath: value.trim().isEmpty
                                   ? null
                                   : value.trim(),
-                              selectedProviderId: settings.selectedProviderId,
-                              themeMode: settings.themeMode,
-                              themePreset: settings.themePreset,
-                              fontPreset: settings.fontPreset,
-                              appIconPreset: settings.appIconPreset,
-                              copilotEnabled: settings.copilotEnabled,
                             ),
                           ),
                         );

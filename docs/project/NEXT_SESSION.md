@@ -6,32 +6,29 @@
 
 1. Read `AI_HANDOFF.md` and `PROJECT_CONTEXT.json`.
 2. `git status`, `git branch --show-current`, `git log -5 --oneline`.
-3. Personalization lives on `feat/personalization-flex-theme` (PD-026 / ADR-005).
-4. Confirm branch protection: required checks `Format` | `Analyze` | `Test` |
-   `Validate workflows` (never `Build macOS`).
+3. Work lives on `feat/personalization-flex-theme` (PD-026 + PD-027).
 
 ## Current objective
 
-Land FlexColorScheme personalization via PR, dogfood Appearance settings on
-macOS, then resume branch-protection / Phase 3 release timing.
+Land personalization + adaptive menu-bar UX via PR, dogfood on macOS, then
+resume branch-protection / Phase 3 release timing.
 
 ## Prerequisites
 
-- EP-004A on `main`
-- D-019 / D-020 on `main`
-- PD-026 implementation on `feat/personalization-flex-theme`
+- EP-004A, D-019 / D-020 on `main`
+- PD-026 / PD-027 implementation on `feat/personalization-flex-theme`
 
 ## Recommended next task
 
-1. Commit personalization (Dart + bundled fonts/icons + docs/ADR).
-2. Open PR; wait for Quality CI; merge.
-3. Dogfood: Settings → Appearance (theme mode, preset, font, disabled icon).
-4. Leave unrelated sessions WIP separate if still present.
+1. Commit intentional Dart + tray assets + docs; open PR.
+2. Quality CI green; merge.
+3. Dogfood: theme switch (light/dark per preset), Menu Bar Adaptive/Always/Icon
+   only, template icon + refresh pulse, concise tray menu.
 
 ## Acceptance criteria
 
-- Appearance changes apply without restart
-- Prefs restore after relaunch (`settings_v1_themePreset|fontPreset|appIconPreset`)
-- App icon picker disabled with platform explanation on desktop
-- Analyzer clean; theme unit/widget tests + goldens green
-- Handoff records PD-026 / D-021 / ADR-005
+- Adaptive default: no title under threshold; `93%` at ≥ 90%
+- Tooltip always includes session/week/status
+- Refresh pulses template opacity (no usage ring in icon)
+- Appearance accordion + Menu Bar settings persist (`settings_v1_tray*`)
+- Analyzer clean; theme + tray unit tests green

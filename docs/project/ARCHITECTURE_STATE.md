@@ -63,7 +63,8 @@ boundary. Graceful degradation is required.
 ## Persistence and resilience
 
 - SharedPreferences stores settings, selected provider, LKG usage, and
-  personalization (`themeMode`, `themePreset`, `fontPreset`, `appIconPreset`).
+  personalization (`themeMode`, `themePreset`, `fontPreset`, `appIconPreset`)
+  and tray density (`trayDisplayMode`, `trayPercentThreshold`).
 - Cache is provider-scoped; legacy Claude cache migration is preserved.
 - Refresh state distinguishes loading, live, cached, soft failure, hard failure.
 - Async UI actions check lifecycle safety before navigation/feedback.

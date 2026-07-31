@@ -8,7 +8,7 @@ import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
 import 'package:ai_tray/features/tray/presentation/tray_menu_builder.dart';
-import 'package:ai_tray/features/tray/presentation/tray_ring_icon_renderer.dart';
+import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
@@ -88,6 +88,9 @@ final class TrayController with TrayListener, WindowListener {
 
   bool _started = false;
   String? _lastIconPath;
+  Timer? _pulseTimer;
+  bool _pulseDim = false;
+  bool _pulsing = false;
 
   Future<void> start() async {
     if (_started || kIsWeb) return;
@@ -104,35 +107,19 @@ final class TrayController with TrayListener, WindowListener {
     });
   }
 
-  Future<void> _applyIcon(RefreshStatus status) async {
-    final kind = UsageStatusMapper.kind(status);
-    final sessionPct = status.lastResult?.usage?.sessionUsedPercent;
+  Future<void> _applyIcon({required bool refreshing}) async {
     try {
       if (Platform.isMacOS) {
-        // Prefer painted circular usage ring; fall back to static assets.
-        try {
-          final path = await TrayRingIconRenderer.render(
-            kind: kind,
-            sessionPercent: sessionPct,
-          );
-          if (path != _lastIconPath) {
-            await trayManager.setIcon(path, isTemplate: false);
-            _lastIconPath = path;
-          }
-          return;
-        } on Exception catch (error) {
-          logger.warning(
-            'tray ring render failed, using static asset: $error',
-            name: 'tray',
-          );
-        }
-        final path = TrayIconResolver.macOsAsset(kind);
+        final path = refreshing && _pulseDim
+            ? TrayIconResolver.macOsMenuBarTemplateDim
+            : TrayIconResolver.macOsMenuBarTemplate;
         if (path != _lastIconPath) {
-          await trayManager.setIcon(path, isTemplate: false);
+          await trayManager.setIcon(path, isTemplate: true);
           _lastIconPath = path;
         }
+        _syncPulse(refreshing);
       } else if (Platform.isWindows) {
-        // Windows expects .ico; custom PNG rings are not used here.
+        _stopPulse();
         if (_lastIconPath != TrayIconResolver.windowsAsset) {
           await trayManager.setIcon(TrayIconResolver.windowsAsset);
           _lastIconPath = TrayIconResolver.windowsAsset;
@@ -143,19 +130,56 @@ final class TrayController with TrayListener, WindowListener {
     }
   }
 
+  void _syncPulse(bool refreshing) {
+    if (!Platform.isMacOS) return;
+    if (refreshing && !_pulsing) {
+      _pulsing = true;
+      _pulseDim = false;
+      _pulseTimer?.cancel();
+      _pulseTimer = Timer.periodic(const Duration(milliseconds: 520), (_) {
+        _pulseDim = !_pulseDim;
+        unawaited(_applyIcon(refreshing: true));
+      });
+    } else if (!refreshing && _pulsing) {
+      _stopPulse();
+      unawaited(_applyIcon(refreshing: false));
+    }
+  }
+
+  void _stopPulse() {
+    _pulseTimer?.cancel();
+    _pulseTimer = null;
+    _pulsing = false;
+    _pulseDim = false;
+  }
+
   Future<void> _rebuildMenu(RefreshStatus status) async {
-    await _applyIcon(status);
+    final refreshing = status.phase == RefreshPhase.refreshing;
+    await _applyIcon(refreshing: refreshing);
+
+    final settings = await repository.getSettings();
+    final kind = UsageStatusMapper.kind(status);
+    final sessionPercent = status.lastResult?.usage?.sessionUsedPercent;
+    final iconTitle = Platform.isMacOS
+        ? TrayIconResolver.macOsTitle(
+            mode: settings.trayDisplayMode,
+            threshold: settings.trayPercentThreshold,
+            kind: kind,
+            sessionPercent: sessionPercent,
+          )
+        : '';
+
     final snapshot = TrayMenuBuilder.fromStatus(
       status,
       providerDisplayName: provider.displayName,
       providerSourceLabel: provider.sourceLabel,
+      iconTitle: iconTitle,
     );
     await trayManager.setContextMenu(snapshot.buildMenu());
     await trayManager.setToolTip(snapshot.toolTip);
     if (Platform.isMacOS) {
       try {
-        // Ring icon already encodes % — keep title empty to avoid duplication.
-        await trayManager.setTitle('');
+        await trayManager.setTitle(iconTitle);
       } on Exception catch (error) {
         logger.warning('tray title failed: $error', name: 'tray');
       }
@@ -185,6 +209,7 @@ final class TrayController with TrayListener, WindowListener {
         await windowManager.focus();
         onOpenSettings();
       case 'quit':
+        _stopPulse();
         await trayManager.destroy();
         exit(0);
     }
@@ -215,6 +240,12 @@ final class TrayController with TrayListener, WindowListener {
     } on Exception catch (error) {
       logger.warning('launchAtLogin update failed: $error', name: 'tray');
     }
+  }
+
+  /// Re-applies menu / title after settings change (density mode, threshold).
+  Future<void> applyPresentationSettings() async {
+    if (!_started) return;
+    await _rebuildMenu(repository.status);
   }
 
   Future<void> maybeNotify(RefreshStatus status) async {

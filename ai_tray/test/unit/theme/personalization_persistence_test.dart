@@ -1,6 +1,7 @@
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/tray/domain/tray_display_mode.dart';
 import 'package:ai_tray/theme/app_icons.dart';
 import 'package:ai_tray/theme/font_presets.dart';
 import 'package:ai_tray/theme/theme_presets.dart';
@@ -25,6 +26,8 @@ void main() {
       themePreset: ThemePreset.dracula,
       fontPreset: FontPreset.firaCode,
       appIconPreset: AppIconPresets.ai,
+      trayDisplayMode: TrayDisplayMode.alwaysPercent,
+      trayPercentThreshold: 75,
     );
     await repo.write(updated);
 
@@ -33,6 +36,8 @@ void main() {
     expect(read.themePreset, ThemePreset.dracula);
     expect(read.fontPreset, FontPreset.firaCode);
     expect(read.appIconPreset, AppIconPresets.ai);
+    expect(read.trayDisplayMode, TrayDisplayMode.alwaysPercent);
+    expect(read.trayPercentThreshold, 75);
   });
 
   test('missing personalization keys restore defaults', () async {
@@ -46,5 +51,7 @@ void main() {
     expect(read.themePreset, ThemePreset.cursor);
     expect(read.fontPreset, FontPreset.inter);
     expect(read.appIconPreset, AppIconPresets.defaultIcon);
+    expect(read.trayDisplayMode, TrayDisplayMode.adaptive);
+    expect(read.trayPercentThreshold, 90);
   });
 }

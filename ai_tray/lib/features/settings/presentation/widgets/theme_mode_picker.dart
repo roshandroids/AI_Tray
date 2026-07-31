@@ -3,7 +3,7 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
 
-/// Segmented control for system / light / dark theme mode.
+/// Compact segmented control for system / light / dark theme mode.
 class ThemeModePicker extends StatelessWidget {
   const ThemeModePicker({
     required this.selected,
@@ -36,11 +36,15 @@ class ThemeModePicker extends StatelessWidget {
         if (selected.isEmpty) return;
         onChanged(selected.first);
       },
+      style: const ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 }
 
-/// Shared search field used by personalization pickers.
+/// Shared dense search field for personalization pickers.
 class PersonalizationSearchField extends StatelessWidget {
   const PersonalizationSearchField({
     required this.controller,
@@ -61,14 +65,18 @@ class PersonalizationSearchField extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         hintText: hintText,
-        prefixIcon: const Icon(Icons.search, size: 18),
+        prefixIcon: const Icon(Icons.search, size: 16),
         isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.xs,
+        ),
       ),
     );
   }
 }
 
-/// Selection checkmark for the active personalization option.
+/// Small selection checkmark for the active option.
 class SelectionCheck extends StatelessWidget {
   const SelectionCheck({required this.selected, super.key});
 
@@ -76,26 +84,19 @@ class SelectionCheck extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!selected) return const SizedBox(width: 20);
+    if (!selected) return const SizedBox(width: 16, height: 16);
     return Icon(
       Icons.check_circle,
-      size: 18,
+      size: 16,
       color: context.colors.success,
     );
   }
 }
 
-/// Compact description under a picker title.
-class PickerDescription extends StatelessWidget {
-  const PickerDescription(this.text, {super.key});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: Text(text, style: context.typography.caption),
-    );
-  }
+/// Which Appearance expandable section is open (accordion).
+enum AppearanceExpandedSection {
+  none,
+  colorTheme,
+  font,
+  appIcon,
 }

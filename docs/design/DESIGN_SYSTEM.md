@@ -172,20 +172,31 @@ variants; keep color from semantic tokens.
 
 ## Tray indicator
 
-Single circular menubar icon (no separate status badge).
+Monochrome **template** menu-bar glyph (filled rounded square). Usage is never
+encoded in the icon.
 
-| State | Ring |
+| Channel | Role |
 | --- | --- |
-| Live | Solid band-colored arc + percent |
-| Cached | Yellow dashed + percent |
-| Refreshing | Blue arc |
-| Error | Red full ring + `!` |
-| Unknown / idle | Gray dashed + `--` |
+| Icon | Identity + connection (template; refresh = opacity pulse) |
+| Title | Adaptive `%` (default), always `%`, or icon-only |
+| Tooltip | Full usage + status |
+| Color | Attention only (future); day-to-day is system template tint |
+
+**Title density (Settings → Appearance → Menu Bar)**
+
+| Mode | Behavior |
+| --- | --- |
+| Adaptive (default) | Show `%` at ≥ threshold (default 90%), or while refreshing/error |
+| Always show % | Title whenever session % is available |
+| Icon only | Empty title; details in menu + tooltip |
 
 **Platform notes**
 
-- **macOS:** PNG painted at runtime via `TrayRingIconRenderer` → `tray_manager.setIcon`.
-- **Windows:** `tray_manager` expects `.ico`; static asset is used. Documented limitation — closest native alternative until ICO generation is added.
+- **macOS menu bar:** `assets/tray/tray_menubar_template.png` (+ dim variant)
+  via `trayManager.setIcon(..., isTemplate: true)`. Separate from the app icon.
+- **Windows:** `tray_manager` expects `.ico`; static asset is used.
+- **Usage-ring PNGs:** `TrayRingIconRenderer` remains for docs / screenshots;
+  it is not the live menu-bar icon.
 
 ---
 

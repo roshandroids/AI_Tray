@@ -9,39 +9,38 @@ AI Tray is a Flutter desktop companion for AI-provider subscription usage
 (Claude stable; Copilot experimental). EP-004A Quality CI + Release CD is on
 `main`. **D-019** shared `scripts/` Local DX + Remote CI. **D-020** CHANGELOG
 SoT + in-app release history. **PD-026 / D-021 / ADR-005** FlexColorScheme
-branded personalization (theme/font/icon presets) is on
-`feat/personalization-flex-theme`. Latest release v1.3.3.
+personalization and **PD-027 / D-022** adaptive menu-bar density + template
+glyph are on `feat/personalization-flex-theme`. Latest release v1.3.3.
 
 ## Current phase
 
-- Product: FlexColorScheme personalization (PD-026) implementation branch
+- Product: Personalization + menu-bar UX on feature branch (pending PR)
 - DevOps: branch protection confirm, macOS dogfood, PO release timing
 
 ## Repository state
 
-- Branch: **`feat/personalization-flex-theme`** (personalization work)
+- Branch: **`feat/personalization-flex-theme`**
 - Showcase: `showcase/demos.json` → `id: main`
-- Scripts: `./scripts/check.sh`, `./scripts/release.sh`, `./scripts/publish.sh`
-- Theme module: `ai_tray/lib/theme/`
+- Theme: `ai_tray/lib/theme/` · Tray density: `TrayDisplayMode`
 
 ## Completed this session
 
-- FlexColorScheme custom theme presets (Cursor default + 7 others)
-- Bundled fonts (Inter, JetBrains Mono, Fira Code, IBM Plex Sans/Mono, Geist)
-- App icon catalog + unsupported platform switcher
-- PersonalizationController + Settings Appearance pickers
-- Unit/widget/golden coverage updated
+- ThemeFactory: full light/dark palettes + component themes from presets
+- Appearance: expandable Theme / Font / App Icon + Menu Bar density settings
+- Concise native tray dropdown (no emoji / ASCII meters)
+- Adaptive / Always % / Icon-only title; threshold default 90%
+- G1 solid template icon + dim opacity pulse while refreshing
+- Tooltip always carries full usage
 
 ## Immediate next actions
 
-1. Review/commit personalization branch; open PR to `main`
-2. Confirm branch protection (no `Build macOS`)
-3. macOS arm64 dogfood of Appearance settings
+1. Commit + open PR to `main`; wait for Quality CI
+2. macOS dogfood: Appearance themes + Menu Bar density + template icon
+3. Confirm branch protection (no `Build macOS`)
 
 ## Verification
 
 ```bash
 cd ai_tray && flutter analyze --fatal-infos
-flutter test test/unit/theme/ test/widget/personalization_pickers_test.dart
-flutter test --tags golden
+flutter test test/unit/theme/ test/unit/tray/ test/widget/personalization_pickers_test.dart
 ```

@@ -63,60 +63,59 @@ void main() {
     );
   }
 
-  test('live usage builds rich menu sections', () {
+  test('live usage builds concise native menu', () {
     final snapshot = TrayMenuBuilder.fromStatus(
       statusWith(usage: sampleUsage()),
+      iconTitle: '24%',
     );
 
-    expect(snapshot.connectionLabel, contains('connected'));
-    expect(snapshot.sessionPercentLine, '24% used');
-    expect(snapshot.sessionBarLine, '██░░░░░░░░');
-    expect(snapshot.weekTitleLine, 'Current Week (all models)');
-    expect(snapshot.footerStatusLine, '🟢 Live');
+    expect(snapshot.headerLine, 'Claude · Live');
+    expect(snapshot.sessionLine, contains('Session 24%'));
+    expect(snapshot.sessionLine, contains('Resets'));
+    expect(snapshot.weekLine, 'Week 11%');
     expect(snapshot.toolTip, contains('Session 24%'));
+    expect(snapshot.toolTip, contains('Live'));
+    expect(snapshot.iconTitle, '24%');
 
     final menu = snapshot.buildMenu();
     final items = menu.items ?? [];
-    expect(items.length, greaterThan(10));
-    expect(
-      items.where((i) => i.key == 'open').first.label,
-      'Open Dashboard',
-    );
+    expect(items.length, 10); // 4 info + sep + 3 actions + sep + quit
+    expect(items.where((i) => i.key == 'open').first.label, 'Open Dashboard');
+    expect(items.where((i) => i.key == 'settings').first.label, 'Settings…');
+    expect(items.where((i) => i.key == 'quit').first.label, 'Quit AI Tray');
   });
 
-  test('cached usage shows cached badge', () {
+  test('cached usage shows cached badge without emoji', () {
     final snapshot = TrayMenuBuilder.fromStatus(
       statusWith(
         usage: sampleUsage(cached: true),
         outcome: RefreshOutcome.softFailure,
       ),
     );
-    expect(snapshot.footerStatusLine, '🟡 Cached');
+    expect(snapshot.headerLine, 'Claude · Cached');
+    expect(snapshot.headerLine.contains('🟡'), isFalse);
   });
 
-  test('refreshing shows refreshing states', () {
+  test('refreshing shows refreshing header', () {
     final snapshot = TrayMenuBuilder.fromStatus(
       statusWith(
         phase: RefreshPhase.refreshing,
         usage: sampleUsage(),
       ),
     );
-    expect(snapshot.connectionLabel, contains('Refreshing'));
-    expect(snapshot.footerStatusLine, '🔵 Refreshing');
-    expect(snapshot.iconTitle, isEmpty);
+    expect(snapshot.headerLine, 'Claude · Refreshing');
   });
 
-  test('cli missing shows error connection state', () {
+  test('cli missing shows actionable header', () {
     final snapshot = TrayMenuBuilder.fromStatus(
       statusWith(
+        outcome: RefreshOutcome.failure,
         error: const AppFailure(
           code: FailureCode.cliNotInstalled,
-          message: 'Claude CLI was not found',
+          message: 'missing',
         ),
-        outcome: RefreshOutcome.failure,
       ),
     );
-    expect(snapshot.connectionLabel, contains('not found'));
-    expect(snapshot.footerStatusLine, '🔴 Error');
+    expect(snapshot.headerLine, contains('not found'));
   });
 }
