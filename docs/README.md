@@ -1,85 +1,111 @@
 # Documentation Index
 
-**Project status:** **v1.3.3** · multi-provider platform (EP-002)
-**Platforms:** macOS arm64 validated · Windows Experimental ([PD-010](stabilization/PD-010-defer-windows.md))
-**Postmortem:** [POSTMORTEM.md](POSTMORTEM.md)
-**Phase 2:** [STABILIZATION_REPORT.md](stabilization/STABILIZATION_REPORT.md) · [S-010](stabilization/S-010-ga-recommendation.md)
+**Project:** AI Tray · **Release:** v1.3.3 · **Platforms:** macOS arm64 supported · Windows Experimental
 
-## Start here
+Audience switchboard for the docs tree. Rules:
+[DOCUMENTATION_RULES.md](DOCUMENTATION_RULES.md) · Process: [process/](process/)
+
+---
+
+## By audience
+
+### Visitor / end user
 
 | Doc | Description |
-|--|--|
-| [providers/github-copilot.md](providers/github-copilot.md) | GitHub Copilot provider guide (EP-002) |
-| [release/EP-002-implementation-report.md](release/EP-002-implementation-report.md) | EP-002 final implementation report |
-| [research/EP-003-cursor-agent-provider.md](research/EP-003-cursor-agent-provider.md) | EP-003 Cursor Agent provider research (no implementation) |
-| [research/EP-003A-cursor-usage-verification.md](research/EP-003A-cursor-usage-verification.md) | EP-003A non-interactive `/usage` verification |
-| [project/AI_HANDOFF.md](project/AI_HANDOFF.md) | Official AI handoff package and current resumption context |
-| [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Official UI design system (PD-021) |
-| [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider architecture |
-| [architecture/EP-004-provider-platform-assessment.md](architecture/EP-004-provider-platform-assessment.md) | Post-EP-002 EP-004 go/no-go assessment |
-| [stabilization/POST_EP002_BASELINE.md](stabilization/POST_EP002_BASELINE.md) | Post-EP-002 stabilization baseline |
+| --- | --- |
+| [guides/installation.md](guides/installation.md) | Install builds |
 | [guides/user-guide.md](guides/user-guide.md) | How to use the app |
 | [guides/troubleshooting.md](guides/troubleshooting.md) | Common failures |
-| [guides/known-limitations.md](guides/known-limitations.md) | Current product limitations |
-| [release/CI-CD.md](release/CI-CD.md) | CI / release automation (Local First) |
-| [devops/LOCAL_DEVELOPMENT.md](devops/LOCAL_DEVELOPMENT.md) | Local First validation + Lefthook |
-| [devops/CI_AUDIT.md](devops/CI_AUDIT.md) | EP-004A CI audit + post-change status |
+| [guides/known-limitations.md](guides/known-limitations.md) | Current limitations |
+| [release/known-issues.md](release/known-issues.md) | Open issues |
+| [../SUPPORT.md](../SUPPORT.md) | Support policy |
+
+### Contributor
+
+| Doc | Description |
+| --- | --- |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md) | Day-1 path and workflow |
+| [process/](process/) | Governance, DoD, CI checks |
+| [devops/LOCAL_DEVELOPMENT.md](devops/LOCAL_DEVELOPMENT.md) | Local First + Lefthook |
+| [release/CI-CD.md](release/CI-CD.md) | Quality CI + Release CD |
+| [templates/](templates/) | ADR and related templates |
 | [dogfood/README.md](dogfood/README.md) | Dogfooding hub |
-| [release/known-issues.md](release/known-issues.md) | Open issues + dogfood log template |
-| [reports/v2-refactor-plan.md](reports/v2-refactor-plan.md) | Document Platform engineering/docs parity plan (analysis only) |
 
-## Product & process (historical SoT)
+### AI agent
 
 | Doc | Description |
-|--|--|
-| [../AI_Tray_Product_Owner_Master_Roadmap.md](../AI_Tray_Product_Owner_Master_Roadmap.md) | Product Owner master roadmap |
-| [../AI_Tray_Autonomous_Execution_Guide.md](../AI_Tray_Autonomous_Execution_Guide.md) | Autonomous phase guide (historical) |
-| [execution/autonomous-progress.md](execution/autonomous-progress.md) | Execution status snapshot |
+| --- | --- |
+| [../AGENTS.md](../AGENTS.md) | Agent entry stub |
+| [project/AI_HANDOFF.md](project/AI_HANDOFF.md) | Executive handoff |
+| [project/PROJECT_CONTEXT.json](project/PROJECT_CONTEXT.json) | Machine-readable state |
+| [project/NEXT_SESSION.md](project/NEXT_SESSION.md) | Current objective |
+| [project/DECISION_LOG.md](project/DECISION_LOG.md) | Product / engineering decisions |
 
-## Architecture & planning
+### Debugger / dogfooder
 
 | Doc | Description |
-|--|--|
-| [guides/architecture-overview.md](guides/architecture-overview.md) | Current architecture overview |
-| [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider framework, migration, and regression results |
-| [architecture/system-architecture.md](architecture/system-architecture.md) | Planning-era system architecture |
-| [architecture/domain-model.md](architecture/domain-model.md) | Domain model |
+| --- | --- |
+| [dogfood/POST_EP002_MACOS_ARM64.md](dogfood/POST_EP002_MACOS_ARM64.md) | macOS arm64 checklist |
+| [dogfood/POST_EP002_WINDOWS_X64.md](dogfood/POST_EP002_WINDOWS_X64.md) | Windows checklist |
+| [providers/github-copilot.md](providers/github-copilot.md) | Copilot provider guide |
+| [devops/DEMO_STRATEGY.md](devops/DEMO_STRATEGY.md) | Product-as-demo (PD-025) |
+
+### Releaser
+
+| Doc | Description |
+| --- | --- |
+| [release/CI-CD.md](release/CI-CD.md) | Release CD |
+| [release/README.md](release/README.md) | Release docs index |
+| [../CHANGELOG.md](../CHANGELOG.md) | Keep-a-Changelog |
+
+---
+
+## By topic
+
+### Project state (SoT)
+
+| Doc | Description |
+| --- | --- |
+| [project/](project/) | Eight-file handoff package |
+| [project/ROADMAP.md](project/ROADMAP.md) | Living roadmap |
+
+### Architecture & ADRs
+
+| Doc | Description |
+| --- | --- |
+| [guides/architecture-overview.md](guides/architecture-overview.md) | Current overview |
+| [architecture/provider-platform.md](architecture/provider-platform.md) | Multi-provider platform |
+| [architecture/system-architecture.md](architecture/system-architecture.md) | System architecture |
 | [architecture/folder-structure.md](architecture/folder-structure.md) | Folder structure |
-| [planning/lightweight-planning-index.md](planning/lightweight-planning-index.md) | Task 0002 planning package |
-| [planning/mvp-backlog.md](planning/mvp-backlog.md) | MVP backlog (historical) |
-| [planning/risk-register.md](planning/risk-register.md) | Risk register |
-
-## ADRs
-
-| Doc | Description |
-|--|--|
+| [architecture/domain-model.md](architecture/domain-model.md) | Domain model |
+| [architecture/EP-004-provider-platform-assessment.md](architecture/EP-004-provider-platform-assessment.md) | EP-004 assessment |
 | [adr/README.md](adr/README.md) | ADR index |
-| [adr/ADR-001-claude-cli-data-source.md](adr/ADR-001-claude-cli-data-source.md) | Claude CLI data source |
-| [adr/ADR-002-error-handling-resilience.md](adr/ADR-002-error-handling-resilience.md) | Errors, cache, retry, logging |
+| [design/DESIGN_SYSTEM.md](design/DESIGN_SYSTEM.md) | Design system (PD-021) |
 
-## Research
-
-| Doc | Description |
-|--|--|
-| [../research/claude-cli.md](../research/claude-cli.md) | Task 0001 PoC report |
-| [../research/poc/README.md](../research/poc/README.md) | PoC harness notes |
-
-## Release (RC1)
+### Research & reports
 
 | Doc | Description |
-|--|--|
-| [release/release-notes-v1.0.0-rc1.md](release/release-notes-v1.0.0-rc1.md) | Release notes |
-| [release/final-qa-report.md](release/final-qa-report.md) | Final QA report |
-| [release/RH-001-cross-platform-verification.md](release/RH-001-cross-platform-verification.md) | Cross-platform verification |
-| [release/RH-002-manual-qa-checklist.md](release/RH-002-manual-qa-checklist.md) | Manual QA checklist |
-| [release/RH-003-packaging.md](release/RH-003-packaging.md) | Packaging |
-| [release/RH-005-technical-debt.md](release/RH-005-technical-debt.md) | Technical debt report |
-| [release/v1.1-product-roadmap.md](release/v1.1-product-roadmap.md) | Deferred roadmap (not started) |
-| [guides/known-limitations.md](guides/known-limitations.md) | Known limitations |
-| [REPOSITORY_CLEANUP_SUMMARY.md](REPOSITORY_CLEANUP_SUMMARY.md) | Decision 008 cleanup summary |
+| --- | --- |
+| [research/EP-003-cursor-agent-provider.md](research/EP-003-cursor-agent-provider.md) | Cursor research (no implementation) |
+| [research/EP-003A-cursor-usage-verification.md](research/EP-003A-cursor-usage-verification.md) | Cursor `/usage` verification |
+| [reports/](reports/) | Audits and upgrade plans |
+| [reports/v2-refactor-plan.md](reports/v2-refactor-plan.md) | Docs/engineering parity plan |
 
-## App package
+### Historical
 
 | Doc | Description |
-|--|--|
-| [../ai_tray/README.md](../ai_tray/README.md) | Run / analyze / build commands |
+| --- | --- |
+| [stabilization/](stabilization/) | Stabilization records |
+| [release/EP-002-implementation-report.md](release/EP-002-implementation-report.md) | EP-002 report |
+| [POSTMORTEM.md](POSTMORTEM.md) | Early postmortem |
+| [planning/](planning/) | Historical planning |
+| [execution/autonomous-progress.md](execution/autonomous-progress.md) | Execution snapshot |
+| [../AI_Tray_Product_Owner_Master_Roadmap.md](../AI_Tray_Product_Owner_Master_Roadmap.md) | Historical PO roadmap |
+| [../AI_Tray_Autonomous_Execution_Guide.md](../AI_Tray_Autonomous_Execution_Guide.md) | Historical autonomous guide |
+| [../research/claude-cli.md](../research/claude-cli.md) | PoC report |
+
+### App package
+
+| Doc | Description |
+| --- | --- |
+| [../ai_tray/README.md](../ai_tray/README.md) | Run / analyze / build |

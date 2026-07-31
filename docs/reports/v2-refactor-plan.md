@@ -653,7 +653,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | --- | --- | --- |
 | 1 — Repository governance | **Completed** 2026-07-31 | `docs: add repository governance` |
 | 2 — Community & contributor experience | **Completed** 2026-07-31 | `docs: add contributor documentation` |
-| 3 — Documentation foundation | Pending | `docs: organize documentation structure` |
+| 3 — Documentation foundation | **Completed** 2026-07-31 | `docs: organize documentation structure` |
 | 4 — Engineering standard | Pending | `docs: add engineering standards` |
 | 5 — Project blueprint | Pending | `docs: add project blueprint` |
 | 6 — Cursor rules | Pending | `docs: refine cursor rules` |
@@ -669,3 +669,10 @@ Added: `LICENSE`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `SUPPORT.md`,
 
 Added: `CONTRIBUTING.md`, `AGENTS.md`, `.github/CODEOWNERS`,
 `.github/PULL_REQUEST_TEMPLATE.md`, issue templates (bug, feature, docs, CI).
+
+### Phase 3 notes
+
+Added: `docs/DOCUMENTATION_RULES.md`, `docs/process/` (governance, DoD, CI
+checks, branch protection, principles, bug handling, ruleset JSON),
+`docs/templates/`, audience switchboard `docs/README.md`, `docs/reports/`
+index; moved loose capability/intelligence reports under `docs/reports/`.
