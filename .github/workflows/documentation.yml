@@ -1,12 +1,17 @@
 name: Documentation
 
-# Local First (EP-004A): docs / markdown / handoff validation without Flutter.
-# Docs-only PRs should not pay for Format / Analyze / Test or desktop builds.
+# =============================================================================
+# Documentation (Quality CI companion — EP-004A)
+# =============================================================================
+# Runs only when documentation / markdown paths change.
+# Ubuntu only. No Flutter SDK. No desktop builds.
+# =============================================================================
 on:
   pull_request:
     branches: [main]
     paths:
       - "docs/**"
+      - "showcase/**"
       - "*.md"
       - "CHANGELOG.md"
       - "AI_Tray_*.md"
@@ -15,6 +20,7 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "showcase/**"
       - "*.md"
       - "CHANGELOG.md"
       - "AI_Tray_*.md"

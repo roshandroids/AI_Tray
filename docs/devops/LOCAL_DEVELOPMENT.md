@@ -1,9 +1,14 @@
-# Local development & Local First CI
+# Local development & Quality CI + Release CD
 
-**Policy (EP-004A):** Validate locally first. GitHub Actions on pull requests
-runs **quality only** (format, analyze, unit tests, workflow YAML). Desktop
-binaries are built **only** on version tags / `workflow_dispatch` via the
-Release workflow. Docs-only changes skip Flutter-heavy steps.
+**Policy (EP-004A):** Validate locally first. GitHub Actions uses **Quality CI +
+Release CD**:
+
+- **Quality CI** (PR / push → `main`): format, analyze, unit/widget tests,
+  workflow YAML — **Ubuntu only**. No macOS/Windows builds.
+- **Release CD** (SemVer tag / `workflow_dispatch`): the **only** place that
+  builds desktop binaries.
+- Docs-only changes skip Flutter-heavy Quality steps; Documentation workflow
+  validates handoff without Flutter.
 
 App package root: **`ai_tray/`** (not the repository root).
 

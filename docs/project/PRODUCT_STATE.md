@@ -1,9 +1,11 @@
 # AI Tray — Product State
 
-**Updated:** 2026-07-19  
+**Updated:** 2026-07-31  
 **Current release:** v1.3.3  
 **Positioning:** Desktop usage and health companion for AI developer tools
 **Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004)
+**Demo posture:** Product-as-demo via GitHub Releases (`demos.json` id `main`); no Flutter Web embed (PD-025)
+**CI posture:** Quality CI + Release CD (D-017) — desktop builds only on tag/dispatch
 
 ## Supported experience
 
@@ -12,6 +14,7 @@
 | macOS arm64 | Primary supported release target |
 | Windows x64 | Experimental release target |
 | macOS Intel/x64 | Not published |
+| Flutter Web / public embed | Not supported (PD-025) |
 | Dark / light / system themes | Implemented |
 | Tray/menu-bar status | Implemented |
 | Settings, diagnostics, logs | Implemented |
@@ -58,8 +61,11 @@
 - macOS release is not signed/notarized
 - App Sandbox is disabled for CLI/sidecar subprocess execution
 - Sleep/wake and extended dogfooding remain partially manual
+- No Flutter Web playground or public web embed (PD-025); Showcase launches
+  the product via `showcase/demos.json` (`id: main`) + Releases downloads
 
 ## Current product gate
 
-Complete review/merge of EP-002 Phase 3 (PR #7). Cursor automation without quota
-parity may only proceed through a separate Product Owner-approved epic.
+Land EP-004A + demo contract; complete macOS dogfood; Product Owner decides
+Phase 3 release timing. Cursor automation without quota parity may only proceed
+through a separate Product Owner-approved epic.

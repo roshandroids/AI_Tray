@@ -1,9 +1,21 @@
 name: Quality
 
-# Local First (EP-004A): PR / main quality gates only — no desktop binary builds.
-# Desktop packaging lives exclusively in release.yml (tags + workflow_dispatch).
+# =============================================================================
+# Quality CI (EP-004A / Quality CI + Release CD)
+# =============================================================================
+# Runs on: pull_request → main, push → main
+# Purpose: fast code-quality verification only
 #
-# Path filtering uses dorny/paths-filter so docs-only PRs skip Flutter setup while
+# ALLOWED: format, analyze, unit/widget tests, bridge check, workflow YAML parse
+# FORBIDDEN in this workflow:
+#   - macos-* / windows-* runners
+#   - flutter build macos | windows | linux | web
+#   - zipping binaries, upload-artifact of apps, GitHub Releases
+#   - codesign / notarization
+#
+# Desktop binaries live ONLY in release.yml (tags + workflow_dispatch).
+#
+# Path filtering (dorny/paths-filter): docs-only PRs skip Flutter setup while
 # still reporting the same stable check names (required for branch protection).
 #
 # STABLE CHECK CONTEXTS (branch protection / rulesets):
@@ -13,6 +25,7 @@ name: Quality
 # docs/devops/LOCAL_DEVELOPMENT.md.
 #
 # Do NOT require "Build macOS" — removed in EP-004A.
+# =============================================================================
 on:
   pull_request:
     branches: [main]
@@ -181,6 +194,24 @@ jobs:
       - name: Checkout
         if: needs.changes.outputs.workflows == 'true' || needs.changes.outputs.code == 'true'
         uses: actions/checkout@v4
+
+      - name: Assert Quality CI uses Ubuntu only
+        if: needs.changes.outputs.workflows == 'true' || needs.changes.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          # Guardrail: Quality / Documentation / Maintenance must never schedule
+          # macOS or Windows runners (Release CD owns heavy desktop builds).
+          for f in \
+            .github/workflows/quality.yml \
+            .github/workflows/documentation.yml \
+            .github/workflows/maintenance.yml
+          do
+            if [ -f "$f" ] && grep -E 'runs-on:\s*(macos|windows)' "$f"; then
+              echo "::error::$f must not use macos/windows runners (Quality CI + Release CD)"
+              exit 1
+            fi
+            echo "OK ubuntu-only: $f"
+          done
 
       - name: Parse workflow YAML
         if: needs.changes.outputs.workflows == 'true' || needs.changes.outputs.code == 'true'

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "projectId": "ai_tray",
+  "demos": [
+    {
+      "id": "main",
+      "title": "AI Tray",
+      "description": "Native macOS menu-bar / Windows tray companion for Claude Code and GitHub Copilot subscription usage.",
+      "type": "desktop",
+      "platform": "macos-windows",
+      "url": "https://github.com/roshandroids/AI_Tray/releases/latest",
+      "download": "https://github.com/roshandroids/AI_Tray/releases/latest",
+      "artifacts": [
+        {
+          "label": "macOS arm64",
+          "platform": "macos",
+          "filename": "AI-Tray-macOS-arm64.zip"
+        },
+        {
+          "label": "Windows x64",
+          "platform": "windows",
+          "filename": "AI-Tray-Windows-x64.zip"
+        }
+      ],
+      "localRun": "cd ai_tray && flutter pub get && flutter run -d macos",
+      "sourcePath": "ai_tray",
+      "ciWorkflow": ".github/workflows/release.yml"
+    }
+  ],
+  "policy": {
+    "webEmbed": "unavailable",
+    "reason": "Product repository: the desktop app is the demo (tray/CLI/sidecar). No separate playground and no Flutter Web embed.",
+    "runnableExperience": "product_releases",
+    "rule": "Do not create additional playgrounds that duplicate the product."
+  }
+}

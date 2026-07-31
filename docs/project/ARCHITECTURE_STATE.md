@@ -1,8 +1,8 @@
 # AI Tray — Architecture State
 
-**Updated:** 2026-07-19
+**Updated:** 2026-07-31
 **Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, provider-platform docs,
-EP-004 assessment
+EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017)
 
 ## System shape
 
@@ -71,10 +71,16 @@ boundary. Graceful degradation is required.
 - Flutter 3.38.9 / Dart 3.10.x
 - Node sidecar toolchain is pinned and assembled per release target.
 - Release artifacts: macOS arm64 and Windows x64.
-- **CI (EP-004A Local First):** `quality.yml` on PR/main (format/analyze/test;
-  no desktop binaries); `documentation.yml` for docs paths; `release.yml` on
-  version tags or manual dispatch only; `maintenance.yml` weekly outdated
-  checks. Optional Lefthook locally — see `docs/devops/LOCAL_DEVELOPMENT.md`.
+- **No Flutter Web platform** for the product app (tray/CLI/sidecar native).
+- **CI (Quality CI + Release CD / EP-004A / D-017):** `quality.yml` on PR/main
+  (format/analyze/test/validate; Ubuntu only; no desktop binaries);
+  `documentation.yml` for docs/showcase paths; `release.yml` on version tags or
+  manual dispatch only (sole macOS/Windows builder); `maintenance.yml` weekly
+  outdated checks. Quality asserts companions stay ubuntu-only. Optional
+  Lefthook locally — see `docs/devops/LOCAL_DEVELOPMENT.md`.
+- **Showcase demos:** `showcase/demos.json` lists product `main` (`type: desktop`).
+  Callable `reusable-flutter-web-demo.yml` is unused by AI Tray.
+  See `docs/devops/DEMO_STRATEGY.md`.
 
 ## Invariants
 
