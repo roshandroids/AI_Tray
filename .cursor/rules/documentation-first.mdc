@@ -1,0 +1,20 @@
+---
+description: Prefer existing docs and handoff before inventing; link don't paste
+alwaysApply: true
+---
+
+# Documentation First
+
+Canonical: `AGENTS.md` · `docs/README.md` · `docs/DOCUMENTATION_RULES.md` ·
+`docs/project/AI_HANDOFF.md`
+
+## Before asking or inventing
+
+1. Start at `AGENTS.md` → handoff (`AI_HANDOFF`, `PROJECT_CONTEXT`, `NEXT_SESSION`).
+2. Open **only** docs for the active area (ADR → architecture/guide → code → tests).
+3. Stop when you can act. Never load the whole `docs/` tree.
+4. Prefer a link over reproducing doc text.
+5. Reuse docs already read in this chat unless they changed or the area changed.
+
+Missing docs → create/update under `docs/` following `DOCUMENTATION_RULES.md`.
+Conflicts with code → report honestly; do not silently “fix” either side.

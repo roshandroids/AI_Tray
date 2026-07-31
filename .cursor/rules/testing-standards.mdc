@@ -1,0 +1,26 @@
+---
+description: Testing — unit/widget/golden/sidecar; dogfood for manual QA
+alwaysApply: true
+---
+
+# Testing Standards
+
+Canonical: `docs/ENGINEERING_STANDARD.md` · `docs/process/BUG_HANDLING.md` ·
+`docs/dogfood/README.md` · `docs/devops/LOCAL_DEVELOPMENT.md`
+
+## Prefer
+
+| Change kind | Prefer |
+| --- | --- |
+| Parser / validator / domain | Unit tests |
+| Notifiers / widgets | Widget tests |
+| Visual chrome | Golden tests when stable (`--tags golden`) |
+| Copilot bridge | `npm run check` in `tool/copilot_sdk_bridge` |
+| Bugs | Regression test that fails before / passes after |
+
+## Before commit (when code changed)
+
+- Add or update tests for the change.
+- Run relevant suites from `ai_tray/` (and bridge if touched).
+- There is **no** ≥90% coverage hard gate.
+- Manual dogfood for tray-visible behavior when practical.

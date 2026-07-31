@@ -1,0 +1,25 @@
+---
+description: ADRs and product decisions — record significant choices in docs
+alwaysApply: true
+---
+
+# Decision Records
+
+Canonical: `docs/adr/` · `docs/project/DECISION_LOG.md` ·
+`docs/templates/ADR_TEMPLATE.md`
+
+## When required
+
+Significant decisions that change provider boundaries, data sources, refresh /
+cache / sidecar contracts, CI model, demo strategy, or other cross-cutting
+design.
+
+## Process
+
+1. Search existing ADRs and DECISION_LOG.
+2. Draft or update ADR before implementation is considered complete.
+3. Record status, context, decision, consequences.
+4. Product-visible decisions also get a PD-/D- entry in DECISION_LOG.
+5. Update dependent architecture / handoff docs as needed.
+
+Do not bury architectural decisions only in PR descriptions or chat.

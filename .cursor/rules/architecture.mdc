@@ -1,0 +1,29 @@
+---
+description: Clean Architecture, Riverpod, provider boundaries for AI Tray
+alwaysApply: true
+---
+
+# Architecture
+
+Canonical: `docs/ENGINEERING_STANDARD.md` ·
+`docs/process/ENGINEERING_PRINCIPLES.md` · `docs/architecture/` · `docs/adr/`
+
+## Always
+
+- Feature-first Clean Architecture: UI → State → Domain → Data.
+- Riverpod Notifier / AsyncNotifier / AsyncValue (no legacy StateNotifier).
+- UI never calls CLI / SDK / HTTP directly; repositories own I/O.
+- DTOs map to domain models before UI.
+- Prefer `features/providers/core/` and `features/providers/copilot/`
+  (ADR-004); do not expand legacy aliases.
+- Capability-driven shared UI via `ProviderRegistry`.
+- Never invent usage values; label stale / LKG data.
+- No `/copilot_internal`, undocumented APIs, or scraping.
+- No Cursor personal quota provider (PD-023).
+- No Flutter Web tray playground (PD-025).
+- Targeted cleanup over rewrites (ADR-004 / PD-024).
+
+## When architecture changes
+
+Create or update an ADR under `docs/adr/` and cross-link
+`docs/project/DECISION_LOG.md` before considering the work complete.

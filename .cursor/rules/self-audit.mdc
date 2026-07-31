@@ -1,0 +1,23 @@
+---
+description: Pre-completion self-audit against DoD and handoff gate
+alwaysApply: true
+---
+
+# Self Audit
+
+Canonical: `docs/process/DEFINITION_OF_DONE.md` ·
+`.cursor/rules/project-handoff.mdc`
+
+Before declaring work complete, verify silently (fix gaps; do not dump this
+checklist unless asked):
+
+- [ ] Relevant handoff / ADR / area docs consulted (not the whole tree)
+- [ ] Architecture boundaries respected; no temporary hacks
+- [ ] Tests added/updated and relevant suites run when code changed
+- [ ] Docs updated; handoff reviewed when state changed
+- [ ] No PD-023 / PD-025 / undocumented-API violations
+- [ ] Quality CI expectations intact (no PR desktop builds)
+- [ ] Conventional Commit / intentional paths when committing
+- [ ] Completion gate: code, tests, docs, handoff, validation
+
+Only then mark the task done.

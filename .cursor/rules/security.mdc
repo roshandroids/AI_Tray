@@ -1,0 +1,22 @@
+---
+description: Security — no secrets; safe CLI/sidecar boundaries; private vuln reports
+alwaysApply: true
+---
+
+# Security
+
+Canonical: `SECURITY.md` · `docs/process/ENGINEERING_PRINCIPLES.md`
+
+## Never expose or commit
+
+- Secrets, API keys, tokens, credentials, private certificates
+- `.env` files with real secrets; warn if the user asks to commit them
+- Provider auth material in logs or screenshots
+
+## Practice
+
+- Treat CLI arguments and sidecar IPC as trust boundaries.
+- Do not invent usage data; do not scrape undocumented endpoints.
+- Do not write exploits, malware, or attack tooling.
+- Prefer defensive fixes for local vulnerabilities without exploit payloads.
+- Public Issues are not for vulnerabilities — use `SECURITY.md`.

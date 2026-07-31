@@ -656,7 +656,7 @@ Tracked against `docs/AI_Tray_Documentation_Upgrade_Master_Prompt.md`
 | 3 — Documentation foundation | **Completed** 2026-07-31 | `docs: organize documentation structure` |
 | 4 — Engineering standard | **Completed** 2026-07-31 | `docs: add engineering standards` |
 | 5 — Project blueprint | **Completed** 2026-07-31 | `docs: add project blueprint` |
-| 6 — Cursor rules | Pending | `docs: refine cursor rules` |
+| 6 — Cursor rules | **Completed** 2026-07-31 | `docs: refine cursor rules` |
 | 7 — Documentation cleanup | Pending | `docs: cleanup documentation` |
 | 8 — Validation | Pending | `docs: finalize documentation upgrade` |
 
@@ -686,3 +686,9 @@ release, DoD, review checklist) with links to existing normative docs.
 
 Added: `docs/PROJECT_BLUEPRINT.md` (vision, goals, architecture, layout, docs
 map, workflows, roadmap, getting started).
+
+### Phase 6 notes
+
+Pruned Cursor rules: kept `project-handoff`; added documentation-first,
+architecture, decision-records, testing-standards, git-github-workflow,
+security, self-audit. Documented non-adopted DP rules in `.cursor/README.md`.

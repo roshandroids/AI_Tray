@@ -1,0 +1,30 @@
+---
+description: Git/GitHub — Issue, branch, Conventional Commits, PR; Quality CI only on PRs
+alwaysApply: true
+---
+
+# Git & GitHub Workflow
+
+Canonical: `CONTRIBUTING.md` · `docs/process/REPOSITORY_GOVERNANCE.md` ·
+`docs/process/CI_REQUIRED_CHECKS.md`
+
+```text
+Issue → Branch → Implementation → Commit → Pull Request → Maintainer → Merge
+```
+
+Do not push or merge unless the user explicitly asks. Prefer feature branches
+over committing directly to `main` when protection is enabled.
+
+## Commits
+
+- Conventional Commits (`feat:`, `fix:`, `docs:`, `ci:`, …).
+- Stage intentional paths only — never `git add .` / `-A` unless the user
+  explicitly asks for a broad commit.
+- Commit when the user or an approved execution plan (e.g. Master Prompt
+  phase commits) requests it.
+
+## PRs
+
+- Link Issues (`Closes` / `Refs`) for non-trivial work.
+- Fill the PR template; expect Format / Analyze / Test / Validate workflows.
+- Do **not** require or reintroduce PR desktop builds (Build macOS / Windows).

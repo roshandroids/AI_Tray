@@ -81,6 +81,7 @@ AI_Tray_Project/
 | Agent session | [../AGENTS.md](../AGENTS.md) → [project/](project/) |
 | Contribute | [../CONTRIBUTING.md](../CONTRIBUTING.md) → [process/](process/) |
 | Engineering bar | [ENGINEERING_STANDARD.md](ENGINEERING_STANDARD.md) |
+| Cursor / agent rules | [../.cursor/README.md](../.cursor/README.md) |
 | Reports / audits | [reports/](reports/) |
 
 ---
