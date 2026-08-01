@@ -35,6 +35,7 @@ void main() {
         applyLaunchAtLoginProvider.overrideWithValue((_) async {
           launchCalls += 1;
         }),
+        applyPresentationSettingsProvider.overrideWithValue(() async {}),
         bufferedAppLoggerProvider.overrideWithValue(BufferedAppLogger()),
       ],
     );
