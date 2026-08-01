@@ -11,6 +11,8 @@ import 'package:ai_tray/features/usage/data/validators/usage_validator.dart';
 import 'package:ai_tray/features/usage/domain/repositories/usage_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+export 'package:ai_tray/core/notifications/notification_providers.dart'
+    show notificationGatewayProvider;
 export 'package:ai_tray/features/providers/presentation/provider_selection_controller.dart'
     show
         selectableAIProvidersProvider,
@@ -18,6 +20,10 @@ export 'package:ai_tray/features/providers/presentation/provider_selection_contr
         selectedProviderIdProvider;
 export 'package:ai_tray/features/providers/provider_providers.dart'
     show processRunnerProvider, providerRegistryProvider;
+export 'package:ai_tray/features/sessions/browser/presentation/session_browser_controller.dart'
+    show sessionBrowserControllerProvider;
+export 'package:ai_tray/features/sessions/session_providers.dart'
+    show sessionRepositoryProvider;
 export 'package:ai_tray/features/settings/settings_providers.dart'
     show settingsRepositoryProvider, sharedPreferencesProvider;
 

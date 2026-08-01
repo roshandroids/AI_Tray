@@ -23,7 +23,7 @@ package, ADRs, and existing provider implementations.
 | Decisions (PD / D / ADR) | [`DECISION_LOG.md`](docs/project/DECISION_LOG.md) · [`docs/adr/`](docs/adr/) |
 | Docs map | [`docs/README.md`](docs/README.md) |
 | Local First CI | [`docs/devops/LOCAL_DEVELOPMENT.md`](docs/devops/LOCAL_DEVELOPMENT.md) |
-| CI/CD | [`docs/release/CI-CD.md`](docs/release/CI-CD.md) |
+| **CI / release (binding)** | [`docs/release/CI-CD.md`](docs/release/CI-CD.md) · [`ci.yaml`](ci.yaml) |
 | Demo / showcase | [`docs/devops/DEMO_STRATEGY.md`](docs/devops/DEMO_STRATEGY.md) |
 | Dogfood / manual QA | [`docs/dogfood/README.md`](docs/dogfood/README.md) |
 | Copilot provider | [`docs/providers/github-copilot.md`](docs/providers/github-copilot.md) |
@@ -43,7 +43,9 @@ package, ADRs, and existing provider implementations.
 - No Cursor personal quota provider (PD-023)
 - No Flutter Web tray playground (PD-025)
 - EP-004 = targeted cleanup, not full rewrite (ADR-004)
-- Quality CI is Ubuntu-only; desktop builds only in Release CD
+- Quality CI is Ubuntu-only; desktop builds only on `release/**` PRs and tags ([docs/release/CI-CD.md](docs/release/CI-CD.md))
+- Never invent a permanent `dev` branch; never put macOS/Windows on feature PRs
+- Version + CHANGELOG on `release/x.y.z` before merge; tag only after merge; tag rebuilds then publishes
 - Conventional Commits; do not push unless asked
 - After significant work: review/update the eight-file `docs/project/` package
 

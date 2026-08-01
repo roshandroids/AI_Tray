@@ -12,6 +12,11 @@ final class FakeSessionFileSystem implements SessionFileSystem {
   /// Records every call made, for assertions in tests.
   final List<String> calls = [];
 
+  /// Set to make every subsequent [listSessionFiles] call fail with this
+  /// failure — simulates a genuine enumeration error (permission denied,
+  /// I/O error), distinct from "no sessions yet" (an empty success).
+  AppFailure? listFailure;
+
   void addFile(
     String path, {
     required List<String> lines,
@@ -30,6 +35,8 @@ final class FakeSessionFileSystem implements SessionFileSystem {
     required String rootPath,
   }) async {
     calls.add('listSessionFiles($rootPath)');
+    final failure = listFailure;
+    if (failure != null) return Result.failure(failure);
     final refs = _files.keys
         .where((path) => path.startsWith(rootPath) && path.endsWith('.jsonl'))
         .map(SessionFileRef.fromPath)

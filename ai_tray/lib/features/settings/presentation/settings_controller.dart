@@ -19,6 +19,15 @@ final applyLaunchAtLoginProvider = Provider<Future<void> Function(AppSettings)>(
   },
 );
 
+/// Re-applies tray menu / title after settings are persisted.
+///
+/// Overridable in tests so Linux CI does not construct a real tray controller.
+final applyPresentationSettingsProvider = Provider<Future<void> Function()>(
+  (ref) {
+    return () => ref.read(trayControllerProvider).applyPresentationSettings();
+  },
+);
+
 /// Owns loading, saving, failure recovery, and retries for Settings UI.
 final class SettingsNotifier extends AsyncNotifier<AppSettings> {
   @visibleForTesting
@@ -59,8 +68,7 @@ final class SettingsNotifier extends AsyncNotifier<AppSettings> {
           .read(applyLaunchAtLoginProvider)(settings)
           .timeout(operationTimeout);
       await ref
-          .read(trayControllerProvider)
-          .applyPresentationSettings()
+          .read(applyPresentationSettingsProvider)()
           .timeout(operationTimeout);
       _lastSettings = settings;
       state = AsyncData(settings);

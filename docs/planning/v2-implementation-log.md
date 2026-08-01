@@ -297,3 +297,712 @@ issues on `lib/features/sessions/` and `test/unit/sessions/`.
   none, do not fix it inside a sessions story.
 
 ---
+
+## Milestone 1 — Session Visibility (read-only)
+
+### Epic 1.2 — Session Browser UI
+
+#### Feature 1.2.1 — Session List Page — ✅ Complete
+
+**Stories completed:** `SessionBrowserController` + list UI · Search/filter
+by project path.
+
+**Files added:**
+- `lib/features/sessions/domain/repositories/session_repository.dart` —
+  port with a single `listSessions()` method. `readSession()`/
+  `refreshIndex()` from §9's port sketch are deliberately **not** added
+  yet — nothing in this feature needs them (Feature 1.2.2's detail view
+  does), so building them now would be untested, unused surface. This
+  fills the gap Feature 1.1.2's log entry flagged: "the locked roadmap has
+  no explicit story for assembling `SessionRepository` itself... implied
+  to happen inside Feature 1.2.1."
+- `lib/features/sessions/data/repositories/file_system_session_repository.dart`
+  — composes Feature 1.1.1's `SessionFileSystem`, Feature 1.1.2's
+  `JsonlSessionParser.summarize()`, and Feature 1.1.3's
+  `ClaudeSessionService`/`mergeSessionLiveness` — no new filesystem or CLI
+  logic
+- `lib/features/sessions/data/repositories/fake_session_repository.dart` —
+  in-memory test double (mirrors `FakeProcessRunner`/
+  `FakeSessionFileSystem`'s configurable-response shape), with a
+  `holdNextResponse()`/`releaseResponse()` gate for deterministic
+  loading-state widget tests
+- `lib/features/sessions/session_providers.dart` — DI wiring
+  (`sessionFileSystemProvider`, `claudeSessionServiceProvider`,
+  `sessionRepositoryProvider`), same shape as `settings_providers.dart`;
+  reuses the existing `processRunnerProvider` singleton rather than
+  constructing a second one
+- `lib/features/sessions/browser/presentation/session_browser_controller.dart`
+  — `AsyncNotifier<List<SessionSummary>>`, same shape as
+  `SettingsNotifier`/`ProviderSelectionNotifier`
+- `lib/features/sessions/browser/presentation/session_list_filter.dart` —
+  standalone pure `filterSessionsByProjectPath()` function (not a
+  controller method), so filtering is unit-testable in isolation and
+  never mutates or discards the controller's loaded list
+- `lib/features/sessions/browser/presentation/session_browser_page.dart` —
+  list page reusing `SectionCard` (`core/components/section_chrome.dart`)
+  for tiles and `StatusBadge`/`TrayStatusKind.live`
+  (`core/components/status_badge.dart`) for the live indicator; empty
+  state mirrors `tray_empty_state.dart`'s visual pattern (Semantics +
+  title/body via `type.emptyTitle`/`type.bodySmall`) rather than
+  instantiating that widget directly, since its constructor is
+  usage/provider-specific and doesn't fit a session list
+- `test/unit/sessions/{session_list_filter_test.dart, file_system_session_repository_test.dart, session_browser_controller_test.dart}`
+- `test/widget/session_browser_page_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/data/fs/fake_session_file_system.dart` — added a
+  `listFailure` field so tests can simulate a genuine enumeration error
+  (permission denied / I/O error), distinct from the already-covered "no
+  sessions yet" empty-success case; Feature 1.1.1's fake had no seam for
+  this because nothing needed it until the repository's error-propagation
+  path did
+- `test/unit/sessions/fake_session_file_system_test.dart` — one new test
+  for the above
+- `lib/features/usage/presentation/usage_page.dart` — added a "Sessions"
+  toolbar `IconButton` (`Icons.history_outlined`) next to Diagnostics,
+  pushing `SessionBrowserPage` via the same bare
+  `Navigator.push(MaterialPageRoute)` pattern already used for
+  Settings/Diagnostics/Logs. Not named as a story in the roadmap, but
+  without it the page is unreachable dead code; this is the minimal,
+  pattern-following wiring, not a new navigation abstraction.
+- `lib/core/di/providers.dart` — exports `sessionRepositoryProvider` and
+  `sessionBrowserControllerProvider`, mirroring how
+  `selectedProviderIdProvider` (an `AsyncNotifierProvider`, not just a
+  plain repository provider) is already re-exported from this barrel.
+
+**Deviations from the roadmap:** None in shape or intent. As anticipated
+by Feature 1.1.2's log entry, this feature is where `SessionRepository`
+itself got built — the roadmap named the port's eventual shape (§9:
+`listSessions()`, `readSession(id)`, `refreshIndex()`) but not which story
+assembles it; building only `listSessions()` now (see above) is a scope
+decision, not a deviation, since `readSession`/`refreshIndex` have no
+caller yet.
+
+**Implementation discoveries for later milestones:**
+- `SessionRepository` owns no cache (§9), so there is no meaningful
+  difference between the initial load and a "refresh" — both are exactly
+  the same `listSessions()` call. `SessionBrowserController.refresh()`
+  simply re-invokes it; no separate `refreshIndex()` port method exists or
+  is needed. Worth confirming this still holds once Feature 1.2.2 is
+  built — if the detail view's `readSession()` ever needs its own
+  re-scan semantics, that is the point to revisit, not now.
+- A per-file `stat()` failure (a session deleted between listing and
+  reading its metadata — the same race Feature 1.1.1's port already
+  documented) is treated at the repository level exactly like Feature
+  1.1.2 treats a malformed transcript line: skip that one item, log a
+  warning, keep going. This is a second, independent application of the
+  same tolerate-and-degrade discipline, at a different layer.
+- `only_throw_errors` (analyzer, info-level) rejects throwing a raw
+  `AppFailure` from `SessionBrowserController._load()` since `AppFailure`
+  doesn't extend `Exception`/`Error` (deliberately, per its own doc
+  comment). `ProviderSelectionNotifier`/`SettingsNotifier` already solve
+  this by throwing a `StateError` with just the user-safe message and
+  logging the full `AppFailure` separately — followed the identical
+  pattern here rather than inventing a new one. Worth carrying into
+  Feature 1.2.2's detail-page controller, which will hit the same lint.
+- `UsageStatusMapper` (`features/usage/presentation/usage_status.dart`) is
+  already reused outside `features/usage/` (by `core/components/`,
+  `features/tray/`, `features/diagnostics/`) despite the bounded-context
+  module structure in §7 — reusing `.relativeUpdated()` and
+  `TrayStatusKind.live`/`StatusBadge` for the session tile's timestamp and
+  live indicator follows that existing precedent rather than duplicating a
+  relative-time formatter or inventing a session-specific status badge.
+
+**Regression found:** None. The three tests that reference `UsagePage`
+(`shared_dashboard_usage_test.dart`, `provider_selection_usage_test.dart`,
+`ep002_ui_quality_test.dart`) were all already failing to compile before
+this feature's changes (see Feature 1.1.3's log entry) for reasons
+unrelated to sessions — none asserted anything about the toolbar's icon
+set, so adding the Sessions `IconButton` carried no regression risk for
+them.
+
+**Branch note, recorded so it isn't mistaken for scope creep later:**
+between this feature's implementation and its final verification, PR #13
+squash-merged `feat/personalization-flex-theme` (which carried both this
+work's Feature 1.1.1–1.1.3 commit and the unrelated theme-personalization
+commit) into `main`; the working tree's checked-out branch moved to `main`
+accordingly (confirmed via `git log`/`git branch -vv` — `main` is at
+`5ebb037`, whose parent history shows the squashed commit message
+containing both original commit bodies verbatim). This resolved the
+previously-failing `UsagePage` compile errors (the personalization
+work's own fixes landed as part of that merge) — not something done by,
+or in the scope of, this feature.
+
+One pre-existing, unrelated failure was discovered during final
+verification: `test/unit/ui/shared_surfaces_controller_test.dart`
+("settings load, save, timeout, and retry recover cleanly") fails with
+`Expected: true, Actual: <false>` at its `save()` assertion (line 51) —
+a `SettingsNotifier` test using a 40ms `operationTimeout`, unrelated to
+sessions in every way (no import, call, or provider this feature touches).
+Confirmed pre-existing, not caused by this feature's changes: `git stash
+push -u` set the working tree to exactly `main`'s committed state, and
+the same failure reproduced 3/3 runs before the stash was popped back.
+Likely a timing-sensitive test whose fixed 40ms budget doesn't leave
+enough margin under machine load — not a sessions concern, and not fixed
+here per the same "don't fix pre-existing unrelated failures inside a
+sessions story" rule Feature 1.1.1 established.
+
+**ADR changes required:** None. No locked architectural decision was
+challenged; `SessionRepository`'s shape and the "no cache" reasoning
+implement §9 exactly as specified.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 26 tests across 5 files, all passing — `session_list_filter_test.dart`
+  (7: empty query, narrows by substring, case-insensitive, falls back to
+  `sanitizedProjectDirName`, no-match, purity, determinism),
+  `file_system_session_repository_test.dart` (6: builds summaries from
+  seeded files, merges liveness onto matching sessions, a failed liveness
+  call leaves `isLive` null without failing the list, a file that
+  disappears between listing and stat is skipped, an empty directory
+  succeeds empty, a genuine enumeration failure propagates),
+  `session_browser_controller_test.dart` (5: populates state, surfaces a
+  repository failure as `AsyncError`, `refresh()` re-queries and updates
+  state, `refresh()` recovers from a prior error, `refresh()` is a no-op
+  while already in flight), one new case in
+  `fake_session_file_system_test.dart` (the new `listFailure` seam), and
+  `test/widget/session_browser_page_test.dart` (7: populated list with
+  path/activity/count, empty state, loading indicator via
+  `holdNextResponse()`/`releaseResponse()`, refresh reflects newly added
+  sessions, search narrows and clearing restores the list, no-match empty
+  state, live badge shown only for `isLive == true`).
+- Sessions-scoped suite (`test/unit/sessions/` +
+  `test/widget/session_browser_page_test.dart`): **81/81 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **266
+  passed, 1 failed** — the single failure is the pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test described above
+  (verified independent of this feature via `git stash`); every other
+  test passes, including the three `UsagePage`-referencing tests that
+  were failing before this feature (see "Branch note" above for why).
+
+---
+
+#### Feature 1.2.2 — Session Detail View — ✅ Complete
+
+**Stories completed:** Detail page · Graceful incomplete-session
+rendering.
+
+**Files added:**
+- `lib/features/sessions/detail/presentation/session_detail_controller.dart`
+  — `sessionDetailProvider`, a `FutureProvider.family<ClaudeSession,
+  String>` (not an `AsyncNotifierProvider.family` — see discoveries
+  below), plus `SessionLoadException` (carries the original
+  `FailureCode`, extends `Error`)
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  renders model, git branch, last activity, message count, token totals
+  via `SectionCard`/`InfoRow` (`core/components/section_chrome.dart`,
+  already used by 1.2.1); live badge reuses `StatusBadge`/
+  `TrayStatusKind.live` exactly as the browser tile does; incomplete
+  banner is a small local widget (the "graceful incomplete rendering"
+  story); "session no longer available" state is its own distinct
+  branch, keyed off `SessionLoadException.code == sessionNotFound`
+- `test/unit/sessions/session_detail_controller_test.dart`,
+  `test/widget/session_detail_page_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/domain/repositories/session_repository.dart` —
+  added `readSession(String sessionId)`. This is the method Feature
+  1.2.1's log entry deliberately deferred ("nothing needs them yet") —
+  this feature is the first and only caller.
+- `lib/features/sessions/data/repositories/file_system_session_repository.dart`
+  — implements `readSession()`: re-enumerates session files (no new
+  lookup table — consistent with §9's "no cache, re-derive live each
+  call"), matches by `sessionId`, and only then reads/parses the single
+  matching file's full content. Returns `FailureCode.sessionNotFound`
+  when no file matches — the real listing-vs-opening race §21 names for
+  this exact feature.
+- `lib/features/sessions/data/repositories/fake_session_repository.dart`
+  — added `setSession()`/`setSessionFailure()` for the detail path,
+  mirroring the existing `setSessions()`/`setFailure()` pair
+- `test/unit/sessions/file_system_session_repository_test.dart` — added
+  a `readSession` group (4 new cases)
+- `lib/features/sessions/browser/presentation/session_browser_page.dart`
+  — tiles are now wrapped in `InkWell` and push `SessionDetailPage`,
+  matching the bare `Navigator.push(MaterialPageRoute)` pattern already
+  used everywhere else in this codebase (no router)
+- `test/widget/session_browser_page_test.dart` — added a
+  tile-tap-opens-detail-page test
+
+**Deviations from the roadmap:** None in shape or intent — `readSession()`
+lands exactly where 1.2.1's log entry predicted it would.
+
+**Implementation discoveries for later milestones (both significant —
+read before building Feature 2.2.1's `ClaudeSessionService.resume()` or
+any other new provider):**
+
+1. **`AsyncNotifierProvider.family` does not exist in this project's
+   installed `riverpod` (3.3.2) manual API.** Checked the installed
+   package source directly (not assumed): `AsyncNotifierProvider` has no
+   `static const family = ...Builder()` the way `Provider`,
+   `FutureProvider`, and `StreamProvider` all do — a family notifier is
+   codegen-only (`@riverpod`-annotated classes via `riverpod_generator`),
+   which this codebase doesn't use anywhere (no `.g.dart` files, no
+   `build_runner` dependency). `session_detail_controller.dart` therefore
+   uses `FutureProvider.family` instead — same `AsyncValue` loading/data/
+   error shape, no controller mutation methods needed since this feature
+   has no "refresh" story. **Trigger for revisiting:** if a future
+   feature needs a per-argument controller with mutation methods (not
+   just a one-shot load), that is the point to either add
+   `riverpod_generator` as a new dependency (a real decision, not a
+   silent one) or hand-roll a family-keyed state map inside a
+   non-family `AsyncNotifier` — not to reach for
+   `AsyncNotifierProvider.family` again, since it isn't available.
+2. **Riverpod 3.x retries a provider's failed `create` call automatically
+   — up to 10× with exponential backoff — unless the thrown object `is
+   Error`** (`ProviderContainer.defaultRetry`, checked directly in the
+   installed package source: `if (error is ProviderException || error is
+   Error) return null;`). Throwing `SessionLoadException` as a plain
+   `implements Exception` type reproduced this as a real, reproduced
+   test hang (30s timeout), not a hypothetical — the failure was logged
+   immediately, but `.future` didn't settle until the retry backoff
+   window was exhausted (well past any reasonable test/UI wait).
+   Changing it to `extends Error` fixed it immediately. This retroactively
+   explains *why* `SessionBrowserController._load()` (Feature 1.2.1) and
+   `SettingsNotifier`/`ProviderSelectionNotifier` (pre-v2) all already
+   throw `StateError` rather than a custom `Exception` type — their own
+   comments cited only the `only_throw_errors` lint, but throwing a
+   `StateError` (an `Error` subclass) also incidentally avoided this
+   retry behavior. **This is a load-bearing rule for every future
+   provider in this codebase, not just sessions:** a provider's `build`/
+   `create` callback must throw something that `is Error` for an
+   intentionally terminal failure — never a bare `Exception` implementer
+   — or it will silently retry for up to ~30+ seconds before surfacing.
+   Worth a shared note if this codebase adds more providers with typed
+   failure information going forward.
+3. Evaluated and reverted `FutureProvider.autoDispose` for
+   `sessionDetailProvider`: a plain `ref.read(provider.future)`/
+   `container.read(provider.future)` call — used by both the page and
+   tests — has no active `ref.watch`/`container.listen` keeping it
+   alive, so an autoDispose provider gets scheduled for disposal while
+   its future is still pending, producing a `disposed during loading
+   state` error (also reproduced directly, not assumed). No other
+   provider in this codebase uses `autoDispose`, so keeping this one
+   consistent (no autoDispose) was the simpler, lower-risk choice over
+   teaching every read site to hold a keep-alive subscription.
+
+**Regression found:** None. `InkWell`-wrapping the browser tile and
+adding `SessionDetailPage` navigation only touches
+`session_browser_page.dart`, already covered by Feature 1.2.1's own
+widget tests (all still pass) plus the new tap-navigation test.
+
+**ADR changes required:** None. `readSession()`'s shape and behavior
+match §9 exactly; the retry/family discoveries above are riverpod-version
+implementation details, not architectural decisions this roadmap governs.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 4 repository cases (`readSession` group), 5
+  `session_detail_controller_test.dart` cases (loads by id, keyed
+  independently per id, `sessionNotFound` surfaces as
+  `SessionLoadException` with the right code, other failures surface
+  their own code, — 4 total plus the keying test), 5
+  `session_detail_page_test.dart` widget cases (renders detail fields,
+  session-not-found state, incomplete indicator shown/not-shown, live
+  badge), and 1 new browser-page test (tap opens detail).
+- Sessions-scoped suite (`test/unit/sessions/` + both session widget test
+  files): **95/95 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **280
+  passed, 1 failed** — the single failure is the same pre-existing,
+  unrelated `shared_surfaces_controller_test.dart` timing test recorded
+  under Feature 1.2.1's log entry; nothing new.
+
+**M1 exit criteria:** met. Session Browser (list + detail) is read-only —
+independently verifiable by grep: no `--resume`, no write call anywhere
+under `lib/features/sessions/`.
+
+---
+
+## Milestone 2 — Manual Resume + Better Notifications (gated on M1 shipped)
+
+### Epic 2.1 — Notification Gateway
+
+#### Feature 2.1.1 — Notification Gateway Port — ✅ Complete
+
+**Stories completed:** Define `NotificationGateway` port + fake · Migrate
+`TrayController.maybeNotify` to the gateway.
+
+**Files added:**
+- `lib/core/notifications/notification_gateway.dart` — port
+  (`notify({title, body, onClick})`), lives in `core/` not
+  `features/sessions/` since it's cross-cutting (§7 placement rule 2,
+  §12)
+- `lib/core/notifications/io_notification_gateway.dart` — wraps
+  `local_notifier`, preserving `maybeNotify`'s exact prior behavior
+  (catch-log-swallow on failure, never throws)
+- `lib/core/notifications/fake_notification_gateway.dart` — records
+  calls (title/body/onClick), mirrors `FakeProcessRunner`'s shape
+- `lib/core/notifications/notification_providers.dart` —
+  `notificationGatewayProvider`
+- `test/unit/notifications/fake_notification_gateway_test.dart`,
+  `test/unit/tray/tray_controller_test.dart` (new — none existed before,
+  see discoveries)
+
+**Files modified:**
+- `lib/features/tray/presentation/tray_controller.dart` —
+  `TrayController` takes a `notificationGateway` constructor parameter;
+  `maybeNotify()` now calls `notificationGateway.notify(title: 'AI Tray',
+  body: '...')` instead of constructing `LocalNotification` directly —
+  same title/body string, same threshold logic, unchanged
+- `lib/core/di/providers.dart` — exports `notificationGatewayProvider`;
+  `trayControllerProvider` now wires it in
+- `lib/features/notifications/{data,domain,presentation}/.gitkeep` —
+  removed. §7 explicitly retires this empty placeholder feature in favor
+  of `core/notifications/`; this story is where that retirement actually
+  happens.
+- `docs/dogfood/POST_EP002_MACOS_ARM64.md` — added checklist row 12 for
+  the gateway migration and (forward-looking) `onClick` verification,
+  per this feature's own acceptance criteria
+
+**Deviations from the roadmap:** None in shape or intent.
+
+**Implementation discoveries for later milestones:**
+- **No `TrayController`/`maybeNotify` test existed before this feature** —
+  confirmed by grepping `test/` for both names (zero hits), matching
+  exactly what §12's own text already claimed ("no notification test
+  exists"). So "existing tests must keep passing unmodified" had nothing
+  to preserve; the 5 new `tray_controller_test.dart` cases are the first
+  coverage this code path has ever had (notifies with correct title/body,
+  suppressed below threshold, suppressed when disabled, suppressed for
+  cached usage, suppressed with no threshold configured) — closing
+  exactly the gap the v1 audit and this roadmap both flagged.
+- **A second, unmigrated `LocalNotification` call site exists**:
+  `DiagnosticsPage._testNotification()` (a "Test notification" diagnostic
+  button) constructs `LocalNotification` directly, not through the new
+  gateway. Left as-is deliberately — this story's roadmap text names only
+  `TrayController.maybeNotify` as the migration target, and
+  `_testNotification` is a `static` helper with no `ref`/DI access today,
+  so migrating it would be new scope (threading a gateway into a static
+  diagnostics helper), not a like-for-like swap. **Trigger for
+  revisiting:** if Epic 2.3's `onClick`-driven notifications reveal any
+  gateway behavior gap, checking this second call site for the same gap
+  is the first place to look; otherwise it's cosmetic inconsistency, not
+  a correctness issue.
+- `IoNotificationGateway` has no automated test — `local_notifier` needs
+  real platform channels (macOS/Windows native code) that don't exist in
+  a plain `flutter test` VM run, the same reason `docs/claude_code_cli_capability_report.md`-style
+  CLI-adjacent code gets fixture/fake tests instead of hitting the real
+  thing. This is exactly why §12/Feature 2.1.1 asks for a **manual**
+  dogfood checklist entry instead of an automated one — added as row 12
+  above, not skipped.
+
+**Regression found:** None. `TrayController`'s constructor gained a new
+required parameter, a compile-level change only `trayControllerProvider`
+needed updating for (one call site, confirmed by grep).
+
+**ADR changes required:** None. This is exactly ADR-006's/§12's
+`NotificationGateway` design, implemented as specified — ports+fake
+modeled on `ProcessRunner`, cross-cutting placement in `core/`.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 3 `fake_notification_gateway_test.dart` cases, 5
+  `tray_controller_test.dart` cases — 8 total, all passing.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **288
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test recorded under
+  Feature 1.2.1/1.2.2's log entries; nothing new.
+
+---
+
+### Epic 2.2 — Resume Execution
+
+#### Feature 2.2.1 — Manual Resume Action — ✅ Complete
+
+**This is the first *acting* feature in the codebase** — every prior
+feature (M1, Epic 2.1) was read-only. Design principle 2's safety model
+was applied from the first line, not bolted on after: attended
+"Resume now" continues in place (`forkSession: false`), never forks,
+never requires a budget cap (that requirement is scoped to *unattended*
+execution — Feature 2.2.2's queue — per §2 principle 2's own wording and
+user journey 2's text, neither of which mention a cap for manual resume).
+
+**Stories completed:** `ClaudeSessionService.resume()` · "Resume now"
+wired from Session Detail · Result surfaced in-app.
+
+**Files added:**
+- `lib/features/sessions/domain/models/resume_outcome.dart` —
+  `ResumeOutcome` (sessionId, isError, costUsd, tokens, numTurns,
+  stopReason, resultText), mapped from the CLI's confirmed
+  `--output-format json` result envelope (capability report §3D); reuses
+  `SessionTokenTotals` for the `usage` block rather than a new type
+- `lib/features/sessions/resume/presentation/resume_controller.dart` —
+  `ResumeController` (`AsyncNotifier<ResumeAttempt?>`) + `ResumeAttempt`
+  (tags an outcome with the session id it belongs to — see discoveries)
+- `test/unit/sessions/resume_controller_test.dart`
+
+**Files modified:**
+- `lib/features/sessions/data/process/claude_session_service.dart` —
+  added `resume()` alongside the existing `listLiveSessions()`, per §7's
+  "ONE class, two capabilities" design. Builds the confirmed
+  `--resume <id> -p "<prompt>" --output-format json [--max-budget-usd
+  <cap>] [--fork-session] [--fallback-model <list>]` grammar (§2/§3D/§15);
+  10-minute default timeout (explicit, not `ProcessRunner`'s 8s default);
+  tolerates a non-zero exit (bogus session id — confirmed live in the
+  capability report to fail with plain stderr, not JSON), malformed JSON,
+  and a non-object JSON shape, matching `listLiveSessions()`'s existing
+  defensive-parsing discipline.
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  added a "Resume now" section: a prompt field + button, disabled with no
+  `ClaudeSession.projectPath` (never guesses a `cwd` — design principle
+  3) and while a resume is in flight; renders cost/tokens/turns/stop
+  reason/result text on success, an error message on failure.
+- `lib/features/providers/data/process/fake_process_runner.dart` —
+  `calls` now records `timeout`/`workingDirectory` alongside
+  `executable`/`arguments` (previously only the latter two) — needed to
+  actually verify `resume()` forwards the non-default timeout and the
+  session's `cwd` correctly, which no existing test needed before.
+  Confirmed no existing test depended on the old 2-tuple shape (grepped
+  `test/` for `.calls` — the only hits were this feature's own new
+  tests), so this was a safe, non-breaking enhancement, not a migration.
+- `test/unit/sessions/claude_session_service_test.dart` — added a
+  `resume` group (14 cases)
+- `test/widget/session_detail_page_test.dart` — added 5 cases for the
+  new "Resume now" section
+
+**Deviations from the roadmap:** None in shape or intent. One explicit
+scope decision, stated because it's easy to misread as an omission: this
+story's UI has **no budget-cap input field** — confirmed intentional by
+re-reading §2 principle 2 ("mandatory... on every *queued or scheduled*
+resume") and user journey 2 (manual resume shows cost only *after*
+completion, no pre-flight cap). `resume()` itself *does* accept an
+optional `maxBudgetUsd` parameter — the queue executor (Feature 2.2.2)
+will be the caller that always supplies one.
+
+**Implementation discoveries for later milestones:**
+- **`ResumeController` is a single, app-wide `AsyncNotifier`, not a
+  family provider** — deliberately, continuing the same reasoning
+  Feature 1.2.2 already established (`AsyncNotifierProvider.family`
+  isn't available in this codebase's non-codegen riverpod usage). Unlike
+  `sessionDetailProvider` (which *loads* per-id data), `resume()` is an
+  imperative action that takes the session id as a call argument — the
+  same shape `SettingsNotifier.save(settings)` already uses — so no
+  family provider was needed at all, not even a `FutureProvider.family`
+  workaround. The one wrinkle this shape introduces: a single app-wide
+  controller means its last result would leak across different sessions'
+  detail pages if not scoped somehow. Solved with `ResumeAttempt`
+  (outcome + the session id it belongs to) — the page only renders a
+  stored result when `attempt.sessionId == this page's sessionId`. Worth
+  reusing this exact tagged-result shape for Feature 2.2.2's queue
+  executor if it ever needs a similarly-shaped "last result, scoped to
+  which item it's for" pattern.
+- Confirmed live in the capability report and now covered by a
+  regression test: a bogus/deleted session id fails the CLI call
+  *before* any JSON envelope is built — plain stderr text, exit code 1,
+  even when `--output-format json` was requested. `resume()` must check
+  `exitCode != 0` **before** attempting `jsonDecode` (matches
+  `listLiveSessions()`'s existing order of checks) — got this right the
+  first time here because the capability report flagged it explicitly,
+  but worth calling out for Feature 2.2.2, which will hit the identical
+  case for a queue item whose session was deleted after being enqueued.
+- `FakeProcessRunner.calls` gained `timeout`/`workingDirectory` fields
+  (see "Files modified" above) — this is now the place to look for
+  verifying *any* future `ProcessRunner` caller's non-default
+  timeout/cwd, not just this feature's.
+
+**Regression found:** None. `FakeProcessRunner.calls`'s shape change was
+verified safe (see above) and the full suite confirms it.
+
+**ADR changes required:** None. This story implements ADR-006's safety
+model exactly as specified for the *attended* path — the unattended/queue
+half of ADR-006 (mandatory cap, fork-by-default, stale-`cwd` fail-fast)
+is Feature 2.2.2's remit, not touched here.
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature.
+
+**Test results:**
+- New: 14 `claude_session_service_test.dart` `resume` cases (confirmed
+  grammar, workingDirectory/timeout forwarding, fork-session
+  presence/absence, budget cap presence/absence, fallback-model joining,
+  full parse of cost/tokens/turns/stopReason/resultText, an `is_error`
+  result still parses fully, a bogus-id non-zero exit, malformed JSON,
+  non-object JSON, timeout, process launch failure, custom executable
+  path), 3 `resume_controller_test.dart` cases (populates state tagged by
+  session id, a failure surfaces as `AsyncError`, a second concurrent
+  call is a no-op), 5 new `session_detail_page_test.dart` cases (button
+  disabled until a prompt is entered, full result renders on success, an
+  error renders on failure, unavailable state with no decoded project
+  path) — 22 new, all passing.
+- Sessions-scoped suite (`test/unit/sessions/` + both session widget test
+  files): **116/116 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **309
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test; nothing new.
+
+---
+
+#### Feature 2.2.2 — Resume Queue — ✅ Complete
+
+**This is "the highest-risk story in the milestone"** per the roadmap's
+own words — the safety model (mandatory cap, fork-by-default, stale-`cwd`
+fail-fast, no auto-execute-by-default) had to compose correctly across a
+persisted model, a repository, and a sequential executor at once, not
+just one class.
+
+**Stories completed:** `ResumeQueueItem` model + bounded repository ·
+Enqueue from Session Detail · Sequential executor · Queue UI.
+
+**Files added:**
+- `lib/features/sessions/queue/domain/models/resume_queue_item.dart` —
+  `ResumeQueueItem` + `ResumeQueueStatus`; constructor validates the
+  budget cap synchronously (`ArgumentError`, mirrors `AppSettings`);
+  `tryFromJson` is the separate, tolerant read-path deserializer that
+  degrades (`null`) instead of throwing — see §9's own distinction
+  between these two paths, which this feature is the first to need.
+- `lib/features/sessions/queue/domain/repositories/resume_queue_repository.dart`
+  — port: `list()`, `enqueue()`, `updateStatus()`, `remove()` (§9's exact
+  method names)
+- `lib/features/sessions/queue/data/repositories/shared_preferences_resume_queue_repository.dart`
+  — one JSON array under `resume_queue_v1` (versioned-prefix convention,
+  §9), bounded at 50 (`maxSize`), evicts the oldest
+  `succeeded`/`failed` item first when full, fails fast with a visible
+  error when full with nothing evictable (never touches a
+  `pending`/`running` item)
+- `lib/features/sessions/queue/data/repositories/fake_resume_queue_repository.dart`
+  — in-memory fake, mirrors `FakeSessionRepository`'s configurable
+  shape
+- `lib/features/sessions/queue/data/services/resume_queue_executor.dart`
+  — `ResumeQueueExecutor.runNext()`: stale-`cwd` fail-fast (before any
+  process spawn), runs the oldest pending item through the same
+  `ClaudeSessionService.resume()` Feature 2.2.1 already built, single-
+  flight (see discoveries)
+- `lib/features/sessions/queue/presentation/{resume_queue_controller.dart, resume_queue_page.dart}`
+  — `AsyncNotifier<List<ResumeQueueItem>>` + a page rendering pending/
+  running/succeeded/failed items with a status chip and a "Run next"
+  action
+- `lib/features/sessions/queue/queue_providers.dart` — DI wiring
+- Tests: `resume_queue_item_test.dart`,
+  `shared_preferences_resume_queue_repository_test.dart`,
+  `resume_queue_executor_test.dart`, `resume_queue_controller_test.dart`,
+  `test/widget/resume_queue_page_test.dart`
+
+**Files modified:**
+- `lib/core/errors/failure_code.dart` — added `workingDirectoryMissing`
+  and `budgetCapRequired` (§8's two remaining reserved codes, both now
+  with a named producer *and* consumer, closing the Final Architecture
+  Validation's own "confirmed every FailureCode value has both" check)
+- `lib/features/usage/presentation/widgets/tray_empty_state.dart` —
+  bucketed both new codes with `unknown` in the same exhaustive switch
+  Feature 1.1.1 already had to touch for `sessionNotFound` — expected,
+  mechanical fallout of extending a shared enum, not a regression
+- `lib/features/sessions/detail/presentation/session_detail_page.dart` —
+  added an "Add to queue" section (prompt + mandatory budget cap field;
+  submit stays disabled until both are valid); corrected its own class
+  doc comment, which had gone stale after Feature 2.2.1 added "Resume
+  now" but still claimed "no mutating CLI action anywhere in this page"
+- `lib/features/sessions/browser/presentation/session_browser_page.dart`
+  — added a toolbar entry point to `ResumeQueuePage`, matching the
+  existing bare `Navigator.push` pattern
+
+**Deviations from the roadmap, stated as deliberate scope decisions:**
+- **No auto-execute toggle exists yet.** Design principle 2 names
+  auto-execute as "an explicit, separate, off-by-default setting," but
+  none of this feature's four named stories (item+repo, enqueue UI,
+  executor, queue UI) is "build the auto-execute setting" — so items sit
+  `pending` until a human presses "Run next" in the Queue UI. This
+  satisfies the safety property (inert until a human acts) without
+  overbuilding a setting no story asked for. **Trigger for revisiting:**
+  the first time a story explicitly asks for background/scheduled
+  execution — likely Milestone 3, which is itself evidence-gated (see
+  the M3 blocker noted for this whole session).
+- **`ResumeQueueItem.forkSession` is always `true` in this pass** — every
+  item is created through the one enqueue path this feature builds
+  (Session Detail's "Add to queue" form), which is inherently for
+  deferred/unattended execution. §8's "false only when created via the
+  attended 'Resume now' action" describes a different creation path this
+  feature doesn't build (there is no "enqueue this as an attended run"
+  UI) — Feature 2.2.1's `ClaudeSessionService.resume()` already covers
+  the attended case directly, without ever touching the queue. Recorded
+  so a later reader doesn't mistake the hardcoded `true` for an
+  oversight.
+
+**Implementation discoveries for later milestones:**
+- **`ResumeQueueExecutor`'s single-flight shape deliberately diverges
+  from `RefreshService`'s.** `RefreshService.refresh()` *joins* a second
+  concurrent call to the same in-flight `Future` because callers want
+  that shared result. `ResumeQueueExecutor.runNext()` has no single
+  result to share (different calls could be for different items), so a
+  second concurrent call is simply a no-op instead — the actual
+  guarantee needed (acceptance criterion (c): "only one item executes at
+  a time") doesn't require joining, just not starting a second run. Both
+  are legitimate "single-flight" shapes; worth remembering they're not
+  interchangeable before copying either one for a third consumer.
+- **No new `uuid` dependency was needed for "app-generated" ids** (§8) —
+  confirmed `pubspec.yaml` has no `collection` or `uuid` package, and
+  §6 states no new dependency is required through M3. IDs are a
+  microsecond timestamp plus an in-memory counter
+  (`SharedPreferencesResumeQueueRepository._generateId`), sufficient
+  since ids only need to be unique within one device's stored queue, not
+  globally unique.
+- **Avoided introducing an anonymous public extension for
+  `Iterable.firstOrNull`** in `resume_queue_item.dart` — an unnamed
+  extension is still part of that library's exported surface, and would
+  risk an "ambiguous extension member" conflict for any future importer
+  that also brings in `package:collection`'s identically-named extension
+  on the same type. Replaced with a plain manual loop; worth remembering
+  this shape (manual loop, not a throwaway extension) for any future
+  "find the first matching item" need until/unless `collection` is
+  actually added as a real dependency.
+- The stale-`cwd` fail-fast check and the malformed-stored-item skip
+  both reuse the exact tolerate-and-degrade shape already established in
+  Feature 1.1.1 (`SessionFileSystem.stat()` racing a deleted file) and
+  Feature 1.1.2 (a malformed transcript line) — this is now the fourth
+  independent application of that same discipline across four different
+  layers (parser, repository, session-repository, queue), not a
+  coincidence: it is this roadmap's one consistent answer to "something
+  expected disappeared or was never really there."
+
+**Regression found:** None. The `FailureCode` switch fallout in
+`tray_empty_state.dart` was caught immediately by `flutter analyze`
+(Dart's own exhaustiveness check, not a grep) and fixed in the same pass
+that added the enum values — confirmed via a full project-wide
+`flutter analyze --fatal-infos` run before any queue code was written,
+matching the mandatory full-tree-analyze discipline Feature 1.1.1
+established.
+
+**ADR changes required:** None. This feature implements ADR-006's
+unattended-execution half of the safety model exactly as specified
+(mandatory cap via constructor validation, fork-by-default, stale-`cwd`
+fail-fast, no `project purge` exposure anywhere in this code).
+
+**Analyzer status:** Clean — `flutter analyze --fatal-infos` reports no
+issues on every new/modified file in this feature, and a full
+project-wide run (not just the touched files) is clean too.
+
+**Test results:**
+- New: 14 `resume_queue_item_test.dart` cases (constructor validation ×4,
+  defaults ×2, `copyWith`, JSON round-trip ×2, tolerant-degrade ×5), 10
+  `shared_preferences_resume_queue_repository_test.dart` cases (empty,
+  enqueue+list, cross-instance persistence, constructor validation
+  propagates, `updateStatus` targets the right item, `remove` targets
+  the right item, eviction of oldest completed, fail-fast when full with
+  nothing evictable, malformed-item skip, non-JSON failure), 6
+  `resume_queue_executor_test.dart` cases (runs oldest pending →
+  succeeded, fork-session passed through, stale cwd fails fast with zero
+  process calls, a resume failure marks failed, no-op with nothing
+  pending, single-flight under concurrent calls), 4
+  `resume_queue_controller_test.dart` cases (populates state, enqueue
+  adds+refreshes, enqueue failure returns false, read failure surfaces
+  as `AsyncError`, `runNext` drives the executor and reloads — 5
+  total), 2 `resume_queue_page_test.dart` widget cases (one item of each
+  status, empty state), and 4 new `session_detail_page_test.dart` cases
+  (disabled without cap, disabled without prompt, enabled+succeeds with
+  both, a zero cap does not enable submit) — 40 new, all passing.
+- Sessions-scoped suite (`test/unit/sessions/` + all four session widget
+  test files): **157/157 passing**.
+- Full suite (`flutter test --exclude-tags golden,screenshot`): **350
+  passed, 1 failed** — the same pre-existing, unrelated
+  `shared_surfaces_controller_test.dart` timing test; nothing new.
+
+**M2 exit criteria progress:** Manual resume (2.2.1) and queued resume
+(2.2.2) both now ship with the safety model enforced and tested. Epic
+2.3 (click-to-resume notifications) is the one remaining M2 story before
+the milestone's exit criteria are fully met.
+
+---

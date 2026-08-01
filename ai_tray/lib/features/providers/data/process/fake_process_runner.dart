@@ -17,7 +17,18 @@ final class FakeProcessRunner implements ProcessRunner {
   )?
   handler;
 
-  final List<(String, List<String>)> calls = [];
+  /// Every call made, including `timeout`/`workingDirectory` — callers
+  /// that only care about executable/arguments can still destructure
+  /// `($1, $2)`-style via the record fields directly.
+  final List<
+    ({
+      String executable,
+      List<String> arguments,
+      Duration timeout,
+      String? workingDirectory,
+    })
+  >
+  calls = [];
 
   @override
   Future<Result<ProcessRunResult>> run(
@@ -26,7 +37,12 @@ final class FakeProcessRunner implements ProcessRunner {
     Duration timeout = const Duration(seconds: 8),
     String? workingDirectory,
   }) async {
-    calls.add((executable, List<String>.from(arguments)));
+    calls.add((
+      executable: executable,
+      arguments: List<String>.from(arguments),
+      timeout: timeout,
+      workingDirectory: workingDirectory,
+    ));
     final custom = handler;
     if (custom != null) {
       return custom(executable, arguments);
