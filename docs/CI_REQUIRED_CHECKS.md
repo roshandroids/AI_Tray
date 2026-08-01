@@ -1,11 +1,8 @@
-# Required status checks (GitHub ruleset)
+# Required status checks
 
-After migrating to `roshandroids/platform-ci@v1`, required contexts are:
+| PR type | Required context |
+|---------|------------------|
+| Feature → main | `quality / Quality` |
+| `release/*` → main | `quality / Quality` plus green `build / Build (macos)` and `build / Build (windows)` (discipline; ruleset requires Quality for all PRs) |
 
-| Check | When |
-|-------|------|
-| `quality / Quality` | Every PR → main |
-
-Optional (not required for merge): Deploy demos, Release (tags).
-
-Do not require macOS/Windows builds on PRs.
+Tag publish is not a merge gate.
