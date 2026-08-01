@@ -142,8 +142,10 @@ final class ClaudeSessionService {
       'json',
       if (maxBudgetUsd != null) ...['--max-budget-usd', '$maxBudgetUsd'],
       if (forkSession) '--fork-session',
-      if (fallbackModels != null && fallbackModels.isNotEmpty)
-        ...['--fallback-model', fallbackModels.join(',')],
+      if (fallbackModels != null && fallbackModels.isNotEmpty) ...[
+        '--fallback-model',
+        fallbackModels.join(','),
+      ],
     ];
     final result = await _processRunner.run(
       binary,

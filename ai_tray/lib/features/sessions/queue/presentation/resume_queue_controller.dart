@@ -14,8 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// presses 'run' themselves"). No auto-execute toggle exists yet in this
 /// pass — see the implementation log for why that's a deliberate scope
 /// decision, not an oversight.
-final class ResumeQueueController
-    extends AsyncNotifier<List<ResumeQueueItem>> {
+final class ResumeQueueController extends AsyncNotifier<List<ResumeQueueItem>> {
   @override
   Future<List<ResumeQueueItem>> build() => _load();
 

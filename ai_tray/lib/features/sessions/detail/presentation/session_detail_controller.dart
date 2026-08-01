@@ -63,9 +63,11 @@ final sessionDetailProvider = FutureProvider.family<ClaudeSession, String>((
   ref,
   sessionId,
 ) async {
-  final result = await ref.read(sessionRepositoryProvider).readSession(
-    sessionId,
-  );
+  final result = await ref
+      .read(sessionRepositoryProvider)
+      .readSession(
+        sessionId,
+      );
   final failure = result.failureOrNull;
   if (failure != null) {
     ref

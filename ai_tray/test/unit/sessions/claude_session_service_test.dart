@@ -108,27 +108,30 @@ void main() {
     expect(result.failureOrNull?.code, FailureCode.unknownCliOutput);
   });
 
-  test('unknown/unrecognized fields on an entry are skipped, not fatal', () async {
-    runner.handler = (exe, args) {
-      return Result.success(
-        ProcessRunResult(
-          exitCode: 0,
-          stdout: jsonEncode([
-            {'unexpectedField': 'no id here'},
-            'not-even-a-map',
-            42,
-            {'sessionId': 'kept-one'},
-          ]),
-          stderr: '',
-          duration: Duration.zero,
-        ),
-      );
-    };
+  test(
+    'unknown/unrecognized fields on an entry are skipped, not fatal',
+    () async {
+      runner.handler = (exe, args) {
+        return Result.success(
+          ProcessRunResult(
+            exitCode: 0,
+            stdout: jsonEncode([
+              {'unexpectedField': 'no id here'},
+              'not-even-a-map',
+              42,
+              {'sessionId': 'kept-one'},
+            ]),
+            stderr: '',
+            duration: Duration.zero,
+          ),
+        );
+      };
 
-    final result = await service.listLiveSessions();
-    expect(result.isSuccess, isTrue);
-    expect(result.valueOrNull, {'kept-one'});
-  });
+      final result = await service.listLiveSessions();
+      expect(result.isSuccess, isTrue);
+      expect(result.valueOrNull, {'kept-one'});
+    },
+  );
 
   test('timeout is reported as a failure, not thrown', () async {
     runner.handler = (exe, args) {
@@ -408,7 +411,10 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(result.valueOrNull!.isError, isTrue);
-      expect(result.valueOrNull!.resultText, 'Not logged in · Please run /login');
+      expect(
+        result.valueOrNull!.resultText,
+        'Not logged in · Please run /login',
+      );
     });
 
     test(

@@ -21,7 +21,9 @@ void main() {
       return Result.success(
         ProcessRunResult(
           exitCode: 0,
-          stdout: jsonEncode([for (final id in ids) {'sessionId': id}]),
+          stdout: jsonEncode([
+            for (final id in ids) {'sessionId': id},
+          ]),
           stderr: '',
           duration: Duration.zero,
         ),

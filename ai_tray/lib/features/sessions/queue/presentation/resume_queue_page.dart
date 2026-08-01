@@ -61,8 +61,7 @@ final class ResumeQueuePage extends ConsumerWidget {
             key: const ValueKey('queue-list'),
             padding: const EdgeInsets.all(Spacing.md),
             itemCount: items.length,
-            itemBuilder: (context, index) =>
-                _QueueItemTile(item: items[index]),
+            itemBuilder: (context, index) => _QueueItemTile(item: items[index]),
           );
         },
       ),

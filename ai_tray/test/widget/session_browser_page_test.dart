@@ -197,21 +197,22 @@ void main() {
   });
 
   testWidgets('tapping a session tile opens its detail page', (tester) async {
-    final repository = FakeSessionRepository(
-      sessions: [
-        summary(sessionId: 'abc', projectPath: '/home/claude/ai-tray'),
-      ],
-    )..setSession(
-      const ClaudeSession(
-        sessionId: 'abc',
-        sanitizedProjectDirName: '-home-claude-ai-tray',
-        projectPath: '/home/claude/ai-tray',
-        messageCount: 3,
-        tokenTotals: SessionTokenTotals(),
-        isComplete: true,
-        model: 'claude-opus-5',
-      ),
-    );
+    final repository =
+        FakeSessionRepository(
+          sessions: [
+            summary(sessionId: 'abc', projectPath: '/home/claude/ai-tray'),
+          ],
+        )..setSession(
+          const ClaudeSession(
+            sessionId: 'abc',
+            sanitizedProjectDirName: '-home-claude-ai-tray',
+            projectPath: '/home/claude/ai-tray',
+            messageCount: 3,
+            tokenTotals: SessionTokenTotals(),
+            isComplete: true,
+            model: 'claude-opus-5',
+          ),
+        );
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();

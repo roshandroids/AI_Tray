@@ -60,8 +60,7 @@ final class _SessionDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
-    final projectLabel =
-        session.projectPath ?? session.sanitizedProjectDirName;
+    final projectLabel = session.projectPath ?? session.sanitizedProjectDirName;
     final tokens = session.tokenTotals;
 
     return Align(
@@ -179,8 +178,7 @@ final class _ResumeSectionState extends ConsumerState<_ResumeSection> {
     final type = context.typography;
     final resumeState = ref.watch(resumeControllerProvider);
     final attempt = resumeState.value;
-    final showResult =
-        attempt != null && attempt.sessionId == widget.sessionId;
+    final showResult = attempt != null && attempt.sessionId == widget.sessionId;
     final isBusy = resumeState.isLoading;
     final workingDirectory = widget.workingDirectory;
     final canResume =

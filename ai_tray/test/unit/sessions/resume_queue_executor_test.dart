@@ -142,7 +142,10 @@ void main() {
     'concurrently',
     () async {
       final repository = FakeResumeQueueRepository(
-        items: [pendingItem(sessionId: 'a'), pendingItem(sessionId: 'b')],
+        items: [
+          pendingItem(sessionId: 'a'),
+          pendingItem(sessionId: 'b'),
+        ],
       );
       var callCount = 0;
       final runner = FakeProcessRunner()

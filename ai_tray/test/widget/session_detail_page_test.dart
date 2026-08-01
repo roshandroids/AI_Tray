@@ -75,8 +75,7 @@ void main() {
   }
 
   testWidgets('renders session detail fields', (tester) async {
-    final repository = FakeSessionRepository()
-      ..setSession(session(id: 'abc'));
+    final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();
@@ -117,8 +116,7 @@ void main() {
 
   testWidgets('does not render the incomplete indicator for a complete '
       'session', (tester) async {
-    final repository = FakeSessionRepository()
-      ..setSession(session(id: 'abc'));
+    final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();

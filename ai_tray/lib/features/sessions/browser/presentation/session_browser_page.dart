@@ -24,12 +24,10 @@ final class SessionBrowserPage extends ConsumerStatefulWidget {
   const SessionBrowserPage({super.key});
 
   @override
-  ConsumerState<SessionBrowserPage> createState() =>
-      _SessionBrowserPageState();
+  ConsumerState<SessionBrowserPage> createState() => _SessionBrowserPageState();
 }
 
-final class _SessionBrowserPageState
-    extends ConsumerState<SessionBrowserPage> {
+final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
   final _search = TextEditingController();
 
   @override
@@ -192,9 +190,7 @@ final class _SessionListEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
-    final title = noMatch
-        ? 'No sessions match this filter'
-        : 'No sessions yet';
+    final title = noMatch ? 'No sessions match this filter' : 'No sessions yet';
     final body = noMatch
         ? 'Clear the search to see every session.'
         : 'Sessions appear here once you use Claude Code in a project.';
