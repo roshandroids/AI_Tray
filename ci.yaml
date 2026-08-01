@@ -1,0 +1,41 @@
+# AI Tray — platform-ci consumer config (opt-in)
+# PR/main: quality only (ubuntu). Desktop builds: release tags only.
+schema: 1
+flutter: "3.38.9"
+kind: app
+paths:
+  - ai_tray
+
+node:
+  enabled: true
+  version: "22.17.0"
+
+quality:
+  format: true
+  analyze: true
+  test: true
+  coverage: false
+  golden: false
+  integration: false
+  scripts:
+    - bash ./scripts/ci/validate_workflows.sh
+
+pr_builds: []
+main_builds: []
+release_targets:
+  - macos
+  - windows
+
+build:
+  macos:
+    script: >-
+      bash ./scripts/ci/build.sh macos &&
+      bash ./scripts/ci/package.sh macos --out "${GITHUB_WORKSPACE}/dist/macos"
+  windows:
+    script: >-
+      bash ./scripts/ci/build.sh windows &&
+      bash ./scripts/ci/package.sh windows --out "${GITHUB_WORKSPACE}/dist/windows"
+
+hooks:
+  local: true
+  before_build: ""
