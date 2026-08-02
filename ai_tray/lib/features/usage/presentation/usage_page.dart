@@ -12,6 +12,8 @@ import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_browser_page.dart';
+import 'package:ai_tray/features/sessions/detail/presentation/session_detail_open_request.dart';
+import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/presentation/settings_page.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
@@ -83,16 +85,33 @@ final class _UsagePageState extends ConsumerState<UsagePage> {
     MaterialPageRoute<void>(builder: (_) => const SessionBrowserPage()),
   );
 
+  Future<void> _openSessionDetail(String sessionId) =>
+      Navigator.of(
+        context,
+      ).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SessionDetailPage(sessionId: sessionId),
+        ),
+      );
+
   Future<void> _openLogs() => Navigator.of(context).push(
     MaterialPageRoute<void>(builder: (_) => const LogsPage()),
   );
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<int>(settingsOpenRequestProvider, (previous, next) {
-      if (previous == next) return;
-      unawaited(_openSettings());
-    });
+    ref
+      ..listen<int>(settingsOpenRequestProvider, (previous, next) {
+        if (previous == next) return;
+        unawaited(_openSettings());
+      })
+      ..listen<SessionDetailOpenRequestState>(
+        sessionDetailOpenRequestProvider,
+        (previous, next) {
+          if (next == null || previous == next) return;
+          unawaited(_openSessionDetail(next.sessionId));
+        },
+      );
 
     final repository = ref.watch(usageRepositoryProvider);
     final selectableProviders = ref.watch(selectableAIProvidersProvider);
