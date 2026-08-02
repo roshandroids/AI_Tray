@@ -96,4 +96,43 @@ void main() {
 
     expect(find.byKey(const ValueKey('queue-empty')), findsOneWidget);
   });
+
+  testWidgets('tapping remove on a pending item deletes it from the list', (
+    tester,
+  ) async {
+    final repository = FakeResumeQueueRepository(
+      items: [item(id: '1', sessionId: 'pending-one')],
+    );
+
+    await pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('queue-remove-1')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('pending-one'), findsNothing);
+    expect(find.byKey(const ValueKey('queue-empty')), findsOneWidget);
+  });
+
+  testWidgets('the remove button is disabled for a running item', (
+    tester,
+  ) async {
+    final repository = FakeResumeQueueRepository(
+      items: [
+        item(
+          id: '1',
+          sessionId: 'running-one',
+          status: ResumeQueueStatus.running,
+        ),
+      ],
+    );
+
+    await pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<IconButton>(
+      find.byKey(const ValueKey('queue-remove-1')),
+    );
+    expect(button.onPressed, isNull);
+  });
 }

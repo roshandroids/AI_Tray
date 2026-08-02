@@ -61,7 +61,12 @@ final class ResumeQueuePage extends ConsumerWidget {
             key: const ValueKey('queue-list'),
             padding: const EdgeInsets.all(Spacing.md),
             itemCount: items.length,
-            itemBuilder: (context, index) => _QueueItemTile(item: items[index]),
+            itemBuilder: (context, index) => _QueueItemTile(
+              item: items[index],
+              onRemove: items[index].status == ResumeQueueStatus.running
+                  ? null
+                  : () => unawaited(notifier.remove(items[index].id)),
+            ),
           );
         },
       ),
@@ -70,9 +75,13 @@ final class ResumeQueuePage extends ConsumerWidget {
 }
 
 final class _QueueItemTile extends StatelessWidget {
-  const _QueueItemTile({required this.item});
+  const _QueueItemTile({required this.item, required this.onRemove});
 
   final ResumeQueueItem item;
+
+  /// `null` when this item can't be removed yet (currently `running` —
+  /// there's no cooperative cancellation of an in-flight resume).
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +103,16 @@ final class _QueueItemTile extends StatelessWidget {
                 ),
                 const SizedBox(width: Spacing.sm),
                 _QueueStatusChip(status: item.status),
+                IconButton(
+                  key: ValueKey('queue-remove-${item.id}'),
+                  tooltip: item.status == ResumeQueueStatus.pending
+                      ? 'Cancel'
+                      : 'Remove',
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.close),
+                  iconSize: 18,
+                  visualDensity: VisualDensity.compact,
+                ),
               ],
             ),
             const SizedBox(height: Spacing.xs),

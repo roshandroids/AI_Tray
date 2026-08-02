@@ -21,6 +21,9 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
   /// Set to make every [list] call fail with this code.
   FailureCode? listFailure;
 
+  /// Set to make the next [remove] call fail with this code.
+  FailureCode? removeFailure;
+
   /// Calls made, for assertions.
   int listCallCount = 0;
 
@@ -85,6 +88,12 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
 
   @override
   Future<Result<Unit>> remove(String id) async {
+    final failureCode = removeFailure;
+    if (failureCode != null) {
+      return Result.failure(
+        AppFailure(code: failureCode, message: 'remove failed'),
+      );
+    }
     _items.removeWhere((i) => i.id == id);
     return const Result.success(Unit.unit);
   }
