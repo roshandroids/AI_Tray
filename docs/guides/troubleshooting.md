@@ -1,4 +1,4 @@
-# Troubleshooting Guide — AI Tray (v1.0.0-rc.1)
+# Troubleshooting Guide — AI Tray (v1.3.3)
 
 ## No tray / menu bar icon
 
@@ -23,23 +23,30 @@ If Flutter still prints `Failed to foreground app; open returned 1`, that is too
 
 ## “macOS blocked launching Claude CLI” / Operation not permitted
 
-**Cause:** App Sandbox blocked `Process.start` for `claude`, or Claude is installed outside the allowed prefixes.
+**Current model:** App Sandbox is **disabled** (see `Runner/Release.entitlements`
+for the full rationale). Sandbox virtualized `$HOME` for the app and every
+spawned `claude`/provider CLI process, which made Session Browser — and any
+CLI call — blind to your real `~/.claude` tree regardless of entitlement
+exceptions. Distribution is via signed/notarized GitHub Releases, not the Mac
+App Store, so sandboxing bought nothing here.
 
-**Current model (dogfood):** App Sandbox stays **on**. Entitlements grant:
-- network client (Claude `/usage` HTTPS)
-- read/exec temporary exceptions for `/opt/homebrew/`, `/usr/local/`, `/usr/bin/`
-- home-relative read/write for `.claude/` and `.config/claude/`
+If you still see this error on a current build:
 
 1. Pull latest / rebuild (`flutter clean && flutter run -d macos` or Release rebuild).
-2. Prefer a Claude install under Homebrew (`/opt/homebrew/bin/claude`) or `/usr/local/bin/claude`.
-3. Or set an absolute Claude path in Settings that sits under those prefixes.
-4. Custom install locations outside those prefixes need a new entitlement exception (or sandbox off — last resort).
+2. Confirm you're not running a build from before the sandbox was disabled —
+   check `Runner/Release.entitlements` doesn't contain
+   `com.apple.security.app-sandbox`.
+3. Set an absolute Claude path in Settings if `claude` genuinely isn't
+   resolvable from the app's inherited PATH.
 
 ## macOS “Files and Folders” / access to many folders
 
-**Cause (mitigated):** Probing the full inherited `PATH` with `existsSync` can touch Desktop/Documents/Downloads and trigger TCC prompts. Unsandboxed builds also appear to have broad FS access.
-
-**Fix:** Sandbox enabled with narrow path exceptions; executable resolution only probes known CLI prefixes (`/opt/homebrew/bin`, `/usr/local/bin`, …), not every `PATH` entry.
+**Cause (historical, RC1-era):** Probing the full inherited `PATH` with
+`existsSync` could touch Desktop/Documents/Downloads and trigger TCC prompts
+under the old sandboxed build. With App Sandbox now disabled and executable
+resolution scoped to known CLI prefixes (`/opt/homebrew/bin`,
+`/usr/local/bin`, …) rather than every `PATH` entry, this should no longer
+occur on a current build.
 
 ## Authentication / login errors
 
@@ -119,9 +126,32 @@ Close hides to tray. Use tray → **Open**. Tray → **Quit** to fully exit.
 
 By design (ADR-002): missing Claude CLI or expired auth **pauses** auto-refresh. Fix the CLI path or run `claude auth login`, then tap **Refresh** (manual refresh clears the pause).
 
+## Resume Queue item stuck as "failed" / working directory missing
+
+The executor checks the queued item's working directory immediately before
+running and fails fast rather than creating or substituting a path — if the
+project folder was moved, renamed, or deleted since you queued it, the item
+will fail every time. Remove the stale item and re-queue from the session's
+current location.
+
+## Resume Queue item stuck as "running"
+
+There's no cooperative cancellation of an in-flight resume yet — if the
+underlying `claude` process is genuinely hung, you'll need to quit and
+relaunch AI Tray. The remove/cancel button is intentionally disabled while
+an item is `running`.
+
+## Clicking a "resume completed" notification does nothing
+
+Confirm notification permission is granted for AI Tray in OS settings — if
+the OS drops the click event, AI Tray never gets called. If permissions look
+fine but nothing happens, check whether the session that resumed still
+appears in the Session Browser (a moved/deleted project directory can leave
+the click with nothing valid to open).
+
 ## Windows issues
 
-Windows is **Experimental** for v1.0.0 ([PD-010](../stabilization/PD-010-defer-windows.md)). Prefer macOS for supported use; track validation under backlog **S-001A**.
+Windows is **Experimental** ([PD-010](../stabilization/PD-010-defer-windows.md)). It's CI-verified to build and package, but has no recorded real-hardware validation yet — prefer macOS for daily use; track validation under backlog **S-001A**.
 
 ## Still stuck
 
@@ -131,6 +161,6 @@ Collect:
 - `claude auth status`
 - Approximate time of failure
 - Whether Terminal `/usage` was Shape A or B
-- Platform + AI Tray version (`1.0.0-rc.1`)
+- Platform + AI Tray version (`1.3.3`)
 
 File under Known Issues / dogfood log for the Product Owner.
