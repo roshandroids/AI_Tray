@@ -70,6 +70,7 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
   Future<Result<Unit>> updateStatus(
     String id, {
     required ResumeQueueStatus status,
+    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   }) async {
@@ -77,6 +78,7 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
       if (_items[i].id == id) {
         _items[i] = _items[i].copyWith(
           status: status,
+          startedAt: startedAt,
           executedAt: executedAt,
           result: result,
         );
@@ -95,6 +97,26 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
       );
     }
     _items.removeWhere((i) => i.id == id);
+    return const Result.success(Unit.unit);
+  }
+
+  @override
+  Future<Result<Unit>> retry(String id) async {
+    for (var i = 0; i < _items.length; i++) {
+      if (_items[i].id == id) {
+        final item = _items[i];
+        _items[i] = ResumeQueueItem(
+          id: item.id,
+          sessionId: item.sessionId,
+          cwd: item.cwd,
+          prompt: item.prompt,
+          maxBudgetUsd: item.maxBudgetUsd,
+          createdAt: item.createdAt,
+          forkSession: item.forkSession,
+        );
+        break;
+      }
+    }
     return const Result.success(Unit.unit);
   }
 }

@@ -87,6 +87,24 @@ final class ResumeQueueController extends AsyncNotifier<List<ResumeQueueItem>> {
     return true;
   }
 
+  /// Resets a `failed` item back to `pending` so "Run next" can pick it
+  /// up again, clearing its previous outcome (design principle 4: a
+  /// retry starts clean, it doesn't carry the old failure forward).
+  /// Returns `false` (without throwing) on failure so the page can show
+  /// an inline error instead of crashing.
+  Future<bool> retry(String id) async {
+    final result = await ref.read(resumeQueueRepositoryProvider).retry(id);
+    final failure = result.failureOrNull;
+    if (failure != null) {
+      ref
+          .read(appLoggerProvider)
+          .warning('retry failed id=$id', name: 'resume_queue', error: failure);
+      return false;
+    }
+    await refresh();
+    return true;
+  }
+
   Future<List<ResumeQueueItem>> _load() async {
     final result = await ref.read(resumeQueueRepositoryProvider).list();
     final failure = result.failureOrNull;

@@ -70,6 +70,13 @@ void main() {
     final items = (await repository.list()).valueOrNull!;
     expect(items.single.status, ResumeQueueStatus.succeeded);
     expect(items.single.result?.resultText, 'done');
+    expect(items.single.startedAt, isNotNull);
+    expect(items.single.executedAt, isNotNull);
+    expect(
+      items.single.executedAt!.isAfter(items.single.startedAt!) ||
+          items.single.executedAt!.isAtSameMomentAs(items.single.startedAt!),
+      isTrue,
+    );
   });
 
   test('passes forkSession true through — the unattended default', () async {

@@ -4,7 +4,6 @@ import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/result/result.dart';
-import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:ai_tray/features/providers/data/process/fake_process_runner.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/sessions/data/process/claude_session_service.dart';
@@ -15,6 +14,7 @@ import 'package:ai_tray/features/sessions/domain/models/session_token_totals.dar
 import 'package:ai_tray/features/sessions/queue/data/repositories/fake_resume_queue_repository.dart';
 import 'package:ai_tray/features/sessions/queue/queue_providers.dart';
 import 'package:ai_tray/features/sessions/session_providers.dart';
+import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -74,13 +74,29 @@ void main() {
     );
   }
 
-  testWidgets('renders session detail fields', (tester) async {
+  Future<void> expandAdvanced(WidgetTester tester) async {
+    await tester.tap(find.text('Advanced'));
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> expandQueueTask(WidgetTester tester) async {
+    await tester.tap(find.text('Queue task'));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('renders the project header and, once expanded, the '
+      'advanced fields', (tester) async {
     final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();
 
+    expect(find.text('ai-tray'), findsOneWidget);
     expect(find.text('/home/claude/ai-tray'), findsOneWidget);
+    expect(find.text('claude-opus-5'), findsNothing);
+
+    await expandAdvanced(tester);
+
     expect(find.text('claude-opus-5'), findsOneWidget);
     expect(find.text('main'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
@@ -136,7 +152,7 @@ void main() {
     expect(find.text('Live'), findsOneWidget);
   });
 
-  testWidgets('Resume now is disabled until a prompt is entered', (
+  testWidgets('Continue conversation is disabled until a prompt is entered', (
     tester,
   ) async {
     final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
@@ -162,7 +178,8 @@ void main() {
   });
 
   testWidgets(
-    'tapping Resume now renders cost, tokens, turns, and stop reason',
+    'tapping Continue conversation renders cost, tokens, turns, and stop '
+    'reason',
     (tester) async {
       final repository = FakeSessionRepository()
         ..setSession(session(id: 'abc'));
@@ -230,7 +247,8 @@ void main() {
   });
 
   testWidgets(
-    'Resume now is unavailable when the project path could not be decoded',
+    'Continue conversation is unavailable when the project path could not '
+    'be decoded',
     (tester) async {
       final repository = FakeSessionRepository()
         ..setSession(
@@ -250,48 +268,48 @@ void main() {
         find.byKey(const ValueKey('resume-prompt-field')),
         findsNothing,
       );
-      expect(find.textContaining('Resume is unavailable'), findsOneWidget);
+      expect(find.textContaining('Unavailable'), findsOneWidget);
     },
   );
 
-  testWidgets('Add to queue is disabled without a budget cap', (
-    tester,
-  ) async {
+  testWidgets('Queue task is disabled without a budget cap', (tester) async {
     final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();
+    await expandQueueTask(tester);
     await tester.enterText(
       find.byKey(const ValueKey('enqueue-prompt-field')),
       'continue please',
     );
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<OutlinedButton>(
       find.byKey(const ValueKey('enqueue-submit-button')),
     );
     expect(button.onPressed, isNull);
   });
 
-  testWidgets('Add to queue is disabled without a prompt', (tester) async {
+  testWidgets('Queue task is disabled without a prompt', (tester) async {
     final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();
+    await expandQueueTask(tester);
     await tester.enterText(
       find.byKey(const ValueKey('enqueue-budget-cap-field')),
       '2.00',
     );
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<OutlinedButton>(
       find.byKey(const ValueKey('enqueue-submit-button')),
     );
     expect(button.onPressed, isNull);
   });
 
   testWidgets(
-    'Add to queue is enabled with both a prompt and a positive budget '
+    'Queue task is enabled with both a prompt and a positive budget '
     'cap, and enqueues successfully',
     (tester) async {
       final repository = FakeSessionRepository()
@@ -304,6 +322,7 @@ void main() {
         queueRepository: queueRepository,
       );
       await tester.pumpAndSettle();
+      await expandQueueTask(tester);
       await tester.enterText(
         find.byKey(const ValueKey('enqueue-prompt-field')),
         'continue please',
@@ -314,7 +333,7 @@ void main() {
       );
       await tester.pump();
 
-      final button = tester.widget<FilledButton>(
+      final button = tester.widget<OutlinedButton>(
         find.byKey(const ValueKey('enqueue-submit-button')),
       );
       expect(button.onPressed, isNotNull);
@@ -332,13 +351,12 @@ void main() {
     },
   );
 
-  testWidgets('a zero budget cap does not enable Add to queue', (
-    tester,
-  ) async {
+  testWidgets('a zero budget cap does not enable Queue task', (tester) async {
     final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
 
     await pumpPage(tester, repository);
     await tester.pumpAndSettle();
+    await expandQueueTask(tester);
     await tester.enterText(
       find.byKey(const ValueKey('enqueue-prompt-field')),
       'continue please',
@@ -349,7 +367,7 @@ void main() {
     );
     await tester.pump();
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<OutlinedButton>(
       find.byKey(const ValueKey('enqueue-submit-button')),
     );
     expect(button.onPressed, isNull);

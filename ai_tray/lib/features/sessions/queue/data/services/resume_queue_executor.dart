@@ -92,7 +92,11 @@ final class ResumeQueueExecutor {
       return;
     }
 
-    await _repository.updateStatus(next.id, status: ResumeQueueStatus.running);
+    await _repository.updateStatus(
+      next.id,
+      status: ResumeQueueStatus.running,
+      startedAt: DateTime.now().toUtc(),
+    );
 
     final result = await _sessionService.resume(
       sessionId: next.sessionId,
