@@ -151,10 +151,14 @@ boundary. Graceful degradation is required.
 
 ## Technical debt
 
-- Transitional compatibility directories (~35 alias files) under provider
-  `core/`, `domain/`, `data/copilot/`, and `copilot/` — addressed by ADR-004
-  targeted cleanup (import canonicalize + deprecate), not a full rewrite.
-  Still open; not blocking correctness.
+- Transitional compatibility directories (~23 alias files remaining, down
+  from ~35 — this session removed 10 under `core/` and `data/copilot/` that
+  had zero references anywhere, not even from the `domain/` layer itself)
+  under provider `domain/` and `copilot/` — addressed by ADR-004 targeted
+  cleanup (import canonicalize + deprecate), not a full rewrite. The
+  remaining files ARE load-bearing (real consumers import them); this is
+  still open, not blocking correctness, and deliberately scoped as its own
+  narrow PR series rather than done piecemeal.
 - Signing, notarization, and Windows hardware validation remain open
   (Windows stays Experimental). Sandbox strategy is resolved — App Sandbox
   is deliberately disabled; see `Runner/Release.entitlements` for the
