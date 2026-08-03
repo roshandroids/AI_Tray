@@ -44,21 +44,45 @@ final class InfoRow extends StatelessWidget {
 }
 
 /// Bordered section container.
+///
+/// Use the default constructor for a single [child], or [SectionCard.divided]
+/// to lay out [children] separated by hairline dividers (e.g. settings rows).
 final class SectionCard extends StatelessWidget {
   const SectionCard({
-    required this.child,
+    required Widget this.child,
     super.key,
     this.title,
     this.padding = const EdgeInsets.all(Spacing.md),
-  });
+  }) : children = null;
 
-  final Widget child;
+  const SectionCard.divided({
+    required this.children,
+    super.key,
+    this.title,
+    this.padding = const EdgeInsets.all(Spacing.md),
+  }) : child = null;
+
+  final Widget? child;
+  final List<Widget>? children;
   final String? title;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final items = children;
+    final body = items == null
+        ? child!
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < items.length; i++) ...[
+                items[i],
+                if (i < items.length - 1)
+                  Divider(height: Spacing.md, color: colors.border),
+              ],
+            ],
+          );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -81,7 +105,7 @@ final class SectionCard extends StatelessWidget {
               ),
               const SizedBox(height: Spacing.sm),
             ],
-            child,
+            body,
           ],
         ),
       ),
@@ -102,22 +126,5 @@ final class SectionDivider extends StatelessWidget {
         child: const SizedBox(height: 1, width: double.infinity),
       ),
     );
-  }
-}
-
-/// Terminal-style bordered panel (alias of [SectionCard] with defaults).
-final class TerminalPanel extends StatelessWidget {
-  const TerminalPanel({
-    required this.title,
-    required this.child,
-    super.key,
-  });
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return SectionCard(title: title, child: child);
   }
 }

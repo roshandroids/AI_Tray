@@ -1,8 +1,8 @@
 import 'dart:io';
 
+import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/features/tray/domain/tray_display_mode.dart';
 import 'package:ai_tray/features/tray/presentation/tray_icon_resolver.dart';
-import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/theme/color_tokens.dart';
-import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 
 /// Renders compact circular tray icons to temp PNG files (PD-021).

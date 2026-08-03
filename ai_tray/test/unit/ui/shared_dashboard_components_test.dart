@@ -1,6 +1,6 @@
 import 'package:ai_tray/core/components/metric_card.dart';
 import 'package:ai_tray/core/components/progress_ring.dart';
-import 'package:ai_tray/core/theme/app_theme.dart';
+import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
