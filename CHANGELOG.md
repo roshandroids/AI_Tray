@@ -34,6 +34,9 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
   directly to reusable workflows from `roshandroids/platform-ci@v1`,
   configured by root `ci.yaml`; a new `release-pr.yml` builds macOS/Windows
   for any PR whose head branch starts with `release/`.
+- `platform-ci` workflow calls are now pinned to a resolved commit SHA
+  instead of the mutable `@v1` tag, so an upstream change can't silently
+  alter this repo's release behavior.
 
 ### Fixed
 - macOS App Sandbox is now disabled. It virtualized `$HOME` for the app and

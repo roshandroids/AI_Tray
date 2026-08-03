@@ -130,8 +130,9 @@ boundary. Graceful degradation is required.
   `release/`; `release.yml` builds+packages+publishes on a version tag or
   manual dispatch. `platform-ci` in turn shells out to this repo's own
   `scripts/ci/*.sh` (via the thin `scripts/*.sh` local-dev wrappers) —
-  `platform-ci` is pinned to a mutable `@v1` tag, not a commit SHA, so its
-  behavior can drift independently of a change in this repo. Optional
+  `platform-ci` calls are pinned to the commit SHA `v1` resolved to on
+  2026-08-02, not the mutable tag itself, so a future change to `platform-ci`
+  can't silently alter release behavior here — bump deliberately. Optional
   Lefthook — see `docs/devops/LOCAL_DEVELOPMENT.md`.
 - **Showcase demos:** `showcase/demos.json` lists product `main` (`type: desktop`).
   Callable `reusable-flutter-web-demo.yml` is unused by AI Tray.
@@ -165,6 +166,5 @@ boundary. Graceful degradation is required.
   are written, and treat this architecture doc plus
   `docs/planning/v2-vision-and-roadmap.md` as the source of truth for
   session-management rationale until then.
-- `platform-ci@v1` is a mutable tag dependency, not pinned to a commit SHA —
-  low risk today, worth tightening before or shortly after going public so a
-  third-party change to that tag can't silently alter release behavior.
+- `platform-ci` is now pinned to a resolved commit SHA (not the mutable `@v1`
+  tag) as of 2026-08-02 — see `.github/workflows/{quality,release,release-pr}.yml`.

@@ -166,7 +166,7 @@
     "shared_scripts": "scripts/ (thin wrappers over scripts/ci/, which is what platform-ci invokes)",
     "consumer_config": "ci.yaml",
     "external_workflow_repo": "roshandroids/platform-ci",
-    "external_workflow_ref": "v1 (mutable tag, not pinned to a commit SHA — tracked as debt)",
+    "external_workflow_ref": "pinned to commit ae93a81f35e088ccd8026557d27cb95e24b3fd12 (resolved from tag v1 on 2026-08-02)",
     "ci_mode_config": ".ci/config",
     "toolchain_config": ".ci/toolchain.env",
     "ci_mode_affects_github_actions": false,
@@ -358,15 +358,12 @@
     {
       "id": "macos_unsigned_not_notarized",
       "severity": "medium"
-    },
-    {
-      "id": "platform_ci_pinned_to_mutable_tag",
-      "severity": "low"
     }
   ],
   "next_recommended_tasks": [
-    "Fix remaining doc drift in docs/guides/ (user-guide.md, architecture-overview.md, troubleshooting.md)",
-    "Update CHANGELOG.md [Unreleased] to cover personalization, CI migration, and all v2 session work",
+    "Run macOS arm64 and Windows x64 dogfood checklists and record actual real-hardware results (still the largest open gap)",
+    "Decide on code signing/notarization timing for macOS",
+    "Verify OSS scaffold (LICENSE/CONTRIBUTING/SECURITY/SUPPORT/templates) one more time before flipping repo visibility",
     "Never hand-edit ai_tray/assets/release_history.json",
     "Run macOS arm64 and Windows x64 dogfood checklists and record actual results",
     "Keep Windows Experimental until hardware checklist passes",
