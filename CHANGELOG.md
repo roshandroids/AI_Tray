@@ -38,6 +38,14 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
   instead of the mutable `@v1` tag, so an upstream change can't silently
   alter this repo's release behavior.
 
+### Removed
+- 12 unreferenced files: 10 provider-platform compatibility re-export shims
+  under `core/`/`data/copilot/` that nothing imported (not even the
+  actively-used `domain/` compatibility layer, which is separate, real,
+  still-open technical debt tracked under PD-024 — left untouched), and 2
+  widget files (`terminal_chrome.dart`, `tray_status_pill.dart`) whose
+  classes were never instantiated anywhere.
+
 ### Fixed
 - macOS App Sandbox is now disabled. It virtualized `$HOME` for the app and
   every spawned `claude`/provider CLI process, making Session Browser (and
