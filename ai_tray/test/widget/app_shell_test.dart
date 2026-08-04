@@ -126,4 +126,42 @@ void main() {
     );
     expect(railAfterAction.selectedIndex, AppDestination.settings.index);
   });
+
+  testWidgets('arrow keys move the palette highlight, Enter invokes it', (
+    tester,
+  ) async {
+    final container = await _offlineContainer();
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const AiTrayApp()),
+    );
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    // Default highlight is the first row (Go to Dashboard); one ArrowDown
+    // moves it to the second row (Go to Sessions).
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    // Hardware Enter reaches the field's onSubmitted via the text input
+    // engine (TextInputAction.done), not a raw key event, in a real app;
+    // simulate that path directly rather than a raw key event in the test.
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(find.text('Type a command or search sessions…'), findsNothing);
+    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+    expect(rail.selectedIndex, AppDestination.sessions.index);
+  });
 }

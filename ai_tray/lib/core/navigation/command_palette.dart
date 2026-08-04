@@ -4,6 +4,7 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
+import 'package:ai_tray/core/theme/motion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/about/presentation/about_page.dart';
@@ -13,6 +14,7 @@ import 'package:ai_tray/features/sessions/detail/presentation/session_detail_pag
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
 import 'package:ai_tray/theme/personalization_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// One runnable entry in the command palette — the single registry backing
@@ -163,28 +165,75 @@ final class _CommandPaletteDialog extends ConsumerStatefulWidget {
       _CommandPaletteDialogState();
 }
 
+/// One flattened, keyboard-navigable row — either an action or a session.
+final class _PaletteEntry {
+  const _PaletteEntry({
+    required this.icon,
+    required this.label,
+    required this.onInvoke,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final VoidCallback onInvoke;
+}
+
 final class _CommandPaletteDialogState
     extends ConsumerState<_CommandPaletteDialog> {
   final _controller = TextEditingController();
+  final _listScrollController = ScrollController();
   String _query = '';
+  int _highlightedIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(() {
-      setState(() => _query = _controller.text);
+      setState(() {
+        _query = _controller.text;
+        _highlightedIndex = 0;
+      });
     });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _listScrollController.dispose();
     super.dispose();
   }
 
   void _invoke(CommandPaletteAction action) {
     Navigator.of(context).pop();
     unawaited(Future.sync(() => action.onInvoke(context, ref)));
+  }
+
+  void _openSessionEntry(SessionSummary session) {
+    Navigator.of(context).pop();
+    _openSession(context, session.sessionId);
+  }
+
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event, int entryCount) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (entryCount == 0) return KeyEventResult.ignored;
+
+    switch (event.logicalKey) {
+      case LogicalKeyboardKey.arrowDown:
+        setState(
+          () => _highlightedIndex = (_highlightedIndex + 1) % entryCount,
+        );
+        return KeyEventResult.handled;
+      case LogicalKeyboardKey.arrowUp:
+        setState(
+          () => _highlightedIndex =
+              (_highlightedIndex - 1 + entryCount) % entryCount,
+        );
+        return KeyEventResult.handled;
+      default:
+        return KeyEventResult.ignored;
+    }
   }
 
   @override
@@ -206,6 +255,26 @@ final class _CommandPaletteDialogState
             needle,
           ).take(6).toList();
 
+    final entries = [
+      for (final action in matchedActions)
+        _PaletteEntry(
+          icon: action.icon,
+          label: action.label,
+          subtitle: action.subtitle,
+          onInvoke: () => _invoke(action),
+        ),
+      for (final session in matchedSessions)
+        _PaletteEntry(
+          icon: Icons.history_rounded,
+          label: session.projectPath ?? session.sanitizedProjectDirName,
+          subtitle: 'Open session',
+          onInvoke: () => _openSessionEntry(session),
+        ),
+    ];
+    final highlighted = entries.isEmpty
+        ? -1
+        : _highlightedIndex.clamp(0, entries.length - 1);
+
     return Dialog(
       alignment: Alignment.topCenter,
       insetPadding: const EdgeInsets.only(top: 96),
@@ -218,76 +287,66 @@ final class _CommandPaletteDialogState
             borderRadius: BorderRadius.circular(RadiusTokens.lg),
             border: Border.all(color: colors.border),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(Spacing.md),
-                child: TextField(
-                  controller: _controller,
-                  autofocus: true,
-                  style: context.typography.body,
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    hintText: 'Type a command or search sessions…',
-                    hintStyle: context.typography.body.copyWith(
-                      color: colors.textMuted,
-                    ),
-                    prefixIcon: Icon(Icons.search, color: colors.textMuted),
-                  ),
-                  onSubmitted: (_) {
-                    if (matchedActions.isNotEmpty) {
-                      _invoke(matchedActions.first);
-                    } else if (matchedSessions.isNotEmpty) {
-                      Navigator.of(context).pop();
-                      _openSession(context, matchedSessions.first.sessionId);
-                    }
-                  },
-                ),
-              ),
-              Divider(height: 1, color: colors.border),
-              Flexible(
-                child: matchedActions.isEmpty && matchedSessions.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(Spacing.lg),
-                        child: Text(
-                          'No matching commands or sessions.',
-                          style: context.typography.caption,
-                        ),
-                      )
-                    : ListView(
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: Spacing.xs,
-                        ),
-                        children: [
-                          for (final action in matchedActions)
-                            _PaletteRow(
-                              icon: action.icon,
-                              label: action.label,
-                              subtitle: action.subtitle,
-                              onTap: () => _invoke(action),
-                            ),
-                          if (matchedSessions.isNotEmpty) ...[
-                            if (matchedActions.isNotEmpty)
-                              Divider(height: 1, color: colors.border),
-                            for (final session in matchedSessions)
-                              _PaletteRow(
-                                icon: Icons.history_rounded,
-                                label:
-                                    session.projectPath ??
-                                    session.sanitizedProjectDirName,
-                                subtitle: 'Open session',
-                                onTap: () {
-                                  Navigator.of(context).pop();
-                                  _openSession(context, session.sessionId);
-                                },
-                              ),
-                          ],
-                        ],
+          child: Focus(
+            onKeyEvent: (node, event) =>
+                _handleKey(node, event, entries.length),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(Spacing.md),
+                  child: TextField(
+                    controller: _controller,
+                    autofocus: true,
+                    style: context.typography.body,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      hintText: 'Type a command or search sessions…',
+                      hintStyle: context.typography.body.copyWith(
+                        color: colors.textMuted,
                       ),
-              ),
-            ],
+                      prefixIcon: Icon(Icons.search, color: colors.textMuted),
+                    ),
+                    onSubmitted: (_) {
+                      if (highlighted >= 0) {
+                        entries[highlighted].onInvoke();
+                      }
+                    },
+                  ),
+                ),
+                Divider(height: 1, color: colors.border),
+                Flexible(
+                  child: entries.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(Spacing.lg),
+                          child: Text(
+                            'No matching commands or sessions.',
+                            style: context.typography.caption,
+                          ),
+                        )
+                      : ListView.builder(
+                          controller: _listScrollController,
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Spacing.xs,
+                          ),
+                          itemCount: entries.length,
+                          itemBuilder: (context, index) {
+                            final entry = entries[index];
+                            return _PaletteRow(
+                              icon: entry.icon,
+                              label: entry.label,
+                              subtitle: entry.subtitle,
+                              highlighted: index == highlighted,
+                              onTap: entry.onInvoke,
+                              onHover: () =>
+                                  setState(() => _highlightedIndex = index),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -300,39 +359,56 @@ final class _PaletteRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    required this.highlighted,
     this.subtitle,
+    this.onHover,
   });
 
   final IconData icon;
   final String label;
   final String? subtitle;
+  final bool highlighted;
   final VoidCallback onTap;
+  final VoidCallback? onHover;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: colors.textSecondary),
-            const SizedBox(width: Spacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return MouseRegion(
+      onEnter: onHover == null ? null : (_) => onHover!(),
+      child: Semantics(
+        button: true,
+        selected: highlighted,
+        label: subtitle == null ? label : '$label, $subtitle',
+        child: AnimatedContainer(
+          duration: MotionTokens.fast,
+          curve: MotionTokens.standardCurve,
+          color: highlighted ? colors.surfaceAlt : Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Spacing.md,
+                vertical: Spacing.sm,
+              ),
+              child: Row(
                 children: [
-                  Text(label, style: context.typography.body),
-                  if (subtitle != null)
-                    Text(subtitle!, style: context.typography.caption),
+                  Icon(icon, size: 18, color: colors.textSecondary),
+                  const SizedBox(width: Spacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: context.typography.body),
+                        if (subtitle != null)
+                          Text(subtitle!, style: context.typography.caption),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
