@@ -1,34 +1,45 @@
 # AI Tray — Next Session
 
-**Updated:** 2026-07-31
+**Updated:** 2026-08-02
 
 ## Start here
 
 1. Read `AI_HANDOFF.md` and `PROJECT_CONTEXT.json`.
 2. `git status`, `git branch --show-current`, `git log -5 --oneline`.
-3. Work lives on `feat/personalization-flex-theme` (PD-026 + PD-027).
+3. Work lives on `main` — no feature branch in flight. The repository is in
+   **release freeze for open-source readiness** (see `ROADMAP.md`).
 
 ## Current objective
 
-Land personalization + adaptive menu-bar UX via PR, dogfood on macOS, then
-resume branch-protection / Phase 3 release timing.
+Finish the release-freeze punch list, then hand the repo-visibility decision
+to the Product Owner. This is not a feature sprint — do not start V2
+Milestone 3 (Resume Scheduler) or Session Analytics.
 
 ## Prerequisites
 
-- EP-004A, D-019 / D-020 on `main`
-- PD-026 / PD-027 implementation on `feat/personalization-flex-theme`
+- PD-026 / PD-027 personalization merged (PR #13)
+- CI migrated to `platform-ci@v1` (D-023, PR #14)
+- V2 Milestone 1 + 2 merged (PR #14 + follow-on commits): Session Browser,
+  Session Detail, manual resume, Resume Queue incl. click-to-resume
+  notification and cancel/remove UI
 
 ## Recommended next task
 
-1. Commit intentional Dart + tray assets + docs; open PR.
-2. Quality CI green; merge.
-3. Dogfood: theme switch (light/dark per preset), Menu Bar Adaptive/Always/Icon
-   only, template icon + refresh pulse, concise tray menu.
+1. Confirm `docs/project/*`, `docs/guides/*`, and `CHANGELOG.md` all agree
+   with the current code (this is an ongoing pass — check for new drift
+   before trusting these files at face value).
+2. Real-hardware dogfood: run the macOS arm64 and Windows x64 checklists in
+   `docs/dogfood/` and actually record pass/fail — both are currently
+   unfilled templates.
+3. Decide on code signing/notarization for macOS before or immediately after
+   going public (currently unsigned).
+4. Product Owner call: flip the GitHub repo from private to public, or stop
+   writing docs that assume it already is.
 
 ## Acceptance criteria
 
-- Adaptive default: no title under threshold; `93%` at ≥ 90%
-- Tooltip always includes session/week/status
-- Refresh pulses template opacity (no usage ring in icon)
-- Appearance accordion + Menu Bar settings persist (`settings_v1_tray*`)
-- Analyzer clean; theme + tray unit tests green
+- Analyzer clean; `flutter test --exclude-tags golden,screenshot` green
+- No doc contradicts the actual `Release.entitlements` / current CI files /
+  current provider set
+- `CHANGELOG.md [Unreleased]` accounts for everything merged since v1.3.3
+- Dogfood checklists have at least one recorded real pass, not just ☐ rows

@@ -1,4 +1,5 @@
 import 'package:ai_tray/core/components/progress_ring.dart';
+import 'package:ai_tray/core/theme/motion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +41,12 @@ final class MetricCard extends StatelessWidget {
     final type = context.typography;
     final shown = percent.clamp(0.0, 100.0).round();
     final band = colors.usageBand(percent);
-    final primaryText = _primaryText(shown);
+    final isPlainPercent = available && !unlimited && value == null;
     final remainingText = _remainingText();
+    final primaryTextStyle = type.monoData.copyWith(
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+    );
 
     return Semantics(
       container: true,
@@ -76,13 +81,13 @@ final class MetricCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: Spacing.xs),
-                    Text(
-                      primaryText,
-                      style: type.monoData.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    if (isPlainPercent)
+                      _AnimatedPercentText(
+                        percent: percent,
+                        style: primaryTextStyle,
+                      )
+                    else
+                      Text(_primaryText(shown), style: primaryTextStyle),
                     if (remainingText != null) ...[
                       const SizedBox(height: Spacing.xs),
                       Text(remainingText, style: type.caption),
@@ -161,6 +166,27 @@ final class MetricCard extends StatelessWidget {
       return value.toInt().toString();
     }
     return value.toStringAsFixed(1);
+  }
+}
+
+/// Counts up/down to [percent] instead of snapping — matches the
+/// [ProgressRing] it sits beside, which already animates.
+final class _AnimatedPercentText extends StatelessWidget {
+  const _AnimatedPercentText({required this.percent, required this.style});
+
+  final double percent;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = MotionTokens.reduced(context);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: percent.clamp(0.0, 100.0)),
+      duration: reduced ? Duration.zero : MotionTokens.slow,
+      curve: MotionTokens.standardCurve,
+      builder: (context, value, _) =>
+          Text('${value.round()}% used', style: style),
+    );
   }
 }
 

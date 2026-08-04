@@ -1,6 +1,6 @@
-import 'package:ai_tray/core/theme/app_theme.dart';
-import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
+import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_usage_meter.dart';
+import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,7 +59,7 @@ Widget _usagePreview({required ThemeData theme}) {
               child: const SizedBox(height: 1, width: double.infinity),
             ),
             const SizedBox(height: 24),
-            const TrayStatusBadge(kind: TrayStatusKind.live),
+            const StatusBadge(kind: TrayStatusKind.live),
             const Spacer(),
             Align(
               alignment: Alignment.centerLeft,

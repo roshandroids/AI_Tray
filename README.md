@@ -44,6 +44,13 @@ Diagnostics · Logs · Menu bar tray rings:
 See [GitHub Copilot provider docs](docs/providers/github-copilot.md) and the
 [EP-002 implementation report](docs/release/EP-002-implementation-report.md).
 
+## Session management
+
+Browse Claude Code sessions (read directly from `~/.claude/projects/`, no new
+database), resume one by hand, or queue a resume for later with a mandatory
+budget cap. Queued items notify on completion — click the notification to
+jump straight to that session. See the [user guide](docs/guides/user-guide.md#sessions).
+
 ## Quick links
 
 | | |

@@ -1,9 +1,10 @@
 # AI Tray — Architecture State
 
-**Updated:** 2026-07-31
+**Updated:** 2026-08-02
 **Primary references:** ADR-001, ADR-002, ADR-003, ADR-004, ADR-005, provider-platform docs,
-EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017),
-shared scripts (D-019), personalization (PD-026 / D-021), `docs/ENGINEERING_STANDARD.md`,
+EP-004 assessment, DEMO_STRATEGY (PD-025 / D-016), Quality CI + Release CD (D-017, superseded
+in CI shape by D-023), shared scripts (D-019), personalization (PD-026 / D-021),
+`docs/planning/v2-vision-and-roadmap.md` (session management), `docs/ENGINEERING_STANDARD.md`,
 `docs/PROJECT_BLUEPRINT.md`
 
 ## System shape
@@ -16,6 +17,18 @@ Desktop UI / Tray
       ├─ ClaudeCliAdapter → Claude CLI → UsageParser
       └─ CopilotProvider → CopilotSdkAdapter → CopilotSdkV1
            → NDJSON sidecar → official @github/copilot-sdk
+
+Session management (v2, separate bounded context — no shared state with the
+usage/quota pipeline above beyond re-using ClaudeSessionService and
+NotificationGateway):
+  Session Browser / Detail UI
+  → SessionRepository → IoSessionFileSystem + JsonlSessionParser
+       (reads ~/.claude/projects/**/*.jsonl directly — no new database)
+  → ResumeController (attended "Resume now") /
+    ResumeQueueController → ResumeQueueExecutor
+       → SharedPreferencesResumeQueueRepository (bounded, persisted)
+       → NotificationGateway (completion notification, click-to-resume
+          opens SessionDetailOpenRequestNotifier → SessionDetailPage)
 ```
 
 ## Layer responsibilities
@@ -70,6 +83,30 @@ boundary. Graceful degradation is required.
 - Async UI actions check lifecycle safety before navigation/feedback.
 - Logs are structured and secret-safe with provider/category metadata.
 
+## Session management (v2 M1/M2)
+
+- Modules: `features/sessions/{browser,detail,resume,queue}/`,
+  `features/sessions/data/{fs,parsers,process}/`, `core/notifications/`
+- Read path is JSONL-only: `IoSessionFileSystem` enumerates
+  `~/.claude/projects/**/*.jsonl`; `JsonlSessionParser` tolerates malformed
+  and truncated lines (skips and degrades `isComplete`, never throws)
+- `SessionSummary.messageCount` is a cheap byte-size estimate until the
+  detail page does a full parse — documented on the model, not a bug
+- Attended resume (`ResumeController`) always runs `forkSession: false`
+  (continue in place); the Resume Queue defaults to `forkSession: true`
+  (unattended execution never silently mutates a transcript the user might
+  be continuing by hand elsewhere) — this asymmetry is deliberate
+- `ResumeQueueExecutor` is single-flight, checks `cwd` existence
+  immediately before running (never creates/substitutes a missing
+  directory), and notifies via `NotificationGateway` on every terminal
+  outcome with a click-through to `SessionDetailPage`
+- Mandatory budget cap on every queued item — no "run without a cap" path
+- No cooperative cancellation of an in-flight resume yet (users can cancel
+  a `pending` item or clear a finished one; a `running` item must finish)
+- Non-goals for the current scope (see `docs/planning/v2-vision-and-roadmap.md`):
+  Resume Scheduler, Session Analytics, multi-provider session support,
+  streaming/live progressive resume view
+
 ## Personalization (PD-026 / ADR-005)
 
 - Module: `ai_tray/lib/theme/`
@@ -84,12 +121,19 @@ boundary. Graceful degradation is required.
 - Node sidecar toolchain is pinned and assembled per release target.
 - Release artifacts: macOS arm64 and Windows x64.
 - **No Flutter Web platform** for the product app (tray/CLI/sidecar native).
-- **CI (Quality CI + Release CD / EP-004A / D-017 / D-019):** `quality.yml` on
-  PR/main invokes `./scripts/format.sh`, `analyze.sh`, `test.sh`,
-  `check.sh workflows` (Ubuntu only; no desktop); `release.yml` calls
-  `./scripts/build.sh` + `package.sh` on tag/dispatch only; `.ci/config`
-  `CI_MODE` is local preference only (Actions ignores it). Optional Lefthook
-  — see `docs/devops/LOCAL_DEVELOPMENT.md`.
+- **CI (Quality CI + Release CD / EP-004A / D-017, CI shape superseded by
+  D-023):** `.github/workflows/{quality,documentation,release-pr,release,
+  maintenance}.yml` are thin callers into `roshandroids/platform-ci@v1`
+  reusable workflows, configured by root `ci.yaml`. `quality.yml` runs on
+  every PR/push to `main` (Ubuntu only, no desktop build); `release-pr.yml`
+  additionally builds macOS+Windows when the PR head branch starts with
+  `release/`; `release.yml` builds+packages+publishes on a version tag or
+  manual dispatch. `platform-ci` in turn shells out to this repo's own
+  `scripts/ci/*.sh` (via the thin `scripts/*.sh` local-dev wrappers) —
+  `platform-ci` calls are pinned to the commit SHA `v1` resolved to on
+  2026-08-02, not the mutable tag itself, so a future change to `platform-ci`
+  can't silently alter release behavior here — bump deliberately. Optional
+  Lefthook — see `docs/devops/LOCAL_DEVELOPMENT.md`.
 - **Showcase demos:** `showcase/demos.json` lists product `main` (`type: desktop`).
   Callable `reusable-flutter-web-demo.yml` is unused by AI Tray.
   See `docs/devops/DEMO_STRATEGY.md`.
@@ -107,10 +151,24 @@ boundary. Graceful degradation is required.
 
 ## Technical debt
 
-- Transitional compatibility directories (~35 alias files) under provider
-  `core/`, `domain/`, `data/copilot/`, and `copilot/` — addressed by ADR-004
-  targeted cleanup (import canonicalize + deprecate), not a full rewrite.
-- Notification dependency/migration state must be reconciled with current
-  `pubspec.yaml` before further notification work.
-- Signing, notarization, sandbox strategy, and Windows hardware validation
-  remain open (Windows stays Experimental).
+- Transitional compatibility directories (~23 alias files remaining, down
+  from ~35 — this session removed 10 under `core/` and `data/copilot/` that
+  had zero references anywhere, not even from the `domain/` layer itself)
+  under provider `domain/` and `copilot/` — addressed by ADR-004 targeted
+  cleanup (import canonicalize + deprecate), not a full rewrite. The
+  remaining files ARE load-bearing (real consumers import them); this is
+  still open, not blocking correctness, and deliberately scoped as its own
+  narrow PR series rather than done piecemeal.
+- Signing, notarization, and Windows hardware validation remain open
+  (Windows stays Experimental). Sandbox strategy is resolved — App Sandbox
+  is deliberately disabled; see `Runner/Release.entitlements` for the
+  documented rationale.
+- The v2 vision doc (§16) proposed ADR-005 through ADR-010 for session/resume
+  decisions, written before ADR-005 was claimed by the personalization
+  decision (2026-07-31). Those session-management ADRs were never actually
+  opened despite M1/M2 shipping — renumber from ADR-006 onward whenever they
+  are written, and treat this architecture doc plus
+  `docs/planning/v2-vision-and-roadmap.md` as the source of truth for
+  session-management rationale until then.
+- `platform-ci` is now pinned to a resolved commit SHA (not the mutable `@v1`
+  tag) as of 2026-08-02 — see `.github/workflows/{quality,release,release-pr}.yml`.

@@ -25,9 +25,16 @@ abstract interface class ResumeQueueRepository {
   Future<Result<Unit>> updateStatus(
     String id, {
     required ResumeQueueStatus status,
+    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   });
 
   Future<Result<Unit>> remove(String id);
+
+  /// Resets a `failed` item back to `pending` — clears
+  /// [ResumeQueueItem.startedAt], [ResumeQueueItem.executedAt], and
+  /// [ResumeQueueItem.result] so the retried attempt starts clean rather
+  /// than carrying the previous failure forward.
+  Future<Result<Unit>> retry(String id);
 }

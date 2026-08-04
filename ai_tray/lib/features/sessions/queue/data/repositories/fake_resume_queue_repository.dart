@@ -21,6 +21,9 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
   /// Set to make every [list] call fail with this code.
   FailureCode? listFailure;
 
+  /// Set to make the next [remove] call fail with this code.
+  FailureCode? removeFailure;
+
   /// Calls made, for assertions.
   int listCallCount = 0;
 
@@ -67,6 +70,7 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
   Future<Result<Unit>> updateStatus(
     String id, {
     required ResumeQueueStatus status,
+    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   }) async {
@@ -74,6 +78,7 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
       if (_items[i].id == id) {
         _items[i] = _items[i].copyWith(
           status: status,
+          startedAt: startedAt,
           executedAt: executedAt,
           result: result,
         );
@@ -85,7 +90,33 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
 
   @override
   Future<Result<Unit>> remove(String id) async {
+    final failureCode = removeFailure;
+    if (failureCode != null) {
+      return Result.failure(
+        AppFailure(code: failureCode, message: 'remove failed'),
+      );
+    }
     _items.removeWhere((i) => i.id == id);
+    return const Result.success(Unit.unit);
+  }
+
+  @override
+  Future<Result<Unit>> retry(String id) async {
+    for (var i = 0; i < _items.length; i++) {
+      if (_items[i].id == id) {
+        final item = _items[i];
+        _items[i] = ResumeQueueItem(
+          id: item.id,
+          sessionId: item.sessionId,
+          cwd: item.cwd,
+          prompt: item.prompt,
+          maxBudgetUsd: item.maxBudgetUsd,
+          createdAt: item.createdAt,
+          forkSession: item.forkSession,
+        );
+        break;
+      }
+    }
     return const Result.success(Unit.unit);
   }
 }

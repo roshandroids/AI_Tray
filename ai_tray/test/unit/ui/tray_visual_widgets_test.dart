@@ -1,8 +1,8 @@
-import 'package:ai_tray/core/theme/app_theme.dart';
+import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/theme/color_tokens.dart';
 import 'package:ai_tray/core/theme/typography.dart';
-import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_usage_meter.dart';
+import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -48,7 +48,7 @@ void main() {
   testWidgets('TrayStatusBadge shows Live label', (tester) async {
     await tester.pumpWidget(
       wrap(
-        const TrayStatusBadge(kind: TrayStatusKind.live),
+        const StatusBadge(kind: TrayStatusKind.live),
         theme: AppTheme.dark(),
       ),
     );

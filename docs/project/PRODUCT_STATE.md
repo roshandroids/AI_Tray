@@ -1,26 +1,33 @@
 # AI Tray — Product State
 
-**Updated:** 2026-07-31  
-**Current release:** v1.3.3  
-**Positioning:** Desktop usage and health companion for AI developer tools
-**Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004)
+**Updated:** 2026-08-02  
+**Current release:** v1.3.3 (tag) — `main` is ahead of this tag; a new release is pending the open-source readiness freeze
+**Positioning:** Desktop usage and health companion for AI developer tools, now with an "orchestration companion" surface for Claude Code sessions (see v2 vision doc) — not a chat client, not an IDE, not a general automation engine
+**Architecture posture:** EP-004 targeted cleanup approved (PD-024 / ADR-004) — still open, not yet executed
 **Demo posture:** Product-as-demo via GitHub Releases (`demos.json` id `main`); no Flutter Web embed (PD-025)
-**CI posture:** Quality CI + Release CD (D-017) + shared scripts (D-019) on `main` — desktop builds only on tag/dispatch; `CI_MODE` does not affect Actions
+**CI posture:** Quality CI + Release CD via `platform-ci@v1` reusable workflows (D-023) — desktop builds only on tag/dispatch or a `release/*` PR
 **Release notes:** CHANGELOG.md SoT; Settings About / Diagnostics show live version + What’s New (D-020)
-**Appearance:** FlexColorScheme branded presets + bundled fonts + app-icon architecture (PD-026 / ADR-005); adaptive menu-bar density (PD-027)
-**Docs posture:** Governance + process + engineering standard + blueprint (D-018)
+**Appearance:** FlexColorScheme branded presets + bundled fonts + app-icon architecture (PD-026 / ADR-005, merged); adaptive menu-bar density (PD-027, merged)
+**Session management:** Session Browser + Detail (v2 M1), manual Resume + Resume Queue + click-to-resume notifications (v2 M2) — all merged; Resume Scheduler (v2 M3) intentionally not started
+**Docs posture:** Governance + process + engineering standard + blueprint (D-018); release-freeze doc sync in progress (this session)
 
 ## Supported experience
 
 | Area | Status |
 | --- | --- |
 | macOS arm64 | Primary supported release target |
-| Windows x64 | Experimental release target |
+| Windows x64 | Experimental release target — CI-buildable, no recorded real-hardware pass yet |
 | macOS Intel/x64 | Not published |
 | Flutter Web / public embed | Not supported (PD-025) |
 | Dark / light / system themes | Implemented |
 | Branded theme / font / app-icon presets | Implemented (PD-026; icon switch unsupported on desktop) |
 | Tray/menu-bar status | Implemented (adaptive title density + template glyph) |
+| Session Browser (list, filter by project path) | Implemented (v2 M1) |
+| Session Detail (transcript summary, resume actions) | Implemented (v2 M1/M2) |
+| Manual "Resume now" | Implemented (v2 M2) |
+| Resume Queue (enqueue, run next, cancel/remove, completion notification) | Implemented (v2 M2) |
+| Resume Scheduler (unattended, timer/wake-driven) | Not started — gated on real M2 usage evidence (v2 M3) |
+| Session Analytics | Deferred to v3 — not in current scope |
 | Settings, diagnostics, logs | Implemented |
 | In-app What’s New / release history | Implemented (D-020; from CHANGELOG-derived asset) |
 | Accessibility and golden coverage | Implemented; continue manual QA |
@@ -71,6 +78,9 @@
 
 ## Current product gate
 
-Land EP-004A + demo contract; complete macOS dogfood; Product Owner decides
-Phase 3 release timing. Cursor automation without quota parity may only proceed
-through a separate Product Owner-approved epic.
+Repository is in **release freeze for open-source readiness** (see
+`ROADMAP.md`). Remaining gates: documentation sync, real-hardware dogfood on
+both platforms, signed/notarized macOS, and an explicit Product Owner
+decision on flipping the GitHub repo from private to public. Cursor
+automation without quota parity may only proceed through a separate Product
+Owner-approved epic.

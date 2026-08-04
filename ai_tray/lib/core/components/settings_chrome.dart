@@ -3,16 +3,19 @@ import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
 
 /// Settings navigation item for the left rail (PD-021).
+///
+/// Every section here renders in-place in the content pane (V3) — tools
+/// that aren't really "settings" (Diagnostics, Logs, About) live under
+/// [SettingsSection.advanced] as plain navigation rows instead of rail
+/// items, so the rail never mixes in-place sections with ones that
+/// silently push a different page.
 enum SettingsSection {
   appearance,
   refresh,
   notifications,
   behavior,
   cli,
-  diagnostics,
-  logs,
   advanced,
-  about,
 }
 
 extension SettingsSectionLabel on SettingsSection {
@@ -22,10 +25,7 @@ extension SettingsSectionLabel on SettingsSection {
     SettingsSection.notifications => 'Notifications',
     SettingsSection.behavior => 'App Behavior',
     SettingsSection.cli => 'CLI',
-    SettingsSection.diagnostics => 'Diagnostics',
-    SettingsSection.logs => 'Logs',
     SettingsSection.advanced => 'Advanced',
-    SettingsSection.about => 'About',
   };
 
   IconData get icon => switch (this) {
@@ -34,15 +34,50 @@ extension SettingsSectionLabel on SettingsSection {
     SettingsSection.notifications => Icons.notifications_outlined,
     SettingsSection.behavior => Icons.tune_outlined,
     SettingsSection.cli => Icons.terminal_outlined,
-    SettingsSection.diagnostics => Icons.monitor_heart_outlined,
-    SettingsSection.logs => Icons.article_outlined,
     SettingsSection.advanced => Icons.build_outlined,
-    SettingsSection.about => Icons.info_outline,
+  };
+
+  /// Extra keywords a global settings search matches against, beyond
+  /// [label] itself.
+  List<String> get searchKeywords => switch (this) {
+    SettingsSection.appearance => const [
+      'theme',
+      'color',
+      'font',
+      'icon',
+      'dark mode',
+      'light mode',
+      'tray icon',
+      'menu bar',
+    ],
+    SettingsSection.refresh => const ['interval', 'auto refresh', 'polling'],
+    SettingsSection.notifications => const [
+      'alert',
+      'session percent',
+      'threshold',
+    ],
+    SettingsSection.behavior => const [
+      'launch at login',
+      'startup',
+      'stale indicator',
+      'cached',
+    ],
+    SettingsSection.cli => const ['binary', 'executable', 'path'],
+    SettingsSection.advanced => const [
+      'diagnostics',
+      'logs',
+      'about',
+      'version',
+      'copilot',
+      'force refresh',
+    ],
   };
 }
 
-/// Compact left navigation rail for Settings.
-final class SettingsNavRail extends StatelessWidget {
+/// Compact left navigation rail for Settings, with a search field that
+/// narrows the visible sections by label or keyword (V3 "global settings
+/// search").
+final class SettingsNavRail extends StatefulWidget {
   const SettingsNavRail({
     required this.selected,
     required this.onSelect,
@@ -53,8 +88,31 @@ final class SettingsNavRail extends StatelessWidget {
   final ValueChanged<SettingsSection> onSelect;
 
   @override
+  State<SettingsNavRail> createState() => _SettingsNavRailState();
+}
+
+final class _SettingsNavRailState extends State<SettingsNavRail> {
+  final _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final query = _search.text.trim().toLowerCase();
+    final sections = query.isEmpty
+        ? SettingsSection.values
+        : [
+            for (final section in SettingsSection.values)
+              if (section.label.toLowerCase().contains(query) ||
+                  section.searchKeywords.any((k) => k.contains(query)))
+                section,
+          ];
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -62,15 +120,43 @@ final class SettingsNavRail extends StatelessWidget {
       ),
       child: SizedBox(
         width: Spacing.settingsRailWidth,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+        child: Column(
           children: [
-            for (final section in SettingsSection.values)
-              _RailItem(
-                section: section,
-                selected: section == selected,
-                onTap: () => onSelect(section),
+            Padding(
+              padding: const EdgeInsets.all(Spacing.sm),
+              child: TextField(
+                key: const ValueKey('settings-search-field'),
+                controller: _search,
+                style: context.typography.caption,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: 'Search settings…',
+                  prefixIcon: Icon(Icons.search, size: 14),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
+            ),
+            Expanded(
+              child: sections.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(Spacing.sm),
+                      child: Text(
+                        'No matching settings.',
+                        style: context.typography.caption,
+                      ),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+                      children: [
+                        for (final section in sections)
+                          _RailItem(
+                            section: section,
+                            selected: section == widget.selected,
+                            onTap: () => widget.onSelect(section),
+                          ),
+                      ],
+                    ),
+            ),
           ],
         ),
       ),
@@ -130,56 +216,6 @@ final class _RailItem extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Settings group title + children.
-final class SettingsGroup extends StatelessWidget {
-  const SettingsGroup({
-    required this.title,
-    required this.children,
-    super.key,
-  });
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          title.toUpperCase(),
-          style: context.typography.section.copyWith(
-            fontSize: 12,
-            letterSpacing: 0.8,
-            color: context.colors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: Spacing.sm),
-        Material(
-          color: context.colors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(RadiusTokens.md),
-            side: BorderSide(color: context.colors.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  children[i],
-                  if (i < children.length - 1)
-                    Divider(height: Spacing.md, color: context.colors.border),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
