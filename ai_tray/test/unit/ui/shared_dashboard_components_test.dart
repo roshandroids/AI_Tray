@@ -50,7 +50,10 @@ void main() {
 
   testWidgets('retains Claude percentage-only presentation', (tester) async {
     await tester.pumpWidget(
-      wrap(const MetricCard(label: 'Session', percent: 24)),
+      wrap(
+        const MetricCard(label: 'Session', percent: 24),
+        disableAnimations: true,
+      ),
     );
 
     expect(find.text('24% used'), findsOneWidget);
