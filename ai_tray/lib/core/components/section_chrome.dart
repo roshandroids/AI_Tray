@@ -89,24 +89,30 @@ final class SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(RadiusTokens.md),
         border: Border.all(color: colors.border),
       ),
-      child: Padding(
-        padding: padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null) ...[
-              Text(
-                title!.toUpperCase(),
-                style: context.typography.section.copyWith(
-                  fontSize: 12,
-                  letterSpacing: 0.8,
-                  color: colors.textSecondary,
+      // ListTile/InkWell children paint their background and ink splashes
+      // on the nearest Material ancestor — without this, this DecoratedBox
+      // hides those effects (Flutter's ListTile debug assertion catches it).
+      child: Material(
+        type: MaterialType.transparency,
+        child: Padding(
+          padding: padding,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null) ...[
+                Text(
+                  title!.toUpperCase(),
+                  style: context.typography.section.copyWith(
+                    fontSize: 12,
+                    letterSpacing: 0.8,
+                    color: colors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: Spacing.sm),
+                const SizedBox(height: Spacing.sm),
+              ],
+              body,
             ],
-            body,
-          ],
+          ),
         ),
       ),
     );
