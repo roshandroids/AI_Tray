@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-08-02",
+  "updated_at": "2026-07-31",
   "version": "1.3.3+9",
-  "project_status": "release_freeze_oss_readiness",
-  "current_epic": "oss-release-freeze",
-  "current_phase": "Release freeze for open-source readiness: docs sync, release-engineering audit, OSS scaffold verification; no new features until complete",
+  "project_status": "pd026_pd027_personalization_menubar_pending_pr",
+  "current_epic": "ep004-targeted-cleanup-and-docs-upgrade",
+  "current_phase": "PD-026 personalization + PD-027 adaptive menu bar on feat/personalization-flex-theme; dogfood + PR pending",
   "branch": {
-    "name": "main",
-    "commit": "a8b5c11",
+    "name": "feat/personalization-flex-theme",
+    "commit": "899eac2",
     "base": "main"
   },
   "release": {
@@ -29,8 +29,8 @@
   },
   "repository_state": {
     "default_branch": "main",
-    "active_branch": "main",
-    "active_branch_commit": "a8b5c11",
+    "active_branch": "feat/personalization-flex-theme",
+    "active_branch_commit": "899eac2",
     "merged_pull_requests": [
       {
         "number": 7,
@@ -65,29 +65,9 @@
         "url": "https://github.com/roshandroids/AI_Tray/pull/12",
         "merge_commit": "6dc4608",
         "state_at_snapshot": "merged"
-      },
-      {
-        "number": 13,
-        "title": "feat: personalization themes and adaptive menu-bar density",
-        "url": "https://github.com/roshandroids/AI_Tray/pull/13",
-        "merge_commit": "5ebb037",
-        "state_at_snapshot": "merged"
-      },
-      {
-        "number": 14,
-        "title": "ci: migrate to platform-ci (quality + macOS/Windows release); V2 Milestone 1+2 (Session Browser/Detail, manual resume, Resume Queue, NotificationGateway)",
-        "url": "https://github.com/roshandroids/AI_Tray/pull/14",
-        "merge_commit": "91d5936",
-        "state_at_snapshot": "merged"
       }
     ],
-    "active_pull_requests": [],
-    "unreleased_commits_on_main_since_v1_3_3": [
-      "59f5400 fix(macos): disable App Sandbox and sync pod lockfile",
-      "0533244 feat(sessions): wire click-to-resume notification to session detail (M2 Feature 2.3.1)",
-      "1a99249 feat(queue): add remove/cancel action to Resume Queue UI",
-      "a8b5c11 fix(sessions): sort session list by most-recently-active first"
-    ]
+    "active_pull_requests": []
   },
   "platforms": {
     "macos_arm64": "supported",
@@ -127,23 +107,9 @@
       "decision": "ADR-005",
       "product_decision": "PD-026"
     },
-    "session_management": {
-      "modules": [
-        "features/sessions/browser",
-        "features/sessions/detail",
-        "features/sessions/resume",
-        "features/sessions/queue",
-        "features/sessions/data",
-        "core/notifications"
-      ],
-      "read_source": "~/.claude/projects/**/*.jsonl (no new database)",
-      "product_decision": "PD-028",
-      "milestones_shipped": ["M1_session_browser", "M2_manual_resume_and_queue"],
-      "milestones_deferred": ["M3_resume_scheduler", "session_analytics"]
-    },
     "ep004_posture": "targeted_cleanup",
     "ci_local_first": true,
-    "ci_model": "platform_ci_reusable_workflows",
+    "ci_model": "quality_ci_plus_release_cd_shared_scripts",
     "demo_strategy": "product_as_demo_desktop_releases",
     "state_management": "Riverpod Notifier/AsyncNotifier/AsyncValue",
     "provider_catalog": "ProviderRegistry",
@@ -157,35 +123,31 @@
     ]
   },
   "ci_cd": {
-    "strategy": "platform_ci_reusable_workflows",
+    "strategy": "quality_ci_plus_release_cd",
     "epic": "EP-004A",
-    "decision": "D-023",
+    "decision": "D-019",
     "release_notes_decision": "D-020",
     "release_notes_sot": "CHANGELOG.md",
     "release_history_asset": "ai_tray/assets/release_history.json",
-    "shared_scripts": "scripts/ (thin wrappers over scripts/ci/, which is what platform-ci invokes)",
-    "consumer_config": "ci.yaml",
-    "external_workflow_repo": "roshandroids/platform-ci",
-    "external_workflow_ref": "pinned to commit ae93a81f35e088ccd8026557d27cb95e24b3fd12 (resolved from tag v1 on 2026-08-02)",
+    "shared_scripts": "scripts/",
     "ci_mode_config": ".ci/config",
     "toolchain_config": ".ci/toolchain.env",
     "ci_mode_affects_github_actions": false,
     "workflows": {
       "quality": ".github/workflows/quality.yml",
       "documentation": ".github/workflows/documentation.yml",
-      "release_pr": ".github/workflows/release-pr.yml",
       "release": ".github/workflows/release.yml",
-      "maintenance": ".github/workflows/maintenance.yml"
+      "maintenance": ".github/workflows/maintenance.yml",
+      "reusable_flutter_web_demo": ".github/workflows/reusable-flutter-web-demo.yml"
     },
     "removed": [
-      ".github/workflows/ci.yml",
-      ".github/workflows/reusable-flutter-web-demo.yml"
+      ".github/workflows/ci.yml"
     ],
     "quality_runners": [
       "ubuntu-latest"
     ],
-    "desktop_builds": "tag_or_workflow_dispatch_or_release_star_pr_head_branch",
-    "desktop_runners_allowed_only_in": ["release.yml", "release-pr.yml (release/* head branch only)"],
+    "desktop_builds": "tag_or_workflow_dispatch_only",
+    "desktop_runners_allowed_only_in": "release.yml",
     "web_demo_builds": "not_applicable_for_ai_tray",
     "pr_required_checks": [
       "Format",
@@ -261,13 +223,7 @@
     "Docs upgrade Master Prompt Phases 1-8 (D-018)",
     "D-019 shared scripts Local DX + Remote CI",
     "D-020 CHANGELOG SoT + release_history.json + in-app About/history",
-    "PD-026 FlexColorScheme personalization implementation (PR #13, merged)",
-    "PD-027 adaptive menu-bar density (PR #13, merged)",
-    "D-023 CI migration to platform-ci@v1 reusable workflows (PR #14)",
-    "PD-028 V2 Milestone 1 (Session Browser + Detail) and Milestone 2 (manual resume, Resume Queue, NotificationGateway, click-to-resume) (PR #14 + follow-on commits)",
-    "Resume Queue cancel/remove UI",
-    "Session list ordering fix (most-recently-active first)",
-    "macOS App Sandbox disabled (D-026) with package_info_plus pod resolution synced"
+    "PD-026 FlexColorScheme personalization implementation (pending PR)"
   ],
   "product_decisions": [
     {
@@ -305,38 +261,13 @@
       "decision": "Branded FlexColorScheme personalization with custom theme presets, bundled fonts, and app-icon architecture",
       "rationale": "Selectable appearance without rewriting tray surfaces; offline desktop forbids runtime font downloads",
       "impact": "lib/theme module; Settings Appearance pickers; settings_v1 persistence; ADR-005"
-    },
-    {
-      "id": "PD-027",
-      "date": "2026-07-31",
-      "status": "approved_implemented",
-      "decision": "Adaptive menu-bar title density with configurable reveal threshold; monochrome template glyph",
-      "rationale": "Persistent percentage in the menu bar is noisy; premium extras should stay quiet until attention is useful",
-      "impact": "TrayDisplayMode + settings; concise native tray menu"
-    },
-    {
-      "id": "PD-028",
-      "date": "2026-08-01",
-      "status": "approved_implemented",
-      "decision": "Ship V2 Milestone 1 (Session Browser + Detail) and Milestone 2 (manual resume, Resume Queue, NotificationGateway, click-to-resume); Milestone 3 (Resume Scheduler) and Session Analytics remain deferred",
-      "rationale": "First mutating capability the app has shipped; safety model requires a mandatory budget cap and no unattended cancellation before any scheduler work is justified",
-      "impact": "features/sessions/*; core/notifications/*; see docs/planning/v2-implementation-log.md"
-    },
-    {
-      "id": "PD-029",
-      "date": "2026-08-02",
-      "status": "approved",
-      "decision": "Repository enters release freeze for open-source readiness; no new features until docs/release-engineering/OSS scaffold are confirmed consistent with shipped code; repo visibility remains a separate Product Owner decision",
-      "rationale": "docs/project/* had drifted a full PR plus a merged feature milestone behind main; OSS-facing docs already assume the repo is public when it is still private",
-      "impact": "This freeze pass; see ROADMAP.md exit criteria"
     }
   ],
   "current_work": [
-    "Release freeze: sync docs/project/*, docs/guides/*, and CHANGELOG.md with shipped code",
-    "Release-engineering audit: CI, dependency versions, dead code, TODOs",
-    "Verify OSS scaffold (LICENSE/CONTRIBUTING/SECURITY/SUPPORT/templates)",
-    "Real-hardware dogfood on macOS arm64 and Windows x64 (no recorded pass yet)",
-    "Product Owner decision: repo visibility (private to public) and signing/notarization timing"
+    "Open PR for feat/personalization-flex-theme",
+    "Confirm GitHub branch protection matches EP-004A",
+    "Execute macOS arm64 dogfood checklist (Appearance + About)",
+    "Product Owner release timing for Phase 3"
   ],
   "risks": [
     {
@@ -348,45 +279,36 @@
       "severity": "medium"
     },
     {
-      "id": "repo_private_but_oss_docs_assume_public",
-      "severity": "high"
+      "id": "phase3_on_main_not_released",
+      "severity": "low"
     },
     {
-      "id": "no_real_hardware_dogfood_recorded",
-      "severity": "medium"
-    },
-    {
-      "id": "macos_unsigned_not_notarized",
+      "id": "branch_protection_stale_build_macos_check",
       "severity": "medium"
     }
   ],
   "next_recommended_tasks": [
-    "Run macOS arm64 and Windows x64 dogfood checklists and record actual real-hardware results (still the largest open gap)",
-    "Decide on code signing/notarization timing for macOS",
-    "Verify OSS scaffold (LICENSE/CONTRIBUTING/SECURITY/SUPPORT/templates) one more time before flipping repo visibility",
+    "Commit and open PR for personalization (PD-026)",
+    "Update/verify branch protection: remove Build macOS; require Format/Analyze/Test/Validate workflows",
+    "Run macOS arm64 dogfood checklist; verify Appearance + Settings About",
     "Never hand-edit ai_tray/assets/release_history.json",
-    "Run macOS arm64 and Windows x64 dogfood checklists and record actual results",
     "Keep Windows Experimental until hardware checklist passes",
-    "Do not start V2 Milestone 3 (Resume Scheduler) or Session Analytics — explicitly deferred",
-    "Do not add a Flutter Web playground for AI Tray",
-    "Decide repo visibility before treating any OSS doc as accurate"
+    "Do not add a Flutter Web playground for AI Tray"
   ],
   "verification": {
     "last_recorded": {
       "flutter_analyze": "pass",
-      "flutter_test_excluding_golden_screenshot": "pass (365 tests)",
-      "macos_debug_build": "pass",
-      "golden_tests": "not_rerun_this_session",
+      "theme_unit_widget_tests": "pass",
+      "golden_tests": "pass_updated_baselines",
       "bridge_npm_check": "not_rerun_this_session",
       "production_copilot_internal_references": 0,
-      "showcase_json": "not_rerun_this_session"
+      "showcase_json": "valid"
     },
     "commands": [
       "dart format --set-exit-if-changed lib test",
       "flutter analyze --fatal-infos",
       "flutter test --exclude-tags golden,screenshot",
       "flutter test --tags golden",
-      "flutter build macos --debug",
       "npm run check"
     ]
   },

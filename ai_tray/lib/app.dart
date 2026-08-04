@@ -1,4 +1,4 @@
-import 'package:ai_tray/core/navigation/app_shell.dart';
+import 'package:ai_tray/features/usage/presentation/usage_page.dart';
 import 'package:ai_tray/theme/app_theme.dart';
 import 'package:ai_tray/theme/personalization_controller.dart';
 import 'package:ai_tray/theme/personalization_state.dart';
@@ -29,7 +29,7 @@ class AiTrayApp extends ConsumerWidget {
       theme: AppTheme.light(preset: preset, font: font),
       darkTheme: AppTheme.dark(preset: preset, font: font),
       themeMode: state.themeMode.materialThemeMode,
-      home: const AppShell(),
+      home: const UsagePage(),
     );
   }
 }

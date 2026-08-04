@@ -6,12 +6,12 @@ import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
-import 'package:ai_tray/core/navigation/app_destination.dart';
-import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/core/theme/theme_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
+import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/copilot/diagnostics/copilot_diagnostics.dart';
 import 'package:ai_tray/features/providers/core/models/provider_id.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
@@ -20,7 +20,7 @@ import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
-import 'package:ai_tray/theme/personalization_controller.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,10 +35,7 @@ final class DiagnosticsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final repository = ref.watch(usageRepositoryProvider);
     final logger = ref.watch(bufferedAppLoggerProvider);
-    final themePref = ref
-        .watch(personalizationControllerProvider)
-        .value
-        ?.themeMode;
+    final themePref = ref.watch(themeControllerProvider).value;
     final selectedProvider = ref.watch(selectedAIProviderProvider);
     final copilotDiagnostics = ref.watch(copilotDiagnosticsProvider);
     final packageInfo = ref.watch(packageInfoProvider);
@@ -74,10 +71,13 @@ final class DiagnosticsPage extends ConsumerWidget {
                   IconButton(
                     tooltip: 'Open logs',
                     onPressed: () {
-                      Navigator.of(context).pop();
-                      ref
-                          .read(appShellDestinationProvider.notifier)
-                          .select(AppDestination.logs);
+                      unawaited(
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const LogsPage(),
+                          ),
+                        ),
+                      );
                     },
                     icon: const Icon(Icons.article_outlined),
                   ),
@@ -87,7 +87,7 @@ final class DiagnosticsPage extends ConsumerWidget {
                 builder: (context, constraints) {
                   final wide = constraints.maxWidth >= 720;
                   final panels = [
-                    SectionCard(
+                    TerminalPanel(
                       title: 'Application',
                       child: Column(
                         children: [
@@ -119,7 +119,7 @@ final class DiagnosticsPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    SectionCard(
+                    TerminalPanel(
                       title: 'Refresh',
                       child: Column(
                         children: [
@@ -186,7 +186,7 @@ final class DiagnosticsPage extends ConsumerWidget {
                         ),
                       )
                     else
-                      SectionCard(
+                      TerminalPanel(
                         title: 'Parser / Cache',
                         child: Column(
                           children: [
@@ -240,7 +240,7 @@ final class DiagnosticsPage extends ConsumerWidget {
                           ],
                         ),
                       ),
-                    SectionCard(
+                    TerminalPanel(
                       title: 'Tools',
                       child: Wrap(
                         spacing: Spacing.sm,
@@ -257,10 +257,13 @@ final class DiagnosticsPage extends ConsumerWidget {
                           _ToolButton(
                             label: 'Open logs',
                             onPressed: () {
-                              Navigator.of(context).pop();
-                              ref
-                                  .read(appShellDestinationProvider.notifier)
-                                  .select(AppDestination.logs);
+                              unawaited(
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const LogsPage(),
+                                  ),
+                                ),
+                              );
                             },
                           ),
                           _ToolButton(
@@ -479,7 +482,7 @@ final class _CopilotDiagnosticsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final diagnostics = state.value;
     if (state.isLoading && diagnostics == null) {
-      return const SectionCard(
+      return const TerminalPanel(
         title: 'Copilot SDK',
         child: Center(
           child: Padding(
@@ -491,7 +494,7 @@ final class _CopilotDiagnosticsPanel extends StatelessWidget {
     }
     if (state.hasError && diagnostics == null) {
       final timedOut = state.error is TimeoutException;
-      return SectionCard(
+      return TerminalPanel(
         title: 'Copilot SDK',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -510,7 +513,7 @@ final class _CopilotDiagnosticsPanel extends StatelessWidget {
       );
     }
     if (diagnostics == null) {
-      return SectionCard(
+      return TerminalPanel(
         title: 'Copilot SDK',
         child: OutlinedButton(
           onPressed: onRetry,
@@ -528,7 +531,7 @@ final class _CopilotDiagnosticsPanel extends StatelessWidget {
       if (!diagnostics.available)
         'Usage remains unavailable until all required checks pass.',
     ];
-    return SectionCard(
+    return TerminalPanel(
       title: 'Copilot SDK',
       child: Column(
         children: [

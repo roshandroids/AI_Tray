@@ -5,6 +5,7 @@ import 'package:ai_tray/core/logging/log_entry.dart';
 import 'package:ai_tray/core/logging/log_level.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/core/models/provider_models.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
@@ -13,7 +14,6 @@ import 'package:ai_tray/features/providers/domain/ports/ai_provider_port.dart';
 import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
 import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_empty_state.dart';
-import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -178,75 +178,7 @@ void main() {
 
       await tester.tap(find.byTooltip('Export'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Export as .txt'));
-      await tester.pumpAndSettle();
       expect(find.text('No logs to export'), findsOneWidget);
-    });
-
-    testWidgets('tapping a row expands a metadata drawer with the error '
-        'and recovery hint', (tester) async {
-      final logger = BufferedAppLogger()
-        ..warning(
-          'refresh failed',
-          name: 'claude_cli',
-          provider: 'claude',
-          error: const AppFailure(
-            code: FailureCode.timeout,
-            message: 'timed out',
-          ),
-        );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            bufferedAppLoggerProvider.overrideWithValue(logger),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.dark(),
-            home: const LogsPage(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Timestamp'), findsNothing);
-
-      await tester.tap(find.textContaining('refresh failed'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Timestamp'), findsOneWidget);
-      expect(find.textContaining('timed out'), findsWidgets);
-    });
-
-    testWidgets('grouping by provider groups rows under provider headers', (
-      tester,
-    ) async {
-      final logger = BufferedAppLogger()
-        ..info('claude refresh', name: 'claude_cli', provider: 'claude')
-        ..info(
-          'copilot diagnostics',
-          name: 'copilot_diagnostics',
-          provider: 'copilot',
-        );
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            bufferedAppLoggerProvider.overrideWithValue(logger),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.dark(),
-            home: const LogsPage(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byTooltip('Group by provider'));
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('CLAUDE · 1'), findsOneWidget);
-      expect(find.textContaining('COPILOT · 1'), findsOneWidget);
     });
   });
 

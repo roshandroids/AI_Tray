@@ -1,23 +1,15 @@
 # Architecture Overview — AI Tray
 
-**Audience:** contributors and reviewers
-**Status:** Reflects the multi-provider platform (PD-021), personalization
-(PD-026/027), and V2 session management (Milestones 1–2)
+**Audience:** contributors and reviewers  
+**Status:** Reflects implemented provider framework through PD-021
 
 ## Purpose
 
-Desktop companion with two surfaces:
-
-1. **Usage/quota dashboard** — a provider registry resolves enabled
-   implementations; raw provider output is parsed/validated into shared
-   domain models, cached, and shown through capability-driven Riverpod UI.
-   Claude Code is stable; GitHub Copilot is experimental via the official
-   SDK sidecar.
-2. **Session management (V2)** — browse Claude Code sessions read directly
-   from `~/.claude/projects/**/*.jsonl`, resume one by hand, or queue a
-   resume (with a mandatory budget cap) for later. This is a separate
-   bounded context from the usage pipeline, sharing only
-   `ClaudeSessionService` and `NotificationGateway`.
+Desktop companion that displays AI provider subscription usage in the system
+tray / menu bar. A provider registry resolves enabled implementations; raw
+provider output is parsed/validated into shared domain models, cached, and shown
+through capability-driven Riverpod-backed UI. Claude Code is stable; GitHub
+Copilot is experimental via the official SDK sidecar.
 
 ## Layering
 
@@ -26,7 +18,7 @@ UI (Flutter widgets, tray shell)
   → State (Riverpod providers / notifiers)
     → Domain (models, repository ports, failure types)
       → Data (adapters, process runner, parser, cache, refresh)
-        → External (enabled provider adapter / filesystem)
+        → External (enabled provider adapter)
 ```
 
 Rules in force:
@@ -35,39 +27,17 @@ Rules in force:
 - Provider access only via `AIProvider`; CLI providers use `ProcessRunner`.
 - UI renders `DashboardData` and provider capabilities, never provider IDs.
 - No fabricated usage percentages.
-- Every queued resume requires a positive budget cap — no "run without a
-  cap" path.
 - Architecture changes require a new ADR.
 
-## Primary data flow (usage/quota)
+## Primary data flow
 
-1. `ProviderRegistry` resolves the enabled default provider (Claude, or
-   Copilot if enabled in Settings).
+1. `ProviderRegistry` resolves the enabled default provider (Claude).
 2. `RefreshService` single-flights a refresh (manual or timer).
-3. The active adapter calls its CLI/SDK (Claude: `claude -p '/usage'
-   --output-format json`; Copilot: `account.getQuota` via the sidecar).
-4. Provider parser + validator classify usable vs degraded output.
-5. Success → write last-known-good cache; soft/hard failures → keep cache
-   when allowed, surface an `AppFailure` code.
-6. `DashboardDataMapper` applies capabilities; tray and diagnostics use
-   provider metadata.
-
-## Session data flow (V2)
-
-1. `IoSessionFileSystem` enumerates `~/.claude/projects/**/*.jsonl` — no new
-   database, no separate cache beyond the Resume Queue's own store.
-2. `JsonlSessionParser` tolerates malformed/truncated lines (skips and marks
-   `isComplete: false` rather than throwing).
-3. `FileSystemSessionRepository` merges in live-session enrichment and sorts
-   most-recently-active first.
-4. Attended "Resume now" (`ResumeController`) runs the CLI in place
-   (`forkSession: false`); the Resume Queue (`ResumeQueueExecutor`) defaults
-   to forking (`forkSession: true`) so unattended execution never mutates a
-   transcript you might be continuing by hand elsewhere.
-5. `ResumeQueueExecutor` is single-flight, checks the working directory
-   exists immediately before running, and notifies via `NotificationGateway`
-   on every terminal outcome — clicking the notification opens that
-   session's detail page.
+3. `ClaudeCliAdapter` runs `claude -p '/usage' --output-format json` (never `--bare`).
+4. Provider parser + `UsageValidator` classify usable vs degraded output.
+5. Shape A → write LKG cache; emit success.
+6. Soft/hard failures → keep cache when allowed; surface `AppFailure` codes.
+7. `DashboardDataMapper` applies capabilities; tray and diagnostics use provider metadata.
 
 ## Key modules (`ai_tray/lib`)
 
@@ -75,36 +45,29 @@ Rules in force:
 |--|--|
 | DI / bootstrap | `core/di`, `main.dart`, `app.dart` |
 | Errors / Result / logging | `core/errors`, `core/result`, `core/logging` |
-| Notifications | `core/notifications` |
 | Provider registry / contracts / selection | `features/providers/domain`, `features/providers/presentation` |
-| Claude + Copilot adapters | `features/providers/data/` |
+| Claude + Copilot scaffold + process | `features/providers/data/` |
 | Usage repo / refresh / cache | `features/usage/` |
-| Sessions (browser, detail, resume, queue) | `features/sessions/` |
 | Settings | `features/settings/` |
-| Personalization (themes, fonts, app icons) | `theme/` |
 | Tray / window / notify / login | `features/tray/` |
 
 ## Resilience (ADR-002)
 
 - Retries + backoff for timeout / transient failures
-- Soft failure for degraded provider output
+- Soft failure for Shape B
 - Cache soft age ~6h / hard age ~24h
 - Pause auto-refresh on auth / CLI missing
-- Structured logging without secrets (credential-shaped strings are redacted
-  before any log write)
-- Resume Queue: mandatory budget cap, fail-fast on a missing working
-  directory, no unattended cancellation of a running item
+- Structured logging without secrets
 
 ## Platforms
 
 | Platform | Status |
 |--|--|
-| macOS arm64 | Primary; Release build verified; unsigned/not notarized |
-| Windows x64 | Experimental; CI-verified to build and package, no recorded real-hardware validation yet |
+| macOS | Primary; Release build verified |
+| Windows | Scaffolded; host build pending |
 
 ## Deeper docs
 
-- [V2 vision and roadmap](../planning/v2-vision-and-roadmap.md)
 - [System architecture (planning)](../architecture/system-architecture.md)
 - [Provider platform](../architecture/provider-platform.md)
 - [Domain model](../architecture/domain-model.md)

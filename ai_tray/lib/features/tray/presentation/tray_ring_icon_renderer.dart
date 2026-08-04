@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/theme/color_tokens.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 
 /// Renders compact circular tray icons to temp PNG files (PD-021).
@@ -71,11 +71,7 @@ abstract final class TrayRingIconRenderer {
         progress = 0.75;
         centerText = percent == null ? '…' : '${percent.round()}';
       case TrayStatusKind.error:
-        // Offline / unreachable — dashed (vs. the solid ring a live
-        // exhausted-usage state draws) so the two red states read
-        // differently at a glance.
         ringColor = colors.error;
-        dashed = true;
         progress = 1;
         centerText = '!';
       case TrayStatusKind.idle:
@@ -84,9 +80,7 @@ abstract final class TrayRingIconRenderer {
         progress = 1;
         centerText = '--';
       case TrayStatusKind.cached:
-        ringColor = percent == null
-            ? colors.warning
-            : colors.usageBand(percent);
+        ringColor = colors.warning;
         dashed = true;
         centerText = percent == null ? '--' : '${percent.round()}';
       case TrayStatusKind.live:

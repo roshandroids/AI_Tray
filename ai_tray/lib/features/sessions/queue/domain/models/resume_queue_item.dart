@@ -26,7 +26,6 @@ final class ResumeQueueItem {
     required DateTime createdAt,
     bool forkSession = true,
     ResumeQueueStatus status = ResumeQueueStatus.pending,
-    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   }) {
@@ -46,7 +45,6 @@ final class ResumeQueueItem {
       createdAt: createdAt,
       forkSession: forkSession,
       status: status,
-      startedAt: startedAt,
       executedAt: executedAt,
       result: result,
     );
@@ -61,7 +59,6 @@ final class ResumeQueueItem {
     required this.createdAt,
     required this.forkSession,
     required this.status,
-    this.startedAt,
     this.executedAt,
     this.result,
   });
@@ -87,17 +84,11 @@ final class ResumeQueueItem {
 
   final ResumeQueueStatus status;
   final DateTime createdAt;
-
-  /// Set when the executor transitions this item to `running` — the
-  /// actual work-start time, distinct from [createdAt] (when it was
-  /// enqueued, which may have been much earlier if the queue was busy).
-  final DateTime? startedAt;
   final DateTime? executedAt;
   final ResumeOutcome? result;
 
   ResumeQueueItem copyWith({
     ResumeQueueStatus? status,
-    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   }) {
@@ -110,7 +101,6 @@ final class ResumeQueueItem {
       createdAt: createdAt,
       forkSession: forkSession,
       status: status ?? this.status,
-      startedAt: startedAt ?? this.startedAt,
       executedAt: executedAt ?? this.executedAt,
       result: result ?? this.result,
     );
@@ -126,7 +116,6 @@ final class ResumeQueueItem {
       'forkSession': forkSession,
       'status': status.name,
       'createdAt': createdAt.toIso8601String(),
-      'startedAt': startedAt?.toIso8601String(),
       'executedAt': executedAt?.toIso8601String(),
       if (result != null)
         'result': {
@@ -179,10 +168,6 @@ final class ResumeQueueItem {
         break;
       }
     }
-    final startedAtRaw = json['startedAt'];
-    final startedAt = startedAtRaw is String
-        ? DateTime.tryParse(startedAtRaw)
-        : null;
     final executedAtRaw = json['executedAt'];
     final executedAt = executedAtRaw is String
         ? DateTime.tryParse(executedAtRaw)
@@ -198,7 +183,6 @@ final class ResumeQueueItem {
       createdAt: createdAt,
       forkSession: json['forkSession'] == true,
       status: status ?? ResumeQueueStatus.pending,
-      startedAt: startedAt,
       executedAt: executedAt,
       result: resultJson is Map<String, Object?>
           ? _tryOutcomeFromJson(resultJson)
@@ -255,7 +239,6 @@ final class ResumeQueueItem {
         other.forkSession == forkSession &&
         other.status == status &&
         other.createdAt == createdAt &&
-        other.startedAt == startedAt &&
         other.executedAt == executedAt &&
         other.result == result;
   }
@@ -270,7 +253,7 @@ final class ResumeQueueItem {
     forkSession,
     status,
     createdAt,
-    Object.hash(startedAt, executedAt, result),
+    Object.hash(executedAt, result),
   );
 
   @override

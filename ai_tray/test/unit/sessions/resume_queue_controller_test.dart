@@ -1,6 +1,4 @@
 import 'package:ai_tray/core/errors/failure_code.dart';
-import 'package:ai_tray/core/notifications/fake_notification_gateway.dart';
-import 'package:ai_tray/core/notifications/notification_providers.dart';
 import 'package:ai_tray/features/sessions/queue/data/repositories/fake_resume_queue_repository.dart';
 import 'package:ai_tray/features/sessions/queue/domain/models/resume_queue_item.dart';
 import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
@@ -13,12 +11,6 @@ void main() {
     return ProviderContainer(
       overrides: [
         resumeQueueRepositoryProvider.overrideWithValue(repository),
-        // The executor notifies on completion; avoid touching the real
-        // `local_notifier` plugin (no platform channel in a plain
-        // `flutter test` run).
-        notificationGatewayProvider.overrideWithValue(
-          FakeNotificationGateway(),
-        ),
       ],
     );
   }
@@ -120,57 +112,5 @@ void main() {
     // executor and then reloaded the list from the repository.
     final items = ref.read(resumeQueueControllerProvider).value!;
     expect(items.single.status, ResumeQueueStatus.failed);
-  });
-
-  test('remove() deletes the item and refreshes the list', () async {
-    final repository = FakeResumeQueueRepository(
-      items: [
-        ResumeQueueItem(
-          id: 'q1',
-          sessionId: 'abc',
-          cwd: '/x',
-          prompt: 'continue',
-          maxBudgetUsd: 1,
-          createdAt: DateTime.utc(2026, 7, 31),
-        ),
-      ],
-    );
-    final ref = container(repository);
-    addTearDown(ref.dispose);
-    await ref.read(resumeQueueControllerProvider.future);
-
-    final ok = await ref
-        .read(resumeQueueControllerProvider.notifier)
-        .remove('q1');
-
-    expect(ok, isTrue);
-    expect(ref.read(resumeQueueControllerProvider).value, isEmpty);
-  });
-
-  test('remove() returns false, without throwing, on a repository '
-      'failure', () async {
-    final repository = FakeResumeQueueRepository(
-      items: [
-        ResumeQueueItem(
-          id: 'q1',
-          sessionId: 'abc',
-          cwd: '/x',
-          prompt: 'continue',
-          maxBudgetUsd: 1,
-          createdAt: DateTime.utc(2026, 7, 31),
-        ),
-      ],
-    )..removeFailure = FailureCode.unknown;
-    final ref = container(repository);
-    addTearDown(ref.dispose);
-    await ref.read(resumeQueueControllerProvider.future);
-
-    final ok = await ref
-        .read(resumeQueueControllerProvider.notifier)
-        .remove('q1');
-
-    expect(ok, isFalse);
-    // Repository failed to remove; the item is still there.
-    expect(ref.read(resumeQueueControllerProvider).value, hasLength(1));
   });
 }

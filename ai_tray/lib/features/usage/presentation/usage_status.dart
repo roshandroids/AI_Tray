@@ -1,7 +1,7 @@
-import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 
 /// Shared status derivation for dashboard, settings, tray (PD-020).
 abstract final class UsageStatusMapper {

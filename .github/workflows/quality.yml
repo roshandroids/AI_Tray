@@ -14,8 +14,6 @@ concurrency:
 
 jobs:
   quality:
-    # Pinned to the commit tag v1 resolved to on 2026-08-02. Bump deliberately:
-    # resolve the new SHA for the tag you want, don't just move to @v1.
-    uses: roshandroids/platform-ci/.github/workflows/quality.yml@ae93a81f35e088ccd8026557d27cb95e24b3fd12
+    uses: roshandroids/platform-ci/.github/workflows/quality.yml@v1
     with:
       config-path: ci.yaml

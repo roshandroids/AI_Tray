@@ -69,11 +69,6 @@ final class FileSystemSessionRepository implements SessionRepository {
       );
     }
 
-    // Most-recently-active session first — the filesystem enumeration order
-    // is otherwise arbitrary (OS/directory-traversal dependent), which made
-    // the Browser show old sessions ahead of new ones in real dogfooding.
-    summaries.sort((a, b) => b.lastActivityAt.compareTo(a.lastActivityAt));
-
     final liveness = await _sessionService.listLiveSessions();
     return Result.success(mergeSessionLiveness(summaries, liveness));
   }

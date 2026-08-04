@@ -1,12 +1,9 @@
-import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/theme/color_tokens.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
-
-/// Compact status badge: color + text (never color alone).
-enum TrayStatusKind { live, cached, error, refreshing, idle }
 
 /// Compact ● Live / Cached / … status badge (PD-021).
 final class StatusBadge extends StatelessWidget {
@@ -14,12 +11,10 @@ final class StatusBadge extends StatelessWidget {
     required this.kind,
     super.key,
     this.compact = false,
-    this.detail,
   });
 
   final TrayStatusKind kind;
   final bool compact;
-  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +23,7 @@ final class StatusBadge extends StatelessWidget {
     final label = UsageStatusMapper.label(kind);
 
     return Semantics(
-      label: detail == null ? label : '$label. $detail',
+      label: label,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.12),
@@ -93,11 +88,48 @@ final class HealthIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final value = detail ?? (ok ? '✓ OK' : '✗ Check');
-    return InfoRow(
+    return InfoRowCompat(
       label: label,
       value: value,
       valueColor: ok ? colors.success : colors.error,
-      labelWidth: 88,
+    );
+  }
+}
+
+/// Local info row helper to avoid circular imports with section_chrome.
+final class InfoRowCompat extends StatelessWidget {
+  const InfoRowCompat({
+    required this.label,
+    required this.value,
+    super.key,
+    this.valueColor,
+  });
+
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(label, style: type.label),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: type.monoData.copyWith(
+                color: valueColor ?? type.monoData.color,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

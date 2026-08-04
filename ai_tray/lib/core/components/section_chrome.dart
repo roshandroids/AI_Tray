@@ -44,75 +44,45 @@ final class InfoRow extends StatelessWidget {
 }
 
 /// Bordered section container.
-///
-/// Use the default constructor for a single [child], or [SectionCard.divided]
-/// to lay out [children] separated by hairline dividers (e.g. settings rows).
 final class SectionCard extends StatelessWidget {
   const SectionCard({
-    required Widget this.child,
+    required this.child,
     super.key,
     this.title,
     this.padding = const EdgeInsets.all(Spacing.md),
-  }) : children = null;
+  });
 
-  const SectionCard.divided({
-    required this.children,
-    super.key,
-    this.title,
-    this.padding = const EdgeInsets.all(Spacing.md),
-  }) : child = null;
-
-  final Widget? child;
-  final List<Widget>? children;
+  final Widget child;
   final String? title;
   final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final items = children;
-    final body = items == null
-        ? child!
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                items[i],
-                if (i < items.length - 1)
-                  Divider(height: Spacing.md, color: colors.border),
-              ],
-            ],
-          );
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(RadiusTokens.md),
         border: Border.all(color: colors.border),
       ),
-      // ListTile/InkWell children paint their background and ink splashes
-      // on the nearest Material ancestor — without this, this DecoratedBox
-      // hides those effects (Flutter's ListTile debug assertion catches it).
-      child: Material(
-        type: MaterialType.transparency,
-        child: Padding(
-          padding: padding,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (title != null) ...[
-                Text(
-                  title!.toUpperCase(),
-                  style: context.typography.section.copyWith(
-                    fontSize: 12,
-                    letterSpacing: 0.8,
-                    color: colors.textSecondary,
-                  ),
+      child: Padding(
+        padding: padding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title != null) ...[
+              Text(
+                title!.toUpperCase(),
+                style: context.typography.section.copyWith(
+                  fontSize: 12,
+                  letterSpacing: 0.8,
+                  color: colors.textSecondary,
                 ),
-                const SizedBox(height: Spacing.sm),
-              ],
-              body,
+              ),
+              const SizedBox(height: Spacing.sm),
             ],
-          ),
+            child,
+          ],
         ),
       ),
     );
@@ -132,5 +102,22 @@ final class SectionDivider extends StatelessWidget {
         child: const SizedBox(height: 1, width: double.infinity),
       ),
     );
+  }
+}
+
+/// Terminal-style bordered panel (alias of [SectionCard] with defaults).
+final class TerminalPanel extends StatelessWidget {
+  const TerminalPanel({
+    required this.title,
+    required this.child,
+    super.key,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionCard(title: title, child: child);
   }
 }

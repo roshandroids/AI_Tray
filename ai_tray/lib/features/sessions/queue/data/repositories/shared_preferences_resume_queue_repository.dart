@@ -150,7 +150,6 @@ final class SharedPreferencesResumeQueueRepository
   Future<Result<Unit>> updateStatus(
     String id, {
     required ResumeQueueStatus status,
-    DateTime? startedAt,
     DateTime? executedAt,
     ResumeOutcome? result,
   }) async {
@@ -162,12 +161,7 @@ final class SharedPreferencesResumeQueueRepository
     final updated = <ResumeQueueItem>[
       for (final item in items)
         if (item.id == id)
-          item.copyWith(
-            status: status,
-            startedAt: startedAt,
-            executedAt: executedAt,
-            result: result,
-          )
+          item.copyWith(status: status, executedAt: executedAt, result: result)
         else
           item,
     ];
@@ -181,31 +175,6 @@ final class SharedPreferencesResumeQueueRepository
     if (listFailure != null) return Result.failure(listFailure);
     final items = listResult.valueOrNull ?? const <ResumeQueueItem>[];
     return _writeAll(items.where((i) => i.id != id).toList());
-  }
-
-  @override
-  Future<Result<Unit>> retry(String id) async {
-    final listResult = await list();
-    final listFailure = listResult.failureOrNull;
-    if (listFailure != null) return Result.failure(listFailure);
-    final items = listResult.valueOrNull ?? const <ResumeQueueItem>[];
-
-    final updated = <ResumeQueueItem>[
-      for (final item in items)
-        if (item.id == id)
-          ResumeQueueItem(
-            id: item.id,
-            sessionId: item.sessionId,
-            cwd: item.cwd,
-            prompt: item.prompt,
-            maxBudgetUsd: item.maxBudgetUsd,
-            createdAt: item.createdAt,
-            forkSession: item.forkSession,
-          )
-        else
-          item,
-    ];
-    return _writeAll(updated);
   }
 
   Future<Result<Unit>> _writeAll(List<ResumeQueueItem> items) async {

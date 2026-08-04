@@ -7,10 +7,11 @@ import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/logging/log_level.dart';
+import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/tray/presentation/tray_ring_icon_renderer.dart';
-import 'package:ai_tray/theme/app_theme.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -366,7 +367,7 @@ final class _DashboardPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: 'Status',
                     child: Column(
                       children: [
@@ -378,7 +379,7 @@ final class _DashboardPreview extends StatelessWidget {
                 ),
                 const SizedBox(width: Spacing.md),
                 Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: isCopilot ? 'Provider Health' : 'CLI Health',
                     child: Column(
                       children: [
@@ -426,7 +427,7 @@ final class _CopilotSettingsPreview extends StatelessWidget {
           Text('Settings · GitHub Copilot', style: context.typography.title),
           const SizedBox(height: Spacing.md),
           const Expanded(
-            child: SectionCard(
+            child: TerminalPanel(
               title: 'GitHub Copilot',
               child: Column(
                 children: [
@@ -463,7 +464,7 @@ final class _CopilotDiagnosticsPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: 'SDK',
                     child: Column(
                       children: [
@@ -477,7 +478,7 @@ final class _CopilotDiagnosticsPreview extends StatelessWidget {
                 ),
                 SizedBox(width: Spacing.md),
                 Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: 'Refresh',
                     child: Column(
                       children: [
@@ -600,7 +601,7 @@ final class _SettingsPreview extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(Spacing.md),
-                  child: SectionCard.divided(
+                  child: SettingsGroup(
                     title: 'Appearance',
                     children: [
                       Column(
@@ -718,7 +719,7 @@ final class _DiagnosticsPreview extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: 'Application',
                     child: Column(
                       children: [
@@ -732,7 +733,7 @@ final class _DiagnosticsPreview extends StatelessWidget {
                 ),
                 SizedBox(width: Spacing.md),
                 Expanded(
-                  child: SectionCard(
+                  child: TerminalPanel(
                     title: 'Refresh',
                     child: Column(
                       children: [
