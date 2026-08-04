@@ -12,6 +12,7 @@ import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/domain/ports/provider_usage_parser.dart';
 import 'package:ai_tray/features/providers/domain/services/provider_registry.dart';
 import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
+import 'package:ai_tray/features/sessions/data/repositories/fake_session_repository.dart';
 import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart' show Unit;
@@ -256,6 +257,9 @@ void main() {
           ),
           usageRepositoryProvider.overrideWithValue(
             _StaticUsageRepository.claudeSuccess(),
+          ),
+          sessionRepositoryProvider.overrideWithValue(
+            FakeSessionRepository(),
           ),
         ],
         child: MediaQuery(
