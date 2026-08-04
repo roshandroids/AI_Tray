@@ -1,19 +1,11 @@
-# Installation Guide — AI Tray (v1.3.3)
+# Installation Guide — AI Tray (v1.0.0-rc.1)
 
 ## Requirements
 
-- **macOS** 11+ (arm64) — primary supported platform
-- **Windows** 10+ (x64) — **Experimental** ([PD-010](../stabilization/PD-010-defer-windows.md)); CI-verified to build and package, but not yet validated on real Windows hardware
+- **macOS** 10.15+ — **officially validated** platform for v1.0.0
+- **Windows** 10+ — **Experimental** ([PD-010](../stabilization/PD-010-defer-windows.md)); build only on a Windows host; not validated in RC1/Phase 2
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
-  (for the GitHub Copilot provider, the `gh` CLI with Copilot access instead)
 - Active Claude.ai authentication (`claude auth login`)
-
-## Download a release (recommended)
-
-Grab `AI-Tray-macOS-arm64.zip` or `AI-Tray-Windows-x64.zip` from
-[GitHub Releases](https://github.com/roshandroids/AI_Tray/releases). Then
-follow the Gatekeeper step below (macOS) or run the extracted executable
-(Windows).
 
 ## Install Claude Code CLI
 
@@ -27,7 +19,7 @@ claude auth status
 
 3. If `claude` is missing from PATH for GUI apps (common with Homebrew), note the absolute path (e.g. `/opt/homebrew/bin/claude`) for Settings → CLI path.
 
-## Build from source (macOS)
+## Install AI Tray (macOS)
 
 1. Build Release:
 
@@ -48,10 +40,9 @@ xattr -cr "build/macos/Build/Products/Release/AI Tray.app"
 
 > Debug (`flutter run -d macos`) bypasses Gatekeeper; Release `.app` double-click does not. That is why Debug can work while the Release `.app` looks broken.
 
-## Build from source (Windows — Experimental)
+## Install AI Tray (Windows — Experimental)
 
-Windows is CI-verified to build and package but has no recorded real-hardware
-validation yet (PD-010). Validation is tracked under backlog item **S-001A**.
+Windows is **not** an officially validated platform for v1.0.0 (PD-010). Validation is deferred to backlog item **S-001A**.
 
 When a Windows host is available:
 

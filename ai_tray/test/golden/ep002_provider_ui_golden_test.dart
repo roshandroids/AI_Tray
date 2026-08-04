@@ -1,9 +1,10 @@
 import 'package:ai_tray/core/components/metric_card.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
+import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/theme/app_theme.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,7 +97,7 @@ Widget _providerPreview({
             const SizedBox(height: Spacing.md),
             ...cards,
             const SizedBox(height: Spacing.md),
-            const SectionCard(
+            const TerminalPanel(
               title: 'Status',
               child: Column(
                 children: [
@@ -258,7 +259,7 @@ void main() {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
-                        child: SectionCard(
+                        child: TerminalPanel(
                           title: 'Settings',
                           child: Column(
                             children: [
@@ -276,7 +277,7 @@ void main() {
                       ),
                       SizedBox(width: Spacing.md),
                       Expanded(
-                        child: SectionCard(
+                        child: TerminalPanel(
                           title: 'Diagnostics',
                           child: Column(
                             children: [
@@ -290,7 +291,7 @@ void main() {
                       ),
                       SizedBox(width: Spacing.md),
                       Expanded(
-                        child: SectionCard(
+                        child: TerminalPanel(
                           title: 'Logs',
                           child: Column(
                             children: [

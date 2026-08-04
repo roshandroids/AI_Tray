@@ -5,22 +5,21 @@ import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/features/sessions/browser/presentation/session_project_grouping.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_controller.dart';
 import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
 import 'package:ai_tray/features/sessions/domain/models/resume_outcome.dart';
 import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
 import 'package:ai_tray/features/sessions/resume/presentation/resume_controller.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Session Detail view. Loads its data read-only from
-/// `SessionRepository.readSession()` (Feature 1.2.2). Redesigned (V3)
-/// around continuing work: "Continue conversation" is the primary,
-/// immediately-visible action; "Queue task" is secondary and collapsed by
-/// default; technical fields (model, tokens, git branch, …) move under an
-/// "Advanced" disclosure at the bottom instead of leading the page.
+/// `SessionRepository.readSession()` (Feature 1.2.2), and hosts two
+/// acting sections added since: attended "Resume now" (Feature 2.2.1) and
+/// "Add to queue" (Feature 2.2.2) — both opt-in, both disabled with no
+/// decoded project path, never silent about what they do.
 final class SessionDetailPage extends ConsumerWidget {
   const SessionDetailPage({required this.sessionId, super.key});
 
@@ -61,11 +60,8 @@ final class _SessionDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
-    final name = projectDisplayName(
-      projectPath: session.projectPath,
-      sanitizedProjectDirName: session.sanitizedProjectDirName,
-    );
-    final fullPath = session.projectPath;
+    final projectLabel = session.projectPath ?? session.sanitizedProjectDirName;
+    final tokens = session.tokenTotals;
 
     return Align(
       alignment: Alignment.topCenter,
@@ -80,7 +76,7 @@ final class _SessionDetailBody extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      name,
+                      projectLabel,
                       style: type.section,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -91,14 +87,6 @@ final class _SessionDetailBody extends StatelessWidget {
                   ],
                 ],
               ),
-              if (fullPath != null && fullPath != name) ...[
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  fullPath,
-                  style: type.caption,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
               const SizedBox(height: Spacing.sm),
               // Incomplete sessions are shown honestly, not silently
               // (design principle 4) — a killed process is an accepted,
@@ -107,17 +95,49 @@ final class _SessionDetailBody extends StatelessWidget {
                 const _IncompleteBanner(key: ValueKey('session-incomplete')),
                 const SizedBox(height: Spacing.md),
               ],
-              _ContinueConversationSection(
+              SectionCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    InfoRow(
+                      label: 'Model',
+                      value: session.model ?? '—',
+                    ),
+                    InfoRow(
+                      label: 'Git branch',
+                      value: session.gitBranch ?? '—',
+                    ),
+                    InfoRow(
+                      label: 'Last activity',
+                      value: UsageStatusMapper.relativeUpdated(
+                        session.lastActivityAt,
+                      ),
+                    ),
+                    InfoRow(
+                      label: 'Messages',
+                      value: '${session.messageCount}',
+                    ),
+                    InfoRow(
+                      label: 'Input tokens',
+                      value: '${tokens.inputTokens}',
+                    ),
+                    InfoRow(
+                      label: 'Output tokens',
+                      value: '${tokens.outputTokens}',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.md),
+              _ResumeSection(
                 sessionId: session.sessionId,
                 workingDirectory: session.projectPath,
               ),
               const SizedBox(height: Spacing.md),
-              _QueueTaskSection(
+              _EnqueueSection(
                 sessionId: session.sessionId,
                 workingDirectory: session.projectPath,
               ),
-              const SizedBox(height: Spacing.md),
-              _AdvancedDetailsSection(session: session),
             ],
           ),
         ),
@@ -126,13 +146,13 @@ final class _SessionDetailBody extends StatelessWidget {
   }
 }
 
-/// Primary action (V3): continues this conversation in place — never
-/// forks (only unattended/queued execution does). Never enabled without a
-/// real, decoded [workingDirectory]: design principle 3 forbids guessing
-/// a `cwd`, so continuing is simply unavailable when
+/// Attended "Resume now" action (Feature 2.2.1) — continues the session
+/// in place (never forks; only unattended/queued execution does). Never
+/// enabled without a real, decoded [workingDirectory]: design principle 3
+/// forbids guessing a `cwd`, so resume is simply unavailable when
 /// [ClaudeSession.projectPath] is `null`.
-final class _ContinueConversationSection extends ConsumerStatefulWidget {
-  const _ContinueConversationSection({
+final class _ResumeSection extends ConsumerStatefulWidget {
+  const _ResumeSection({
     required this.sessionId,
     required this.workingDirectory,
   });
@@ -141,12 +161,10 @@ final class _ContinueConversationSection extends ConsumerStatefulWidget {
   final String? workingDirectory;
 
   @override
-  ConsumerState<_ContinueConversationSection> createState() =>
-      _ContinueConversationSectionState();
+  ConsumerState<_ResumeSection> createState() => _ResumeSectionState();
 }
 
-final class _ContinueConversationSectionState
-    extends ConsumerState<_ContinueConversationSection> {
+final class _ResumeSectionState extends ConsumerState<_ResumeSection> {
   final _prompt = TextEditingController();
 
   @override
@@ -167,19 +185,13 @@ final class _ContinueConversationSectionState
         workingDirectory != null && !isBusy && _prompt.text.trim().isNotEmpty;
 
     return SectionCard(
-      title: 'Continue conversation',
+      title: 'Resume now',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Picks up where this session left off, in its original working '
-            'directory. Runs right now, in place — never a separate copy.',
-            style: type.caption,
-          ),
-          const SizedBox(height: Spacing.sm),
           if (workingDirectory == null)
             Text(
-              'Unavailable — the project path for this session '
+              'Resume is unavailable — the project path for this session '
               "couldn't be determined.",
               style: type.caption,
             )
@@ -215,7 +227,7 @@ final class _ContinueConversationSectionState
                         width: 16,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Continue conversation'),
+                    : const Text('Resume now'),
               ),
             ),
           ],
@@ -350,13 +362,13 @@ final class _SessionDetailError extends StatelessWidget {
   }
 }
 
-/// Secondary action (V3): queues a task to run unattended later, as a
-/// forked copy of this session — safe to queue even while actively using
-/// this session elsewhere. Collapsed by default (progressive disclosure);
-/// a budget cap is mandatory (design principle 2) — the submit button
-/// stays disabled until both a prompt and a positive cap are entered.
-final class _QueueTaskSection extends ConsumerStatefulWidget {
-  const _QueueTaskSection({
+/// "Enqueue from Session Detail" (Feature 2.2.2). A budget cap is
+/// mandatory (design principle 2) — the submit button stays disabled
+/// until both a prompt and a positive cap are entered; there is no
+/// "submit without a cap" path in this form. Enqueuing never triggers
+/// execution by itself (see `ResumeQueueController`'s own doc comment).
+final class _EnqueueSection extends ConsumerStatefulWidget {
+  const _EnqueueSection({
     required this.sessionId,
     required this.workingDirectory,
   });
@@ -365,10 +377,10 @@ final class _QueueTaskSection extends ConsumerStatefulWidget {
   final String? workingDirectory;
 
   @override
-  ConsumerState<_QueueTaskSection> createState() => _QueueTaskSectionState();
+  ConsumerState<_EnqueueSection> createState() => _EnqueueSectionState();
 }
 
-final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
+final class _EnqueueSectionState extends ConsumerState<_EnqueueSection> {
   final _prompt = TextEditingController();
   final _budgetCap = TextEditingController();
   bool _submitting = false;
@@ -430,140 +442,75 @@ final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
     final type = context.typography;
     final workingDirectory = widget.workingDirectory;
 
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: const ValueKey('queue-task-expansion'),
-          title: Text(
-            'Queue task',
-            style: type.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            'Runs later, unattended, as a separate copy of this session',
-            style: type.caption,
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            Spacing.md,
-            0,
-            Spacing.md,
-            Spacing.md,
-          ),
-          children: [
-            if (workingDirectory == null)
-              Text(
-                'Unavailable — the project path for this session '
-                "couldn't be determined.",
-                style: type.caption,
-              )
-            else ...[
-              TextField(
-                key: const ValueKey('enqueue-prompt-field'),
-                controller: _prompt,
-                maxLines: 3,
-                style: type.body,
-                enabled: !_submitting,
-                decoration: const InputDecoration(hintText: 'Continue with…'),
-                onChanged: (_) => setState(() {}),
+    return SectionCard(
+      title: 'Add to queue',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (workingDirectory == null)
+            Text(
+              'Queueing is unavailable — the project path for this '
+              "session couldn't be determined.",
+              style: type.caption,
+            )
+          else ...[
+            TextField(
+              key: const ValueKey('enqueue-prompt-field'),
+              controller: _prompt,
+              maxLines: 3,
+              style: type.body,
+              enabled: !_submitting,
+              decoration: const InputDecoration(hintText: 'Continue with…'),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Spacing.sm),
+            TextField(
+              key: const ValueKey('enqueue-budget-cap-field'),
+              controller: _budgetCap,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-              const SizedBox(height: Spacing.sm),
-              TextField(
-                key: const ValueKey('enqueue-budget-cap-field'),
-                controller: _budgetCap,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                style: type.body,
-                enabled: !_submitting,
-                decoration: const InputDecoration(
-                  labelText: 'Budget cap (USD) — required',
-                  hintText: 'e.g. 2.00',
-                ),
-                onChanged: (_) => setState(() {}),
+              style: type.body,
+              enabled: !_submitting,
+              decoration: const InputDecoration(
+                labelText: 'Budget cap (USD) — required',
+                hintText: 'e.g. 2.00',
               ),
-              const SizedBox(height: Spacing.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: OutlinedButton(
-                  key: const ValueKey('enqueue-submit-button'),
-                  onPressed: _canSubmit ? () => unawaited(_submit()) : null,
-                  child: _submitting
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Queue task'),
-                ),
-              ),
-            ],
-            if (_error != null) ...[
-              const SizedBox(height: Spacing.sm),
-              Text(
-                _error!,
-                key: const ValueKey('enqueue-error'),
-                style: type.caption.copyWith(color: context.colors.error),
-              ),
-            ],
-            if (_justEnqueued) ...[
-              const SizedBox(height: Spacing.sm),
-              Text(
-                'Added to the queue.',
-                key: const ValueKey('enqueue-success'),
-                style: type.caption.copyWith(color: context.colors.success),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Technical fields (V3: moved under an "Advanced" disclosure at the
-/// bottom of the page instead of leading it — a user resuming or queueing
-/// work rarely needs the model name or raw token counts up front).
-final class _AdvancedDetailsSection extends StatelessWidget {
-  const _AdvancedDetailsSection({required this.session});
-
-  final ClaudeSession session;
-
-  @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    final tokens = session.tokenTotals;
-
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: const ValueKey('advanced-details-expansion'),
-          title: Text(
-            'Advanced',
-            style: type.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            Spacing.md,
-            0,
-            Spacing.md,
-            Spacing.md,
-          ),
-          children: [
-            InfoRow(label: 'Model', value: session.model ?? '—'),
-            InfoRow(label: 'Git branch', value: session.gitBranch ?? '—'),
-            InfoRow(
-              label: 'Last activity',
-              value: UsageStatusMapper.relativeUpdated(
-                session.lastActivityAt,
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: Spacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                key: const ValueKey('enqueue-submit-button'),
+                onPressed: _canSubmit ? () => unawaited(_submit()) : null,
+                child: _submitting
+                    ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Add to queue'),
               ),
             ),
-            InfoRow(label: 'Messages', value: '${session.messageCount}'),
-            InfoRow(label: 'Input tokens', value: '${tokens.inputTokens}'),
-            InfoRow(label: 'Output tokens', value: '${tokens.outputTokens}'),
           ],
-        ),
+          if (_error != null) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              _error!,
+              key: const ValueKey('enqueue-error'),
+              style: type.caption.copyWith(color: context.colors.error),
+            ),
+          ],
+          if (_justEnqueued) ...[
+            const SizedBox(height: Spacing.sm),
+            Text(
+              'Added to the resume queue.',
+              key: const ValueKey('enqueue-success'),
+              style: type.caption.copyWith(color: context.colors.success),
+            ),
+          ],
+        ],
       ),
     );
   }

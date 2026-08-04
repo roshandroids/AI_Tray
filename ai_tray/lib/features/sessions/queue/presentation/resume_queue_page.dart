@@ -1,76 +1,29 @@
 import 'dart:async';
 
-import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
-import 'package:ai_tray/core/navigation/app_destination.dart';
-import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/features/sessions/browser/presentation/session_project_grouping.dart';
 import 'package:ai_tray/features/sessions/queue/domain/models/resume_queue_item.dart';
 import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Resume Queue page (Feature 2.2.2; V3 redesign) — renders pending/
-/// running/succeeded/failed items with live updates, a project label
-/// (from each item's working directory) instead of a raw session id, and
-/// a Retry action for failed items. Enqueuing never triggers execution on
-/// its own; "Run next" is the only way an item moves forward in this pass
-/// (see `ResumeQueueController`'s own doc comment for why there's no
+/// Resume Queue page (Feature 2.2.2) — renders pending/running/succeeded/
+/// failed items. Enqueuing never triggers execution on its own; "Run
+/// next" is the only way an item moves forward in this pass (see
+/// `ResumeQueueController`'s own doc comment for why there's no
 /// auto-execute toggle yet).
-final class ResumeQueuePage extends ConsumerStatefulWidget {
+final class ResumeQueuePage extends ConsumerWidget {
   const ResumeQueuePage({super.key});
 
   @override
-  ConsumerState<ResumeQueuePage> createState() => _ResumeQueuePageState();
-}
-
-final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
-  Timer? _liveUpdateTimer;
-
-  @override
-  void dispose() {
-    _liveUpdateTimer?.cancel();
-    super.dispose();
-  }
-
-  // Live updates (V3): the queue has no push/stream signal of its own (a
-  // single sequential CLI executor), so a light poll is the smallest
-  // change that keeps Running/Duration current without a bigger
-  // architecture change. Gated on this actually being the *visible* shell
-  // destination — not just mounted — since the shell keeps every
-  // destination alive in an `IndexedStack`; polling unconditionally on
-  // mount would poll forever in the background, even while looking at the
-  // Dashboard.
-  void _syncLiveUpdates(bool isVisible) {
-    if (isVisible) {
-      _liveUpdateTimer ??= Timer.periodic(const Duration(seconds: 2), (_) {
-        final notifier = ref.read(resumeQueueControllerProvider.notifier);
-        if (!ref.read(resumeQueueControllerProvider).isLoading) {
-          unawaited(notifier.refresh());
-        }
-      });
-    } else {
-      _liveUpdateTimer?.cancel();
-      _liveUpdateTimer = null;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isVisible =
-        ref.watch(appShellDestinationProvider) == AppDestination.queue;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _syncLiveUpdates(isVisible);
-    });
-
+  Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(resumeQueueControllerProvider);
     final notifier = ref.read(resumeQueueControllerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Queue'),
+        title: const Text('Resume Queue'),
         actions: [
           IconButton(
             key: const ValueKey('queue-run-next'),
@@ -108,15 +61,7 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
             key: const ValueKey('queue-list'),
             padding: const EdgeInsets.all(Spacing.md),
             itemCount: items.length,
-            itemBuilder: (context, index) => _QueueItemTile(
-              item: items[index],
-              onRemove: items[index].status == ResumeQueueStatus.running
-                  ? null
-                  : () => unawaited(notifier.remove(items[index].id)),
-              onRetry: items[index].status == ResumeQueueStatus.failed
-                  ? () => unawaited(notifier.retry(items[index].id))
-                  : null,
-            ),
+            itemBuilder: (context, index) => _QueueItemTile(item: items[index]),
           );
         },
       ),
@@ -125,29 +70,13 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
 }
 
 final class _QueueItemTile extends StatelessWidget {
-  const _QueueItemTile({
-    required this.item,
-    required this.onRemove,
-    required this.onRetry,
-  });
+  const _QueueItemTile({required this.item});
 
   final ResumeQueueItem item;
-
-  /// `null` when this item can't be removed yet (currently `running` —
-  /// there's no cooperative cancellation of an in-flight resume).
-  final VoidCallback? onRemove;
-
-  /// `null` unless this item is `failed`.
-  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
-    final projectName = projectDisplayName(
-      projectPath: item.cwd,
-      sanitizedProjectDirName: item.cwd,
-    );
-
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.sm),
       child: SectionCard(
@@ -158,78 +87,68 @@ final class _QueueItemTile extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    projectName,
-                    style: type.body.copyWith(fontWeight: FontWeight.w600),
+                    item.sessionId,
+                    style: type.body,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 const SizedBox(width: Spacing.sm),
-                QueueStatusChip(status: item.status),
-                if (onRetry != null)
-                  IconButton(
-                    key: ValueKey('queue-retry-${item.id}'),
-                    tooltip: 'Retry',
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.replay),
-                    iconSize: 18,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                IconButton(
-                  key: ValueKey('queue-remove-${item.id}'),
-                  tooltip: item.status == ResumeQueueStatus.pending
-                      ? 'Cancel'
-                      : 'Remove',
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.close),
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                ),
+                _QueueStatusChip(status: item.status),
               ],
-            ),
-            const SizedBox(height: Spacing.xs),
-            Text(
-              item.cwd,
-              style: type.caption,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: Spacing.xs),
             Text(item.prompt, style: type.caption, maxLines: 2),
             const SizedBox(height: Spacing.xs),
-            Text(_summaryLine(item), style: type.caption),
+            Text(
+              _capAndCostLabel(item),
+              style: type.caption,
+            ),
           ],
         ),
       ),
     );
   }
 
-  String _summaryLine(ResumeQueueItem item) {
+  String _capAndCostLabel(ResumeQueueItem item) {
     final cap = 'Cap \$${item.maxBudgetUsd.toStringAsFixed(2)}';
-    final duration = _durationLabel(item);
     final outcome = item.result;
-    final parts = [
-      cap,
-      ?duration,
-      if (outcome != null) 'cost \$${outcome.costUsd.toStringAsFixed(4)}',
-    ];
-    return parts.join(' · ');
+    if (outcome == null) return cap;
+    return '$cap · cost \$${outcome.costUsd.toStringAsFixed(4)}';
   }
+}
 
-  String? _durationLabel(ResumeQueueItem item) {
-    final startedAt = item.startedAt;
-    if (startedAt == null) return null;
-    final end = item.executedAt ?? DateTime.now().toUtc();
-    final elapsed = end.difference(startedAt);
-    final label = _formatDuration(elapsed);
-    return item.status == ResumeQueueStatus.running ? 'running $label' : label;
-  }
+final class _QueueStatusChip extends StatelessWidget {
+  const _QueueStatusChip({required this.status});
 
-  String _formatDuration(Duration duration) {
-    if (duration.inMinutes >= 1) {
-      final minutes = duration.inMinutes;
-      final seconds = duration.inSeconds % 60;
-      return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
-    }
-    return '${duration.inSeconds}s';
+  final ResumeQueueStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final (label, color) = switch (status) {
+      ResumeQueueStatus.pending => ('Pending', colors.textMuted),
+      ResumeQueueStatus.running => ('Running', colors.info),
+      ResumeQueueStatus.succeeded => ('Succeeded', colors.success),
+      ResumeQueueStatus.failed => ('Failed', colors.error),
+    };
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(RadiusTokens.sm),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.xs,
+        ),
+        child: Text(
+          label,
+          key: ValueKey('queue-status-${status.name}'),
+          style: context.typography.status.copyWith(color: color),
+        ),
+      ),
+    );
   }
 }
 
@@ -245,10 +164,10 @@ final class _QueueEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('No queued tasks', style: type.emptyTitle),
+            Text('No queued resumes', style: type.emptyTitle),
             const SizedBox(height: Spacing.sm),
             Text(
-              "Queue a task from a session's detail page.",
+              'Add a session to the queue from its detail page.',
               style: type.bodySmall,
             ),
           ],

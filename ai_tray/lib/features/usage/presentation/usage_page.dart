@@ -1,23 +1,20 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/components/metric_card.dart';
-import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
-import 'package:ai_tray/core/navigation/app_destination.dart';
-import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/providers/domain/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/providers/presentation/widgets/provider_selector.dart';
-import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
-import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
-import 'package:ai_tray/features/sessions/queue/domain/models/resume_queue_item.dart';
-import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
+import 'package:ai_tray/features/sessions/browser/presentation/session_browser_page.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/settings/presentation/settings_page.dart';
+import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
@@ -26,17 +23,77 @@ import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
 import 'package:ai_tray/features/usage/domain/services/dashboard_data_mapper.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_empty_state.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Design-system dashboard (PD-021), hosted as the Dashboard destination in
-/// the app shell — navigation to Sessions/Queue/Logs/Settings and the
-/// ⌘R/⌘L/⌘, shortcuts live on the shell now, not here.
-final class UsagePage extends ConsumerWidget {
+/// Design-system dashboard (PD-021).
+final class UsagePage extends ConsumerStatefulWidget {
   const UsagePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UsagePage> createState() => _UsagePageState();
+}
+
+final class _UsagePageState extends ConsumerState<UsagePage> {
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (event is! KeyDownEvent) return false;
+    final meta =
+        HardwareKeyboard.instance.isMetaPressed ||
+        HardwareKeyboard.instance.isControlPressed;
+    if (!meta) return false;
+    final repo = ref.read(usageRepositoryProvider);
+    if (event.logicalKey == LogicalKeyboardKey.keyR) {
+      unawaited(repo.refresh(manual: true));
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.comma) {
+      unawaited(_openSettings());
+      return true;
+    }
+    if (event.logicalKey == LogicalKeyboardKey.keyL) {
+      unawaited(_openLogs());
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _openSettings() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
+  );
+
+  Future<void> _openDiagnostics() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const DiagnosticsPage()),
+  );
+
+  Future<void> _openSessions() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const SessionBrowserPage()),
+  );
+
+  Future<void> _openLogs() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const LogsPage()),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<int>(settingsOpenRequestProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(_openSettings());
+    });
+
     final repository = ref.watch(usageRepositoryProvider);
     final selectableProviders = ref.watch(selectableAIProvidersProvider);
     final selectedProvider = ref.watch(selectedAIProviderProvider);
@@ -82,13 +139,24 @@ final class UsagePage extends ConsumerWidget {
                 child: Center(child: StatusBadge(kind: kind, compact: true)),
               ),
               IconButton(
+                tooltip: 'Logs (⌘L)',
+                onPressed: () => unawaited(_openLogs()),
+                icon: const Icon(Icons.article_outlined),
+              ),
+              IconButton(
                 tooltip: 'Diagnostics',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DiagnosticsPage(),
-                  ),
-                ),
+                onPressed: () => unawaited(_openDiagnostics()),
                 icon: const Icon(Icons.monitor_heart_outlined),
+              ),
+              IconButton(
+                tooltip: 'Sessions',
+                onPressed: () => unawaited(_openSessions()),
+                icon: const Icon(Icons.history_outlined),
+              ),
+              IconButton(
+                tooltip: 'Settings (⌘,)',
+                onPressed: () => unawaited(_openSettings()),
+                icon: const Icon(Icons.settings_outlined),
               ),
             ],
           ),
@@ -124,8 +192,6 @@ final class UsagePage extends ConsumerWidget {
                       ),
                       const SizedBox(height: Spacing.sm),
                     ],
-                    const _ContinueYourWorkSection(),
-                    const SizedBox(height: Spacing.md),
                     _ProviderHeader(
                       key: ValueKey(
                         'provider-header-${selectedProvider.providerId.value}',
@@ -178,7 +244,7 @@ final class UsagePage extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            '⌘K Commands · ⌘R Refresh · ⌘L Logs · ⌘, Settings',
+                            '⌘R Refresh · ⌘L Logs · ⌘, Settings',
                             style: context.typography.caption,
                           ),
                         ),
@@ -206,230 +272,6 @@ final class UsagePage extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-}
-
-/// Work-first block (V3 redesign): quick actions plus at-a-glance recent
-/// sessions and queue state, ahead of the usage/health metrics below.
-final class _ContinueYourWorkSection extends ConsumerWidget {
-  const _ContinueYourWorkSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sessionsAsync = ref.watch(sessionBrowserControllerProvider);
-    final queueAsync = ref.watch(resumeQueueControllerProvider);
-    final recentSessions = sessionsAsync.value ?? const <SessionSummary>[];
-    final recentQueue = queueAsync.value ?? const <ResumeQueueItem>[];
-    final lastSessionId = recentSessions.isEmpty
-        ? null
-        : recentSessions.first.sessionId;
-
-    void goToSessions() => ref
-        .read(appShellDestinationProvider.notifier)
-        .select(
-          AppDestination.sessions,
-        );
-    void goToQueue() => ref
-        .read(appShellDestinationProvider.notifier)
-        .select(
-          AppDestination.queue,
-        );
-    void openSession(String sessionId) => Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => SessionDetailPage(sessionId: sessionId),
-      ),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: lastSessionId == null
-                    ? null
-                    : () => openSession(lastSessionId),
-                icon: const Icon(Icons.play_circle_outline_rounded, size: 18),
-                label: const Text('Continue last session'),
-              ),
-            ),
-            const SizedBox(width: Spacing.sm),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: goToSessions,
-                icon: const Icon(Icons.pending_actions_outlined, size: 18),
-                label: const Text('Queue a task'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Spacing.sm),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final sessionsCard = _RecentSessionsCard(
-              sessions: recentSessions,
-              onOpenSession: openSession,
-              onViewAll: goToSessions,
-            );
-            final queueCard = _RecentQueueCard(
-              items: recentQueue,
-              onOpenSession: openSession,
-              onViewAll: goToQueue,
-            );
-            if (constraints.maxWidth >= 560) {
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(child: sessionsCard),
-                    const SizedBox(width: Spacing.sm),
-                    Expanded(child: queueCard),
-                  ],
-                ),
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                sessionsCard,
-                const SizedBox(height: Spacing.sm),
-                queueCard,
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-final class _RecentSessionsCard extends StatelessWidget {
-  const _RecentSessionsCard({
-    required this.sessions,
-    required this.onOpenSession,
-    required this.onViewAll,
-  });
-
-  final List<SessionSummary> sessions;
-  final ValueChanged<String> onOpenSession;
-  final VoidCallback onViewAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    final recent = sessions.take(3).toList();
-    return SectionCard(
-      title: 'Recent Sessions',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (recent.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
-              child: Text('No sessions yet', style: type.caption),
-            )
-          else
-            for (final (index, session) in recent.indexed) ...[
-              InkWell(
-                onTap: () => onOpenSession(session.sessionId),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          session.projectPath ??
-                              session.sanitizedProjectDirName,
-                          style: type.body,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.sm),
-                      Text(
-                        UsageStatusMapper.relativeUpdated(
-                          session.lastActivityAt,
-                        ),
-                        style: type.caption,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (index < recent.length - 1) const Divider(height: Spacing.md),
-            ],
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onViewAll,
-              child: const Text('View all'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-final class _RecentQueueCard extends StatelessWidget {
-  const _RecentQueueCard({
-    required this.items,
-    required this.onOpenSession,
-    required this.onViewAll,
-  });
-
-  final List<ResumeQueueItem> items;
-  final ValueChanged<String> onOpenSession;
-  final VoidCallback onViewAll;
-
-  @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    final recent = items.take(3).toList();
-    return SectionCard(
-      title: 'Queue',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (recent.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
-              child: Text('No queued tasks', style: type.caption),
-            )
-          else
-            for (final (index, item) in recent.indexed) ...[
-              InkWell(
-                onTap: () => onOpenSession(item.sessionId),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          item.prompt,
-                          style: type.body,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.sm),
-                      QueueStatusChip(status: item.status),
-                    ],
-                  ),
-                ),
-              ),
-              if (index < recent.length - 1) const Divider(height: Spacing.md),
-            ],
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onViewAll,
-              child: const Text('View all'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -889,7 +731,7 @@ final class _DashboardBody extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: SectionCard(
+                          child: TerminalPanel(
                             title: 'Status',
                             child: Column(
                               children: [
@@ -915,7 +757,7 @@ final class _DashboardBody extends ConsumerWidget {
                         ),
                         const SizedBox(width: Spacing.sm),
                         Expanded(
-                          child: SectionCard(
+                          child: TerminalPanel(
                             title: 'Provider Health',
                             child: Column(
                               children: [
@@ -951,7 +793,7 @@ final class _DashboardBody extends ConsumerWidget {
                       ],
                     )
                   else ...[
-                    SectionCard(
+                    TerminalPanel(
                       title: 'Status',
                       child: Column(
                         children: [
@@ -974,7 +816,7 @@ final class _DashboardBody extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: Spacing.sm),
-                    SectionCard(
+                    TerminalPanel(
                       title: 'Provider Health',
                       child: Column(
                         children: [

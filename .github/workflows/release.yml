@@ -58,9 +58,7 @@ jobs:
 
   build:
     needs: validate
-    # Pinned to the commit tag v1 resolved to on 2026-08-02. Bump deliberately:
-    # resolve the new SHA for the tag you want, don't just move to @v1.
-    uses: roshandroids/platform-ci/.github/workflows/build.yml@ae93a81f35e088ccd8026557d27cb95e24b3fd12
+    uses: roshandroids/platform-ci/.github/workflows/build.yml@v1
     with:
       config-path: ci.yaml
       trigger: release
@@ -68,7 +66,7 @@ jobs:
 
   release:
     needs: [validate, build]
-    uses: roshandroids/platform-ci/.github/workflows/release.yml@ae93a81f35e088ccd8026557d27cb95e24b3fd12
+    uses: roshandroids/platform-ci/.github/workflows/release.yml@v1
     with:
       config-path: ci.yaml
       tag: ${{ needs.validate.outputs.tag }}

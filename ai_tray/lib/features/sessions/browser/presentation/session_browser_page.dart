@@ -2,22 +2,19 @@ import 'dart:async';
 
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
-import 'package:ai_tray/core/navigation/app_destination.dart';
-import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_browser_controller.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_list_filter.dart';
-import 'package:ai_tray/features/sessions/browser/presentation/session_project_grouping.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
+import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_page.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Session Browser list page (Feature 1.2.1; M1 "Session Visibility"),
-/// grouped by project (V3 redesign) — the group containing the current
-/// live session (if any) is pinned first and expanded by default.
+/// Session Browser list page (Feature 1.2.1; M1 "Session Visibility").
 ///
 /// Renders entirely from `SessionBrowserController`'s JSONL-derived list —
 /// no mutation, no CLI action beyond the read-only liveness enrichment the
@@ -32,26 +29,12 @@ final class SessionBrowserPage extends ConsumerStatefulWidget {
 
 final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
   final _search = TextEditingController();
-  final Set<String> _expandedKeys = {};
-  bool _expansionInitialized = false;
 
   @override
   void dispose() {
     _search.dispose();
     super.dispose();
   }
-
-  void _ensureDefaultExpansion(List<ProjectGroup> groups) {
-    if (_expansionInitialized || groups.isEmpty) return;
-    _expansionInitialized = true;
-    _expandedKeys.add(groups.first.key);
-  }
-
-  void _openSession(String sessionId) => Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => SessionDetailPage(sessionId: sessionId),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +45,10 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
         title: const Text('Sessions'),
         actions: [
           IconButton(
-            tooltip: 'Queue',
-            onPressed: () => ref
-                .read(appShellDestinationProvider.notifier)
-                .select(AppDestination.queue),
+            tooltip: 'Resume Queue',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ResumeQueuePage()),
+            ),
             icon: const Icon(Icons.pending_actions_outlined),
           ),
           IconButton(
@@ -125,27 +108,12 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
                     noMatch: true,
                   );
                 }
-                final groups = groupSessionsByProject(filtered);
-                _ensureDefaultExpansion(groups);
                 return ListView.builder(
                   key: const ValueKey('sessions-list'),
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _ProjectGroupTile(
-                      group: group,
-                      initiallyExpanded: _expandedKeys.contains(group.key),
-                      onExpansionChanged: (expanded) => setState(() {
-                        if (expanded) {
-                          _expandedKeys.add(group.key);
-                        } else {
-                          _expandedKeys.remove(group.key);
-                        }
-                      }),
-                      onOpenSession: _openSession,
-                    );
-                  },
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) =>
+                      _SessionListTile(summary: filtered[index]),
                 );
               },
             ),
@@ -156,106 +124,58 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
   }
 }
 
-final class _ProjectGroupTile extends StatelessWidget {
-  const _ProjectGroupTile({
-    required this.group,
-    required this.initiallyExpanded,
-    required this.onExpansionChanged,
-    required this.onOpenSession,
-  });
+final class _SessionListTile extends StatelessWidget {
+  const _SessionListTile({required this.summary});
 
-  final ProjectGroup group;
-  final bool initiallyExpanded;
-  final ValueChanged<bool> onExpansionChanged;
-  final ValueChanged<String> onOpenSession;
+  final SessionSummary summary;
 
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
-    final mostRecent = group.sessions.first;
-    final name = projectDisplayName(
-      projectPath: mostRecent.projectPath,
-      sanitizedProjectDirName: mostRecent.sanitizedProjectDirName,
-    );
-    final subtitle =
-        '${group.sessions.length} '
-        '${group.sessions.length == 1 ? 'session' : 'sessions'} · '
-        'updated ${UsageStatusMapper.relativeUpdated(group.lastActivityAt)}';
+    final projectLabel = summary.projectPath ?? summary.sanitizedProjectDirName;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: PageStorageKey('project-group-${group.key}'),
-          initiallyExpanded: initiallyExpanded,
-          onExpansionChanged: onExpansionChanged,
-          title: Row(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(RadiusTokens.md),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => SessionDetailPage(sessionId: summary.sessionId),
+          ),
+        ),
+        child: SectionCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Flexible(
-                child: Text(
-                  name,
-                  style: type.body.copyWith(fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      projectLabel,
+                      style: type.body,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      '${UsageStatusMapper.relativeUpdated(
+                        summary.lastActivityAt,
+                      )} · ${summary.messageCount} messages',
+                      style: type.caption,
+                    ),
+                  ],
                 ),
               ),
-              if (group.hasLiveSession) ...[
+              // A live badge appears only when `agents --json --all`
+              // matched this session — absence (false or unconfirmed) is
+              // never shown as "not live" (design principle 3): there is
+              // no visual distinction between false and null.
+              if (summary.isLive ?? false) ...[
                 const SizedBox(width: Spacing.sm),
                 const StatusBadge(kind: TrayStatusKind.live, compact: true),
               ],
             ],
           ),
-          subtitle: mostRecent.projectPath == null
-              ? Text(subtitle, style: type.caption)
-              : Text(
-                  '${mostRecent.projectPath} · $subtitle',
-                  style: type.caption,
-                  overflow: TextOverflow.ellipsis,
-                ),
-          children: [
-            for (final session in group.sessions)
-              _SessionRow(session: session, onTap: onOpenSession),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final class _SessionRow extends StatelessWidget {
-  const _SessionRow({required this.session, required this.onTap});
-
-  final SessionSummary session;
-  final ValueChanged<String> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    return InkWell(
-      onTap: () => onTap(session.sessionId),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${UsageStatusMapper.relativeUpdated(session.lastActivityAt)} '
-                '· ${session.messageCount} messages',
-                style: type.body,
-              ),
-            ),
-            // A live badge appears only when `agents --json --all` matched
-            // this session — absence (false or unconfirmed) is never shown
-            // as "not live" (design principle 3): there is no visual
-            // distinction between false and null.
-            if (session.isLive ?? false) ...[
-              const SizedBox(width: Spacing.sm),
-              const StatusBadge(kind: TrayStatusKind.live, compact: true),
-            ],
-          ],
         ),
       ),
     );

@@ -21,17 +21,14 @@ class ThemeModePicker extends StatelessWidget {
         ButtonSegment(
           value: AppThemePreference.system,
           label: Text('System'),
-          icon: Icon(Icons.brightness_auto_outlined, size: 16),
         ),
         ButtonSegment(
           value: AppThemePreference.dark,
           label: Text('Dark'),
-          icon: Icon(Icons.dark_mode_outlined, size: 16),
         ),
         ButtonSegment(
           value: AppThemePreference.light,
           label: Text('Light'),
-          icon: Icon(Icons.light_mode_outlined, size: 16),
         ),
       ],
       selected: {selected},

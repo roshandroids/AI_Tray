@@ -1,5 +1,5 @@
-import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/features/tray/domain/tray_display_mode.dart';
+import 'package:ai_tray/features/usage/presentation/widgets/tray_status_badge.dart';
 
 /// Resolves tray / menu-bar icon assets and macOS title density.
 ///

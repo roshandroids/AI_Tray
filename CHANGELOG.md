@@ -6,21 +6,6 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 ## [Unreleased]
 
 ### Added
-- **Session management (V2 Milestone 1 + 2):** Session Browser and Session
-  Detail views, reading directly from `~/.claude/projects/**/*.jsonl` (no new
-  database). Manual "Resume now" action. A bounded, persisted Resume Queue —
-  every queued item requires a budget cap, defaults to forking the session
-  rather than continuing in place, and notifies on completion; clicking the
-  notification opens that session's detail page directly. A cancel/remove
-  action for queue items (pending items can be cancelled; finished items
-  cleared; a running item can't be removed until it finishes).
-- `NotificationGateway` abstraction with a real `local_notifier`-backed
-  implementation, migrated `TrayController`'s threshold alert onto it.
-- FlexColorScheme branded personalization: selectable theme presets, bundled
-  fonts, and app-icon architecture (PD-026 / ADR-005).
-- Adaptive menu-bar title density — quiet by default, reveals a percentage
-  only past a configurable threshold — plus a monochrome template glyph
-  (PD-027).
 - EP-002 Phase 3 UI quality coverage: accessibility/state widget tests and
   provider UI golden baselines for Claude and GitHub Copilot.
 - Copilot screenshots plus provider docs and the EP-002 implementation report.
@@ -28,30 +13,6 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 ### Changed
 - Provider selector disables while selection persistence is busy and surfaces a
   retryable save-failure banner on the shared dashboard.
-- Session list is now sorted most-recently-active first, instead of
-  filesystem enumeration order.
-- CI migrated from repo-owned Actions workflows calling `./scripts/*.sh`
-  directly to reusable workflows from `roshandroids/platform-ci@v1`,
-  configured by root `ci.yaml`; a new `release-pr.yml` builds macOS/Windows
-  for any PR whose head branch starts with `release/`.
-- `platform-ci` workflow calls are now pinned to a resolved commit SHA
-  instead of the mutable `@v1` tag, so an upstream change can't silently
-  alter this repo's release behavior.
-
-### Removed
-- 12 unreferenced files: 10 provider-platform compatibility re-export shims
-  under `core/`/`data/copilot/` that nothing imported (not even the
-  actively-used `domain/` compatibility layer, which is separate, real,
-  still-open technical debt tracked under PD-024 — left untouched), and 2
-  widget files (`terminal_chrome.dart`, `tray_status_pill.dart`) whose
-  classes were never instantiated anywhere.
-
-### Fixed
-- macOS App Sandbox is now disabled. It virtualized `$HOME` for the app and
-  every spawned `claude`/provider CLI process, making Session Browser (and
-  any provider CLI call) blind to the real `~/.claude` tree regardless of
-  entitlement exceptions. Distribution remains signed/notarized GitHub
-  Releases, not the Mac App Store, so sandboxing had no upside here.
 
 ## [1.3.3] — 2026-07-17
 

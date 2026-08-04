@@ -1,6 +1,6 @@
 import 'package:ai_tray/core/components/metric_card.dart';
 import 'package:ai_tray/core/components/progress_ring.dart';
-import 'package:ai_tray/theme/app_theme.dart';
+import 'package:ai_tray/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,10 +50,7 @@ void main() {
 
   testWidgets('retains Claude percentage-only presentation', (tester) async {
     await tester.pumpWidget(
-      wrap(
-        const MetricCard(label: 'Session', percent: 24),
-        disableAnimations: true,
-      ),
+      wrap(const MetricCard(label: 'Session', percent: 24)),
     );
 
     expect(find.text('24% used'), findsOneWidget);
