@@ -67,6 +67,31 @@ void main() {
     expect(ids, {'abc', 'def'});
   });
 
+  test('orders sessions most-recently-active first, not by enumeration '
+      'order', () async {
+    fileSystem
+      ..addFile(
+        '/root/-home-claude-one/oldest.jsonl',
+        lines: const ['line'],
+        modifiedAt: DateTime.utc(2026, 7, 1),
+      )
+      ..addFile(
+        '/root/-home-claude-two/newest.jsonl',
+        lines: const ['line'],
+        modifiedAt: DateTime.utc(2026, 7, 31),
+      )
+      ..addFile(
+        '/root/-home-claude-three/middle.jsonl',
+        lines: const ['line'],
+        modifiedAt: DateTime.utc(2026, 7, 15),
+      );
+
+    final result = await repository.listSessions();
+
+    final ids = result.valueOrNull!.map((s) => s.sessionId).toList();
+    expect(ids, ['newest', 'middle', 'oldest']);
+  });
+
   test('merges liveness onto matching sessions', () async {
     fileSystem
       ..addFile('/root/-home-claude-one/live.jsonl', lines: const [])

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:ai_tray/core/components/log_chip.dart';
@@ -13,7 +14,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Design-system log viewer (PD-021).
+/// Professional log explorer (V3 redesign): search, level + dynamic
+/// provider filters, optional grouping by provider, expandable rows with
+/// a metadata drawer (full timestamp, error, stack trace, recovery
+/// hint), and plain-text/JSON export — built on `BufferedAppLogger`'s
+/// existing broadcast stream (PD-020), no new data plumbing needed.
 final class LogsPage extends ConsumerStatefulWidget {
   const LogsPage({super.key});
 
@@ -25,6 +30,8 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
   final _search = TextEditingController();
   LogLevel? _filter;
   String? _providerFilter;
+  bool _groupByProvider = false;
+  final Set<String> _expandedKeys = {};
   StreamSubscription<List<LogEntry>>? _sub;
   List<LogEntry> _entries = const [];
 
@@ -45,6 +52,9 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     super.dispose();
   }
 
+  String _rowKey(LogEntry e) =>
+      '${e.timestamp.microsecondsSinceEpoch}-${e.message.hashCode}';
+
   List<LogEntry> get _filtered {
     final q = _search.text.trim().toLowerCase();
     return _entries.reversed.where((e) {
@@ -57,15 +67,33 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     }).toList();
   }
 
+  List<String> get _availableProviders {
+    final providers =
+        _entries.map((e) => e.provider).whereType<String>().toSet().toList()
+          ..sort();
+    return providers;
+  }
+
   @override
   Widget build(BuildContext context) {
     final logger = ref.watch(bufferedAppLoggerProvider);
     final rows = _filtered;
+    final providers = _availableProviders;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Logs'),
         actions: [
+          IconButton(
+            tooltip: _groupByProvider ? 'Ungroup' : 'Group by provider',
+            onPressed: () =>
+                setState(() => _groupByProvider = !_groupByProvider),
+            icon: Icon(
+              _groupByProvider
+                  ? Icons.view_list_outlined
+                  : Icons.layers_outlined,
+            ),
+          ),
           IconButton(
             tooltip: 'Copy',
             onPressed: () async {
@@ -81,6 +109,21 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
                 );
             },
             icon: const Icon(Icons.copy_outlined),
+          ),
+          PopupMenuButton<_ExportFormat>(
+            tooltip: 'Export',
+            icon: const Icon(Icons.download_outlined),
+            onSelected: (format) => unawaited(_export(logger, format)),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: _ExportFormat.plainText,
+                child: Text('Export as .txt'),
+              ),
+              PopupMenuItem(
+                value: _ExportFormat.json,
+                child: Text('Export as .json'),
+              ),
+            ],
           ),
           IconButton(
             tooltip: 'Clear',
@@ -98,13 +141,8 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
             icon: const Icon(Icons.delete_outline),
           ),
           IconButton(
-            tooltip: 'Export',
-            onPressed: () => unawaited(_export(logger)),
-            icon: const Icon(Icons.download_outlined),
-          ),
-          IconButton(
-            tooltip: 'Open folder',
-            onPressed: () => unawaited(_openFolder()),
+            tooltip: 'Reveal export folder',
+            onPressed: () => unawaited(_reveal(Directory.systemTemp.path)),
             icon: const Icon(Icons.folder_open_outlined),
           ),
         ],
@@ -118,20 +156,14 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
               Spacing.md,
               Spacing.sm,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _search,
-                    style: context.typography.body,
-                    decoration: const InputDecoration(
-                      hintText: 'Search logs…',
-                      prefixIcon: Icon(Icons.search, size: 16),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ],
+            child: TextField(
+              controller: _search,
+              style: context.typography.body,
+              decoration: const InputDecoration(
+                hintText: 'Search logs…',
+                prefixIcon: Icon(Icons.search, size: 16),
+              ),
+              onChanged: (_) => setState(() {}),
             ),
           ),
           SingleChildScrollView(
@@ -154,29 +186,26 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
             ),
           ),
           const SizedBox(height: Spacing.xs),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-            child: Row(
-              children: [
-                _Chip(
-                  label: 'ALL PROVIDERS',
-                  selected: _providerFilter == null,
-                  onTap: () => setState(() => _providerFilter = null),
-                ),
-                _Chip(
-                  label: 'CLAUDE',
-                  selected: _providerFilter == 'claude',
-                  onTap: () => setState(() => _providerFilter = 'claude'),
-                ),
-                _Chip(
-                  label: 'COPILOT',
-                  selected: _providerFilter == 'copilot',
-                  onTap: () => setState(() => _providerFilter = 'copilot'),
-                ),
-              ],
+          if (providers.isNotEmpty)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+              child: Row(
+                children: [
+                  _Chip(
+                    label: 'ALL PROVIDERS',
+                    selected: _providerFilter == null,
+                    onTap: () => setState(() => _providerFilter = null),
+                  ),
+                  for (final provider in providers)
+                    _Chip(
+                      label: provider.toUpperCase(),
+                      selected: _providerFilter == provider,
+                      onTap: () => setState(() => _providerFilter = provider),
+                    ),
+                ],
+              ),
             ),
-          ),
           const SectionDivider(),
           Expanded(
             child: rows.isEmpty
@@ -194,47 +223,29 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
                       textAlign: TextAlign.center,
                     ),
                   )
+                : _groupByProvider
+                ? _GroupedLogList(
+                    rows: rows,
+                    expandedKeys: _expandedKeys,
+                    rowKey: _rowKey,
+                    onToggle: (key) => setState(() {
+                      if (!_expandedKeys.remove(key)) _expandedKeys.add(key);
+                    }),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
                     itemCount: rows.length,
                     itemBuilder: (context, index) {
                       final entry = rows[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: Spacing.sm),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 64,
-                              child: Text(
-                                entry.formattedTime,
-                                style: context.typography.caption,
-                              ),
-                            ),
-                            LogChip(level: entry.level),
-                            const SizedBox(width: Spacing.sm),
-                            SizedBox(
-                              width: 110,
-                              child: Text(
-                                [
-                                  entry.component ?? 'ai_tray',
-                                  if (entry.category != null) entry.category,
-                                ].join(' · '),
-                                style: context.typography.label,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Expanded(
-                              child: SelectableText(
-                                entry.message +
-                                    (entry.recoveryHint == null
-                                        ? ''
-                                        : '\n→ ${entry.recoveryHint}'),
-                                style: context.typography.terminalOutput,
-                              ),
-                            ),
-                          ],
-                        ),
+                      final key = _rowKey(entry);
+                      return _LogRow(
+                        entry: entry,
+                        expanded: _expandedKeys.contains(key),
+                        onToggle: () => setState(() {
+                          if (!_expandedKeys.remove(key)) {
+                            _expandedKeys.add(key);
+                          }
+                        }),
                       );
                     },
                   ),
@@ -251,7 +262,7 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     );
   }
 
-  Future<void> _export(BufferedAppLogger logger) async {
+  Future<void> _export(BufferedAppLogger logger, _ExportFormat format) async {
     if (logger.entries.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -260,19 +271,27 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
       return;
     }
     try {
+      final extension = format == _ExportFormat.json ? 'json' : 'txt';
+      final content = format == _ExportFormat.json
+          ? _toJson(logger.entries)
+          : logger.exportPlainText();
       final file = File(
         '${Directory.systemTemp.path}/ai-tray-logs-'
-        '${DateTime.now().millisecondsSinceEpoch}.txt',
+        '${DateTime.now().millisecondsSinceEpoch}.$extension',
       );
-      await file.writeAsString(logger.exportPlainText());
-      await Clipboard.setData(ClipboardData(text: file.path));
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text('Exported → ${file.path}')),
-          );
-      }
+      await file.writeAsString(content);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('Exported → ${file.path}'),
+            action: SnackBarAction(
+              label: 'Reveal',
+              onPressed: () => unawaited(_reveal(file.parent.path)),
+            ),
+          ),
+        );
     } on Exception catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -284,16 +303,227 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     }
   }
 
-  Future<void> _openFolder() async {
-    final dir = Directory.systemTemp.path;
-    await Clipboard.setData(ClipboardData(text: dir));
-    if (mounted) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(content: Text('Temp folder path copied: $dir')),
-        );
+  String _toJson(List<LogEntry> entries) {
+    return jsonEncode([
+      for (final e in entries)
+        {
+          'timestamp': e.timestamp.toIso8601String(),
+          'level': e.level.name,
+          'message': e.message,
+          if (e.component != null) 'component': e.component,
+          if (e.provider != null) 'provider': e.provider,
+          if (e.category != null) 'category': e.category,
+          if (e.recoveryHint != null) 'recoveryHint': e.recoveryHint,
+          if (e.error != null) 'error': e.error.toString(),
+          if (e.stackTrace != null) 'stackTrace': e.stackTrace.toString(),
+        },
+    ]);
+  }
+
+  Future<void> _reveal(String dir) async {
+    try {
+      if (Platform.isMacOS) {
+        await Process.run('open', [dir]);
+      } else if (Platform.isWindows) {
+        await Process.run('explorer', [dir]);
+      } else if (Platform.isLinux) {
+        await Process.run('xdg-open', [dir]);
+      } else {
+        throw const OSError('unsupported platform');
+      }
+    } on Object {
+      await Clipboard.setData(ClipboardData(text: dir));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text("Couldn't open the folder — path copied: $dir"),
+            ),
+          );
+      }
     }
+  }
+}
+
+enum _ExportFormat { plainText, json }
+
+final class _GroupedLogList extends StatelessWidget {
+  const _GroupedLogList({
+    required this.rows,
+    required this.expandedKeys,
+    required this.rowKey,
+    required this.onToggle,
+  });
+
+  final List<LogEntry> rows;
+  final Set<String> expandedKeys;
+  final String Function(LogEntry) rowKey;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final byProvider = <String, List<LogEntry>>{};
+    for (final entry in rows) {
+      (byProvider[entry.provider ?? 'ai_tray'] ??= []).add(entry);
+    }
+    final groupKeys = byProvider.keys.toList()..sort();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+      itemCount: groupKeys.length,
+      itemBuilder: (context, index) {
+        final key = groupKeys[index];
+        final entries = byProvider[key]!;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: Spacing.sm),
+          child: SectionCard(
+            padding: EdgeInsets.zero,
+            child: Theme(
+              data: Theme.of(
+                context,
+              ).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                initiallyExpanded: true,
+                title: Text(
+                  '${key.toUpperCase()} · ${entries.length}',
+                  style: context.typography.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                childrenPadding: const EdgeInsets.only(bottom: Spacing.sm),
+                children: [
+                  for (final entry in entries)
+                    _LogRow(
+                      entry: entry,
+                      expanded: expandedKeys.contains(rowKey(entry)),
+                      onToggle: () => onToggle(rowKey(entry)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+final class _LogRow extends StatelessWidget {
+  const _LogRow({
+    required this.entry,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final LogEntry entry;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    return InkWell(
+      onTap: onToggle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  expanded ? Icons.expand_more : Icons.chevron_right,
+                  size: 16,
+                  color: context.colors.textMuted,
+                ),
+                SizedBox(
+                  width: 64,
+                  child: Text(entry.formattedTime, style: type.caption),
+                ),
+                LogChip(level: entry.level),
+                const SizedBox(width: Spacing.sm),
+                SizedBox(
+                  width: 110,
+                  child: Text(
+                    [
+                      entry.component ?? 'ai_tray',
+                      if (entry.category != null) entry.category,
+                    ].join(' · '),
+                    style: type.label,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    entry.message,
+                    style: type.terminalOutput,
+                    maxLines: expanded ? null : 1,
+                    overflow: expanded ? null : TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            if (expanded) ...[
+              const SizedBox(height: Spacing.xs),
+              Padding(
+                padding: const EdgeInsets.only(left: 24),
+                child: _MetadataDrawer(entry: entry),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+final class _MetadataDrawer extends StatelessWidget {
+  const _MetadataDrawer({required this.entry});
+
+  final LogEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final type = context.typography;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.colors.surfaceAlt,
+        borderRadius: BorderRadius.circular(RadiusTokens.sm),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InfoRow(
+              label: 'Timestamp',
+              value: entry.timestamp.toIso8601String(),
+            ),
+            if (entry.provider != null)
+              InfoRow(label: 'Provider', value: entry.provider!),
+            if (entry.category != null)
+              InfoRow(label: 'Category', value: entry.category!),
+            if (entry.recoveryHint != null)
+              InfoRow(label: 'Suggested fix', value: entry.recoveryHint!),
+            if (entry.error != null)
+              InfoRow(
+                label: 'Error',
+                value: '${entry.error}',
+                valueColor: context.colors.error,
+              ),
+            if (entry.stackTrace != null) ...[
+              const SizedBox(height: Spacing.xs),
+              SelectableText(
+                '${entry.stackTrace}',
+                style: type.terminalOutput.copyWith(fontSize: 11),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
