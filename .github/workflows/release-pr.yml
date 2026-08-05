@@ -12,9 +12,9 @@ concurrency:
 jobs:
   quality:
     if: startsWith(github.head_ref, 'release/')
-    # Pinned to the commit tag v1 resolved to on 2026-08-02. Bump deliberately:
+    # Pinned to the commit tag v1 resolved to on 2026-08-05. Bump deliberately:
     # resolve the new SHA for the tag you want, don't just move to @v1.
-    uses: roshandroids/platform-ci/.github/workflows/quality.yml@ae93a81f35e088ccd8026557d27cb95e24b3fd12
+    uses: roshandroids/platform-ci/.github/workflows/quality.yml@143c92a533dedc33487ef4cee28091d8cc078570
     with:
       config-path: ci.yaml
 
@@ -22,7 +22,7 @@ jobs:
     if: startsWith(github.head_ref, 'release/')
     needs: quality
     # Pinned to the same resolved commit as the quality job above.
-    uses: roshandroids/platform-ci/.github/workflows/build.yml@ae93a81f35e088ccd8026557d27cb95e24b3fd12
+    uses: roshandroids/platform-ci/.github/workflows/build.yml@143c92a533dedc33487ef4cee28091d8cc078570
     with:
       config-path: ci.yaml
       trigger: release
