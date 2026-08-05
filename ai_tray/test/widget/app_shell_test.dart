@@ -163,8 +163,9 @@ void main() {
 
       expect(find.byKey(const ValueKey('help-list')), findsOneWidget);
 
-      Navigator.of(tester.element(find.byKey(const ValueKey('help-list'))))
-          .pop();
+      Navigator.of(
+        tester.element(find.byKey(const ValueKey('help-list'))),
+      ).pop();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
 

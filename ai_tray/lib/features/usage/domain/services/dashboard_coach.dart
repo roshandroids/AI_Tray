@@ -63,9 +63,7 @@ CoachMessage? selectCoachMessage({
     );
   }
 
-  if (!notificationsEnabled &&
-      sessionPercent != null &&
-      sessionPercent >= 80) {
+  if (!notificationsEnabled && sessionPercent != null && sessionPercent >= 80) {
     return const CoachMessage(
       kind: CoachKind.notificationsOff,
       text: 'Notifications are off — enable them in Settings to catch a reset.',

@@ -31,10 +31,13 @@ void main() {
       await tester.tap(find.byTooltip('Group by provider'));
       await tester.pump();
 
-      expect(find.byType(SizedBox).evaluate().any((e) {
-        final box = e.widget as SizedBox;
-        return box.height == 320;
-      }), isFalse);
+      expect(
+        find.byType(SizedBox).evaluate().any((e) {
+          final box = e.widget as SizedBox;
+          return box.height == 320;
+        }),
+        isFalse,
+      );
     },
   );
 

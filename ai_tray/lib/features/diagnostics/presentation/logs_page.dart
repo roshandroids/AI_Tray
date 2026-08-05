@@ -424,8 +424,7 @@ final class _GroupedLogList extends StatelessWidget {
                           height: _virtualizedHeight,
                           child: ListView.builder(
                             itemCount: entries.length,
-                            itemBuilder: (context, i) =>
-                                rowBuilder(entries[i]),
+                            itemBuilder: (context, i) => rowBuilder(entries[i]),
                           ),
                         ),
                       ]

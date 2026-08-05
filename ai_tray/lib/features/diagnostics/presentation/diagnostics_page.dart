@@ -508,10 +508,12 @@ final class DiagnosticsPage extends ConsumerWidget {
     WidgetRef ref,
   ) async {
     try {
-      await ref.read(notificationGatewayProvider).notify(
-        title: 'AI Tray',
-        body: 'Test notification from Diagnostics',
-      );
+      await ref
+          .read(notificationGatewayProvider)
+          .notify(
+            title: 'AI Tray',
+            body: 'Test notification from Diagnostics',
+          );
     } on Exception catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
