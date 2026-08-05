@@ -5,6 +5,8 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-08-05
+
 ### Added
 - **App shell redesign (V3):** persistent `AppShell` (NavigationRail +
   IndexedStack) replaces ad hoc `Navigator.push`; a global Cmd+K command
