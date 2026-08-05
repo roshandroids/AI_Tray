@@ -374,6 +374,14 @@ final class _GroupedLogList extends StatelessWidget {
   final String Function(LogEntry) rowKey;
   final ValueChanged<String> onToggle;
 
+  /// Above this many entries, a group's rows render inside a bounded,
+  /// virtualized `ListView.builder` instead of directly as
+  /// `ExpansionTile.children` — `ExpansionTile` mounts every child
+  /// eagerly (just height-animates them), so a single busy provider could
+  /// otherwise build hundreds of `_LogRow`s at once (§7.1).
+  static const _virtualizeThreshold = 30;
+  static const _virtualizedHeight = 320.0;
+
   @override
   Widget build(BuildContext context) {
     final byProvider = <String, List<LogEntry>>{};
@@ -388,6 +396,11 @@ final class _GroupedLogList extends StatelessWidget {
       itemBuilder: (context, index) {
         final key = groupKeys[index];
         final entries = byProvider[key]!;
+        _LogRow rowBuilder(LogEntry entry) => _LogRow(
+          entry: entry,
+          expanded: expandedKeys.contains(rowKey(entry)),
+          onToggle: () => onToggle(rowKey(entry)),
+        );
         return Padding(
           padding: const EdgeInsets.only(bottom: Spacing.sm),
           child: SectionCard(
@@ -405,14 +418,18 @@ final class _GroupedLogList extends StatelessWidget {
                   ),
                 ),
                 childrenPadding: const EdgeInsets.only(bottom: Spacing.sm),
-                children: [
-                  for (final entry in entries)
-                    _LogRow(
-                      entry: entry,
-                      expanded: expandedKeys.contains(rowKey(entry)),
-                      onToggle: () => onToggle(rowKey(entry)),
-                    ),
-                ],
+                children: entries.length > _virtualizeThreshold
+                    ? [
+                        SizedBox(
+                          height: _virtualizedHeight,
+                          child: ListView.builder(
+                            itemCount: entries.length,
+                            itemBuilder: (context, i) =>
+                                rowBuilder(entries[i]),
+                          ),
+                        ),
+                      ]
+                    : [for (final entry in entries) rowBuilder(entry)],
               ),
             ),
           ),
