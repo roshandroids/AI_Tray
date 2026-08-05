@@ -11,7 +11,6 @@ export 'metric_card.dart';
 export 'page_header.dart';
 export 'progress_ring.dart';
 export 'queue_status_chip.dart';
-export 'responsive_grid.dart';
 export 'section_chrome.dart';
 export 'session_card.dart';
 export 'settings_chrome.dart';
