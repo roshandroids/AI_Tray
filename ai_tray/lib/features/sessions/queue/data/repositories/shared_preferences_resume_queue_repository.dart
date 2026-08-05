@@ -184,6 +184,23 @@ final class SharedPreferencesResumeQueueRepository
   }
 
   @override
+  Future<Result<Unit>> cancel(String id) async {
+    final listResult = await list();
+    final listFailure = listResult.failureOrNull;
+    if (listFailure != null) return Result.failure(listFailure);
+    final items = listResult.valueOrNull ?? const <ResumeQueueItem>[];
+
+    final updated = <ResumeQueueItem>[
+      for (final item in items)
+        if (item.id == id)
+          item.copyWith(status: ResumeQueueStatus.cancelled)
+        else
+          item,
+    ];
+    return _writeAll(updated);
+  }
+
+  @override
   Future<Result<Unit>> retry(String id) async {
     final listResult = await list();
     final listFailure = listResult.failureOrNull;

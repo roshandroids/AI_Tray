@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/confirmation_dialog.dart';
 import 'package:ai_tray/core/components/empty_state.dart';
 import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
@@ -117,24 +118,67 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
                 if (items.isEmpty) {
                   return const _QueueEmptyState(key: ValueKey('queue-empty'));
                 }
+                final active = items
+                    .where(
+                      (i) =>
+                          i.status == ResumeQueueStatus.pending ||
+                          i.status == ResumeQueueStatus.running,
+                    )
+                    .toList();
+                final history = items
+                    .where(
+                      (i) =>
+                          i.status != ResumeQueueStatus.pending &&
+                          i.status != ResumeQueueStatus.running,
+                    )
+                    .toList();
                 return Semantics(
                   container: true,
                   label:
                       'Resume queue, ${items.length} '
                       '${items.length == 1 ? 'item' : 'items'}',
-                  child: ListView.builder(
+                  child: ListView(
                     key: const ValueKey('queue-list'),
                     padding: const EdgeInsets.all(Spacing.md),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) => _QueueItemTile(
-                      item: items[index],
-                      onRemove: items[index].status == ResumeQueueStatus.running
-                          ? null
-                          : () => unawaited(notifier.remove(items[index].id)),
-                      onRetry: items[index].status == ResumeQueueStatus.failed
-                          ? () => unawaited(notifier.retry(items[index].id))
-                          : null,
-                    ),
+                    children: [
+                      for (final item in active)
+                        _QueueItemTile(
+                          key: ValueKey('queue-item-${item.id}'),
+                          item: item,
+                          onCancel: item.status == ResumeQueueStatus.pending
+                              ? () =>
+                                    unawaited(_cancel(context, notifier, item))
+                              : null,
+                          onRemove: item.status == ResumeQueueStatus.running
+                              ? null
+                              : () => unawaited(notifier.remove(item.id)),
+                          onRetry: item.status == ResumeQueueStatus.failed
+                              ? () => unawaited(notifier.retry(item.id))
+                              : null,
+                        ),
+                      if (history.isNotEmpty) ...[
+                        if (active.isNotEmpty)
+                          const SizedBox(height: Spacing.sm),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Spacing.xs,
+                          ),
+                          child: Text(
+                            'History',
+                            style: context.typography.section,
+                          ),
+                        ),
+                        for (final item in history)
+                          _QueueItemTile(
+                            key: ValueKey('queue-item-${item.id}'),
+                            item: item,
+                            onRemove: () => unawaited(notifier.remove(item.id)),
+                            onRetry: item.status == ResumeQueueStatus.failed
+                                ? () => unawaited(notifier.retry(item.id))
+                                : null,
+                          ),
+                      ],
+                    ],
                   ),
                 );
               },
@@ -146,14 +190,38 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
   }
 }
 
+/// Confirms before cancelling a pending item (V4 §6.1) — cancelling keeps
+/// it in the list (as `cancelled`, for history) rather than deleting it,
+/// so a confirmation is worth the click unlike a plain list refresh.
+Future<void> _cancel(
+  BuildContext context,
+  ResumeQueueController notifier,
+  ResumeQueueItem item,
+) async {
+  final confirmed = await showConfirmationDialog(
+    context,
+    title: 'Cancel this task?',
+    body: "It'll move to History as cancelled instead of running.",
+    confirmLabel: 'Cancel task',
+  );
+  if (confirmed) await notifier.cancel(item.id);
+}
+
 final class _QueueItemTile extends StatelessWidget {
   const _QueueItemTile({
     required this.item,
     required this.onRemove,
     required this.onRetry,
+    super.key,
+    this.onCancel,
   });
 
   final ResumeQueueItem item;
+
+  /// Non-null only for a `pending` item — marks it `cancelled` instead of
+  /// deleting it (V4 §6.1). Takes precedence over [onRemove] in the UI
+  /// when both would otherwise apply to the same pending item.
+  final VoidCallback? onCancel;
 
   /// `null` when this item can't be removed yet (currently `running` —
   /// there's no cooperative cancellation of an in-flight resume).
@@ -196,16 +264,24 @@ final class _QueueItemTile extends StatelessWidget {
                     iconSize: 18,
                     visualDensity: VisualDensity.compact,
                   ),
-                IconButton(
-                  key: ValueKey('queue-remove-${item.id}'),
-                  tooltip: item.status == ResumeQueueStatus.pending
-                      ? 'Cancel'
-                      : 'Remove',
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.close),
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                ),
+                if (onCancel != null)
+                  IconButton(
+                    key: ValueKey('queue-cancel-${item.id}'),
+                    tooltip: 'Cancel',
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.close),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                  )
+                else
+                  IconButton(
+                    key: ValueKey('queue-remove-${item.id}'),
+                    tooltip: 'Remove',
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.close),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
             const SizedBox(height: Spacing.xs),

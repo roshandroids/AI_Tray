@@ -147,6 +147,32 @@ void main() {
     expect(ref.read(resumeQueueControllerProvider).value, isEmpty);
   });
 
+  test('cancel() marks the item cancelled and refreshes the list', () async {
+    final repository = FakeResumeQueueRepository(
+      items: [
+        ResumeQueueItem(
+          id: 'q1',
+          sessionId: 'abc',
+          cwd: '/x',
+          prompt: 'continue',
+          maxBudgetUsd: 1,
+          createdAt: DateTime.utc(2026, 7, 31),
+        ),
+      ],
+    );
+    final ref = container(repository);
+    addTearDown(ref.dispose);
+    await ref.read(resumeQueueControllerProvider.future);
+
+    final ok = await ref
+        .read(resumeQueueControllerProvider.notifier)
+        .cancel('q1');
+
+    expect(ok, isTrue);
+    final items = ref.read(resumeQueueControllerProvider).value!;
+    expect(items.single.status, ResumeQueueStatus.cancelled);
+  });
+
   test('remove() returns false, without throwing, on a repository '
       'failure', () async {
     final repository = FakeResumeQueueRepository(

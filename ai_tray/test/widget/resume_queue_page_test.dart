@@ -73,6 +73,8 @@ void main() {
       ],
     );
 
+    await tester.binding.setSurfaceSize(const Size(800, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await pumpPage(tester, repository);
     await tester.pump();
 
@@ -107,22 +109,28 @@ void main() {
     expect(find.byKey(const ValueKey('queue-empty')), findsOneWidget);
   });
 
-  testWidgets('tapping remove on a pending item deletes it from the list', (
-    tester,
-  ) async {
-    final repository = FakeResumeQueueRepository(
-      items: [item(id: '1', sessionId: 'a', cwd: '/home/claude/pending-proj')],
-    );
+  testWidgets(
+    'cancelling a pending item moves it to History as cancelled',
+    (tester) async {
+      final repository = FakeResumeQueueRepository(
+        items: [
+          item(id: '1', sessionId: 'a', cwd: '/home/claude/pending-proj'),
+        ],
+      );
 
-    await pumpPage(tester, repository);
-    await tester.pump();
+      await pumpPage(tester, repository);
+      await tester.pump();
 
-    await tester.tap(find.byKey(const ValueKey('queue-remove-1')));
-    await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('queue-cancel-1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel task'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('pending-proj'), findsNothing);
-    expect(find.byKey(const ValueKey('queue-empty')), findsOneWidget);
-  });
+      expect(find.text('pending-proj'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Cancelled'), findsOneWidget);
+    },
+  );
 
   testWidgets('the remove button is disabled for a running item', (
     tester,

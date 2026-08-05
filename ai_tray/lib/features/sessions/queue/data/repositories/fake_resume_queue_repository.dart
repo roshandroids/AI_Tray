@@ -101,6 +101,17 @@ final class FakeResumeQueueRepository implements ResumeQueueRepository {
   }
 
   @override
+  Future<Result<Unit>> cancel(String id) async {
+    for (var i = 0; i < _items.length; i++) {
+      if (_items[i].id == id) {
+        _items[i] = _items[i].copyWith(status: ResumeQueueStatus.cancelled);
+        break;
+      }
+    }
+    return const Result.success(Unit.unit);
+  }
+
+  @override
   Future<Result<Unit>> retry(String id) async {
     for (var i = 0; i < _items.length; i++) {
       if (_items[i].id == id) {

@@ -39,6 +39,7 @@ final class StatusPresentation {
       ResumeQueueStatus.running => ('Running', colors.info),
       ResumeQueueStatus.succeeded => ('Succeeded', colors.success),
       ResumeQueueStatus.failed => ('Failed', colors.error),
+      ResumeQueueStatus.cancelled => ('Cancelled', colors.textMuted),
     };
     return StatusPresentation(color: color, label: label);
   }
