@@ -69,7 +69,9 @@ try {
 
   const extractRoot = join(workRoot, "node-extract");
   await mkdir(extractRoot);
-  await run("tar", ["-xf", archivePath, "-C", extractRoot]);
+  // --force-local: Windows runners can have GNU tar ahead of bsdtar on PATH,
+  // and GNU tar misparses a "D:\..." path as a "D:" remote host without it.
+  await run("tar", ["--force-local", "-xf", archivePath, "-C", extractRoot]);
   const extractedEntries = await readdir(extractRoot);
   if (extractedEntries.length !== 1) {
     fail(`Node archive must contain one root directory, found ${extractedEntries.length}`);

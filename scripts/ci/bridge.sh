@@ -24,9 +24,16 @@ require_cmd npm
 ACTUAL_NPM="$(npm --version)"
 if [[ "${ACTUAL_NPM}" != "${NPM_VERSION}" ]]; then
   if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-    fail "npm version ${ACTUAL_NPM} != pinned ${NPM_VERSION}"
+    # Runner images bundle whatever npm shipped with their preinstalled Node,
+    # which drifts independently of our pinned Node version. Self-heal to the
+    # exact pin rather than failing on that drift.
+    warn "npm ${ACTUAL_NPM} != pinned ${NPM_VERSION}; installing pinned npm"
+    npm install --global "npm@${NPM_VERSION}"
+    ACTUAL_NPM="$(npm --version)"
+    [[ "${ACTUAL_NPM}" == "${NPM_VERSION}" ]] || fail "npm version ${ACTUAL_NPM} != pinned ${NPM_VERSION} after self-heal"
+  else
+    warn "npm ${ACTUAL_NPM} != pinned ${NPM_VERSION} (GHA enforces the pin)"
   fi
-  warn "npm ${ACTUAL_NPM} != pinned ${NPM_VERSION} (GHA enforces the pin)"
 fi
 
 log "npm ci"
