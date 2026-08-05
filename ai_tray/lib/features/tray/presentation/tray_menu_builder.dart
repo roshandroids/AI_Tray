@@ -1,10 +1,10 @@
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
-import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/domain/models/weekly_usage.dart';
+import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:meta/meta.dart';
 import 'package:tray_manager/tray_manager.dart';
 
@@ -63,18 +63,15 @@ abstract final class TrayMenuBuilder {
     String iconTitle = '',
   }) {
     final usage = status.lastResult?.usage;
-    final outcome = status.lastResult?.status;
     final error = status.lastResult?.error;
     final refreshing = status.phase == RefreshPhase.refreshing;
 
     final sessionPct = usage?.sessionUsedPercent;
     final week = _primaryWeek(usage);
-    final badge = _statusBadge(
-      refreshing: refreshing,
-      usage: usage,
-      outcome: outcome,
-      error: error,
-    );
+    // Delegates to the same kind/label resolution the dashboard's
+    // StatusBadge uses (UsageStatusMapper, V4 §1.2) so the native tray
+    // menu text can't drift from the in-app badge wording.
+    final badge = UsageStatusMapper.label(UsageStatusMapper.kind(status));
     final updatedAt = status.lastSuccessAt ?? usage?.fetchedAt;
 
     final header = _headerLine(
@@ -149,21 +146,6 @@ abstract final class TrayMenuBuilder {
       };
     }
     return '$providerDisplayName · $badge';
-  }
-
-  static String _statusBadge({
-    required bool refreshing,
-    required UsageInfo? usage,
-    required RefreshOutcome? outcome,
-    required AppFailure? error,
-  }) {
-    if (refreshing) return 'Refreshing';
-    if (outcome == RefreshOutcome.failure && error != null) return 'Error';
-    if (usage == null) return 'Waiting';
-    if (usage.isFromCache || outcome == RefreshOutcome.softFailure) {
-      return 'Cached';
-    }
-    return 'Live';
   }
 
   static String _relativeUpdated(DateTime? at) {

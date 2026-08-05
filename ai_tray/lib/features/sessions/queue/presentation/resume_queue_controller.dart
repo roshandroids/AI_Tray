@@ -87,6 +87,27 @@ final class ResumeQueueController extends AsyncNotifier<List<ResumeQueueItem>> {
     return true;
   }
 
+  /// Cancels a `pending` item — unlike [remove], it stays in the list
+  /// (marked `cancelled`) so it shows up in the queue's history (V4
+  /// §6.1) instead of disappearing. Returns `false` (without throwing) on
+  /// failure so the page can show an inline error instead of crashing.
+  Future<bool> cancel(String id) async {
+    final result = await ref.read(resumeQueueRepositoryProvider).cancel(id);
+    final failure = result.failureOrNull;
+    if (failure != null) {
+      ref
+          .read(appLoggerProvider)
+          .warning(
+            'cancel failed id=$id',
+            name: 'resume_queue',
+            error: failure,
+          );
+      return false;
+    }
+    await refresh();
+    return true;
+  }
+
   /// Resets a `failed` item back to `pending` so "Run next" can pick it
   /// up again, clearing its previous outcome (design principle 4: a
   /// retry starts clean, it doesn't carry the old failure forward).

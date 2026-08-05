@@ -9,6 +9,7 @@ import 'package:ai_tray/features/providers/data/claude/claude_cli_adapter.dart';
 import 'package:ai_tray/features/providers/data/process/fake_process_runner.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
 import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 import 'package:ai_tray/features/usage/data/repositories/usage_repository_impl.dart';
@@ -41,6 +42,13 @@ Future<ProviderContainer> _offlineContainer() async {
     overrides: [
       bufferedAppLoggerProvider.overrideWithValue(logger),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      // These tests exercise AppShell, not onboarding — treat this run as
+      // already onboarded.
+      settingsRepositoryProvider.overrideWithValue(
+        InMemorySettingsRepository(
+          AppSettings.defaults().copyWith(hasCompletedOnboarding: true),
+        ),
+      ),
       processRunnerProvider.overrideWithValue(runner),
       usageRepositoryProvider.overrideWith((ref) {
         final repo = UsageRepositoryImpl(
@@ -126,6 +134,107 @@ void main() {
     );
     expect(railAfterAction.selectedIndex, AppDestination.settings.index);
   });
+
+  testWidgets(
+    'the palette can open Help Center and the keyboard shortcuts list',
+    (tester) async {
+      final container = await _offlineContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const AiTrayApp(),
+        ),
+      );
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Open Help Center'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.byKey(const ValueKey('help-list')), findsOneWidget);
+
+      Navigator.of(
+        tester.element(find.byKey(const ValueKey('help-list'))),
+      ).pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Keyboard shortcuts'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Open the command palette'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Restart Product Tour spotlights real nav rail destinations',
+    (tester) async {
+      final container = await _offlineContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const AiTrayApp(),
+        ),
+      );
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Restart Product Tour'));
+      await tester.pump();
+
+      expect(find.text('1 / 3'), findsOneWidget);
+      expect(
+        find.text('Usage, provider health, and quick actions at a glance.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(
+        find.text('Browse past sessions, grouped by project.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(
+        find.text('Queue tasks to run unattended, one at a time.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(find.text('3 / 3'), findsNothing);
+    },
+  );
 
   testWidgets('arrow keys move the palette highlight, Enter invokes it', (
     tester,

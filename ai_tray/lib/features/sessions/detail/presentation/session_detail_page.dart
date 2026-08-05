@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/inline_help.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
@@ -31,23 +33,29 @@ final class SessionDetailPage extends ConsumerWidget {
     final sessionAsync = ref.watch(sessionDetailProvider(sessionId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Session')),
-      body: sessionAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(
-            key: ValueKey('session-detail-loading'),
+      body: Column(
+        children: [
+          const PageHeader(title: 'Session'),
+          Expanded(
+            child: sessionAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(
+                  key: ValueKey('session-detail-loading'),
+                ),
+              ),
+              error: (error, stackTrace) {
+                if (error is SessionLoadException &&
+                    error.code == FailureCode.sessionNotFound) {
+                  return const _SessionNotFoundState(
+                    key: ValueKey('session-detail-not-found'),
+                  );
+                }
+                return _SessionDetailError(error: error);
+              },
+              data: (session) => _SessionDetailBody(session: session),
+            ),
           ),
-        ),
-        error: (error, stackTrace) {
-          if (error is SessionLoadException &&
-              error.code == FailureCode.sessionNotFound) {
-            return const _SessionNotFoundState(
-              key: ValueKey('session-detail-not-found'),
-            );
-          }
-          return _SessionDetailError(error: error);
-        },
-        data: (session) => _SessionDetailBody(session: session),
+        ],
       ),
     );
   }
@@ -312,11 +320,11 @@ final class _SessionNotFoundState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Session no longer available', style: type.emptyTitle),
+              Text('Session no longer available', style: type.section),
               const SizedBox(height: Spacing.sm),
               Text(
                 'This transcript was deleted or moved since it was listed.',
-                style: type.bodySmall,
+                style: type.caption,
               ),
             ],
           ),
@@ -340,9 +348,9 @@ final class _SessionDetailError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Could not load session', style: type.emptyTitle),
+            Text('Could not load session', style: type.section),
             const SizedBox(height: Spacing.sm),
-            Text('$error', style: type.bodySmall, textAlign: TextAlign.center),
+            Text('$error', style: type.caption, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -476,9 +484,19 @@ final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
                 ),
                 style: type.body,
                 enabled: !_submitting,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Budget cap (USD) — required',
                   hintText: 'e.g. 2.00',
+                  suffixIcon: InlineHelp(
+                    message:
+                        'The task stops itself once its cost reaches this '
+                        "cap, even mid-response — it won't run unbounded.",
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: context.colors.textMuted,
+                    ),
+                  ),
                 ),
                 onChanged: (_) => setState(() {}),
               ),

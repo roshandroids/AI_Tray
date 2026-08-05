@@ -104,14 +104,23 @@ final class _SettingsNavRailState extends State<SettingsNavRail> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final query = _search.text.trim().toLowerCase();
-    final sections = query.isEmpty
-        ? SettingsSection.values
-        : [
-            for (final section in SettingsSection.values)
-              if (section.label.toLowerCase().contains(query) ||
-                  section.searchKeywords.any((k) => k.contains(query)))
-                section,
-          ];
+    // Global settings search (V4 §8.3): a query can match an individual
+    // setting's keyword, not just a section's own label — surfaced below
+    // as a hint so picking "App Behavior" for "launch at login" makes
+    // sense instead of looking like an unrelated result.
+    final matches = <(SettingsSection, String?)>[
+      if (query.isEmpty)
+        for (final section in SettingsSection.values) (section, null)
+      else
+        for (final section in SettingsSection.values)
+          if (section.label.toLowerCase().contains(query))
+            (section, null)
+          else if (section.searchKeywords.any((k) => k.contains(query)))
+            (
+              section,
+              section.searchKeywords.firstWhere((k) => k.contains(query)),
+            ),
+    ];
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -137,7 +146,7 @@ final class _SettingsNavRailState extends State<SettingsNavRail> {
               ),
             ),
             Expanded(
-              child: sections.isEmpty
+              child: matches.isEmpty
                   ? Padding(
                       padding: const EdgeInsets.all(Spacing.sm),
                       child: Text(
@@ -148,10 +157,11 @@ final class _SettingsNavRailState extends State<SettingsNavRail> {
                   : ListView(
                       padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
                       children: [
-                        for (final section in sections)
+                        for (final (section, matchedKeyword) in matches)
                           _RailItem(
                             section: section,
                             selected: section == widget.selected,
+                            matchedKeyword: matchedKeyword,
                             onTap: () => widget.onSelect(section),
                           ),
                       ],
@@ -169,11 +179,16 @@ final class _RailItem extends StatelessWidget {
     required this.section,
     required this.selected,
     required this.onTap,
+    this.matchedKeyword,
   });
 
   final SettingsSection section;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Non-null when this section matched the search query via one of its
+  /// individual-setting keywords rather than its own label (V4 §8.3).
+  final String? matchedKeyword;
 
   @override
   Widget build(BuildContext context) {
@@ -204,12 +219,26 @@ final class _RailItem extends StatelessWidget {
               Icon(section.icon, size: 16, color: color),
               const SizedBox(width: Spacing.sm),
               Expanded(
-                child: Text(
-                  section.label,
-                  style: context.typography.label.copyWith(
-                    color: color,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      section.label,
+                      style: context.typography.label.copyWith(
+                        color: color,
+                        fontWeight: selected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
+                    ),
+                    if (matchedKeyword != null)
+                      Text(
+                        'matches "$matchedKeyword"',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.typography.caption,
+                      ),
+                  ],
                 ),
               ),
             ],

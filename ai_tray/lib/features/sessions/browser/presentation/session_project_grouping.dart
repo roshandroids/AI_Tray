@@ -62,3 +62,13 @@ String projectDisplayName({
   final segments = projectPath.split('/').where((s) => s.isNotEmpty).toList();
   return segments.isEmpty ? projectPath : segments.last;
 }
+
+/// Shortens a long filesystem path (V4 §4.1) by eliding from the front, so
+/// the trailing segment — the part that actually distinguishes one project
+/// from another — always stays visible. Plain `overflow: ellipsis` on a
+/// `Text` cuts from the end instead, which hides exactly the segment that
+/// matters for a long absolute path.
+String truncatePath(String path, {int maxLength = 48}) {
+  if (path.length <= maxLength) return path;
+  return '…${path.substring(path.length - maxLength + 1)}';
+}

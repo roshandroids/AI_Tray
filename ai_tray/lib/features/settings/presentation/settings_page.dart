@@ -1,18 +1,23 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/coach_mark_overlay.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
+import 'package:ai_tray/core/navigation/product_tour_keys.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/about/presentation/about_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/help/presentation/help_center_page.dart';
+import 'package:ai_tray/features/notifications/presentation/notifications_page.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/settings/presentation/settings_controller.dart';
@@ -94,65 +99,75 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ref.read(settingsControllerProvider.notifier).lastSettings;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: settings == null
-          ? _SettingsLoadState(
-              loading: settingsState.isLoading,
-              message: _settingsErrorMessage(settingsState.error),
-              onRetry: () => unawaited(
-                ref.read(settingsControllerProvider.notifier).retry(),
-              ),
-            )
-          : Builder(
-              builder: (context) {
-                if (!_binaryInitialized) {
-                  _binaryController.text = settings.claudeBinaryPath ?? '';
-                  _binaryInitialized = true;
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SettingsNavRail(
-                      selected: _section,
-                      onSelect: (section) => setState(() => _section = section),
+      body: Column(
+        children: [
+          const PageHeader(title: 'Settings'),
+          Expanded(
+            child: settings == null
+                ? _SettingsLoadState(
+                    loading: settingsState.isLoading,
+                    message: _settingsErrorMessage(settingsState.error),
+                    onRetry: () => unawaited(
+                      ref.read(settingsControllerProvider.notifier).retry(),
                     ),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(Spacing.md),
+                  )
+                : Builder(
+                    builder: (context) {
+                      if (!_binaryInitialized) {
+                        _binaryController.text =
+                            settings.claudeBinaryPath ?? '';
+                        _binaryInitialized = true;
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (settingsState.hasError) ...[
-                            _InlineError(
-                              message: _settingsErrorMessage(
-                                settingsState.error,
-                              ),
-                              onRetry: () => unawaited(
-                                ref
-                                    .read(settingsControllerProvider.notifier)
-                                    .retry(),
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.md),
-                          ],
-                          Text(
-                            _section.label,
-                            style: context.typography.title,
+                          SettingsNavRail(
+                            selected: _section,
+                            onSelect: (section) =>
+                                setState(() => _section = section),
                           ),
-                          const SizedBox(height: Spacing.md),
-                          ..._buildSection(
-                            settings,
-                            personalization,
-                            iconSwitcher.isSupported,
-                            selectedProvider,
-                            settingsState.isLoading,
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.all(Spacing.md),
+                              children: [
+                                if (settingsState.hasError) ...[
+                                  _InlineError(
+                                    message: _settingsErrorMessage(
+                                      settingsState.error,
+                                    ),
+                                    onRetry: () => unawaited(
+                                      ref
+                                          .read(
+                                            settingsControllerProvider.notifier,
+                                          )
+                                          .retry(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                ],
+                                Text(
+                                  _section.label,
+                                  style: context.typography.title,
+                                ),
+                                const SizedBox(height: Spacing.md),
+                                ..._buildSection(
+                                  settings,
+                                  personalization,
+                                  iconSwitcher.isSupported,
+                                  selectedProvider,
+                                  settingsState.isLoading,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -339,6 +354,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       },
               ),
             ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('View notification history'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const NotificationsPage(),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ],
@@ -432,7 +461,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 unawaited(
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const DiagnosticsPage(),
+                      builder: (_) => DiagnosticsPage(),
                     ),
                   ),
                 );
@@ -446,6 +475,31 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref
                     .read(appShellDestinationProvider.notifier)
                     .select(AppDestination.logs);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Help Center'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpCenterPage(),
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Restart Product Tour'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                final keys = ref.read(productTourKeysProvider);
+                unawaited(
+                  showCoachMarks(context, buildProductTourSteps(keys)),
+                );
               },
             ),
             ListTile(

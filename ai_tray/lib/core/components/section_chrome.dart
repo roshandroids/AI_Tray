@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/theme/component_theme.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +11,19 @@ final class InfoRow extends StatelessWidget {
     super.key,
     this.valueColor,
     this.labelWidth = 112,
+    this.repairLabel,
+    this.onRepair,
   });
 
   final String label;
   final String value;
   final Color? valueColor;
   final double labelWidth;
+
+  /// Optional repair-action slot (V4 §9.5) — every Diagnostics health
+  /// check gets somewhere to fix the problem inline, not just see it.
+  final String? repairLabel;
+  final VoidCallback? onRepair;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +45,17 @@ final class InfoRow extends StatelessWidget {
               ),
             ),
           ),
+          if (repairLabel != null && onRepair != null)
+            Padding(
+              padding: const EdgeInsets.only(left: Spacing.sm),
+              child: InkWell(
+                onTap: onRepair,
+                child: Text(
+                  repairLabel!,
+                  style: type.label.copyWith(color: context.colors.info),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -52,14 +71,14 @@ final class SectionCard extends StatelessWidget {
     required Widget this.child,
     super.key,
     this.title,
-    this.padding = const EdgeInsets.all(Spacing.md),
+    this.padding = const EdgeInsets.all(Spacing.lg),
   }) : children = null;
 
   const SectionCard.divided({
     required this.children,
     super.key,
     this.title,
-    this.padding = const EdgeInsets.all(Spacing.md),
+    this.padding = const EdgeInsets.all(Spacing.lg),
   }) : child = null;
 
   final Widget? child;
@@ -84,11 +103,7 @@ final class SectionCard extends StatelessWidget {
             ],
           );
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(RadiusTokens.md),
-        border: Border.all(color: colors.border),
-      ),
+      decoration: ComponentTheme.panel(colors),
       // ListTile/InkWell children paint their background and ink splashes
       // on the nearest Material ancestor — without this, this DecoratedBox
       // hides those effects (Flutter's ListTile debug assertion catches it).

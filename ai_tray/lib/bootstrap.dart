@@ -6,6 +6,9 @@ import 'package:ai_tray/core/logging/app_logger.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/console_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
+import 'package:ai_tray/core/notifications/io_notification_gateway.dart';
+import 'package:ai_tray/features/notifications/data/history_recording_notification_gateway.dart';
+import 'package:ai_tray/features/notifications/notification_providers.dart';
 import 'package:ai_tray/features/tray/presentation/tray_controller.dart';
 import 'package:ai_tray/features/usage/data/repositories/usage_repository_impl.dart';
 import 'package:flutter/widgets.dart';
@@ -33,6 +36,16 @@ Future<void> bootstrap({
     overrides: [
       bufferedAppLoggerProvider.overrideWithValue(bufferedLogger),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      // Records every notification the app shows into history (V4 §9.4) —
+      // composed here, not inside `core/notifications`, so core stays free
+      // of a dependency on a feature-level repository.
+      notificationGatewayProvider.overrideWith((ref) {
+        return HistoryRecordingNotificationGateway(
+          IoNotificationGateway(logger: ref.watch(appLoggerProvider)),
+          ref.watch(notificationHistoryRepositoryProvider),
+          logger: ref.watch(appLoggerProvider),
+        );
+      }),
     ],
   );
 

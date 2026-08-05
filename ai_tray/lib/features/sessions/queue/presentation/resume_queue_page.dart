@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/confirmation_dialog.dart';
+import 'package:ai_tray/core/components/empty_state.dart';
+import 'package:ai_tray/core/components/inline_help.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
@@ -69,59 +73,150 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
     final notifier = ref.read(resumeQueueControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Queue'),
-        actions: [
-          IconButton(
-            key: const ValueKey('queue-run-next'),
-            tooltip: 'Run next',
-            onPressed: itemsAsync.isLoading
-                ? null
-                : () => unawaited(notifier.runNext()),
-            icon: const Icon(Icons.play_arrow),
+      body: Column(
+        children: [
+          PageHeader(
+            title: 'Queue',
+            actions: [
+              InlineHelp(
+                message:
+                    'Tasks run one at a time, in the background. Nothing '
+                    'executes until you press Run next — queuing a task '
+                    'never starts it on its own.',
+                child: Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: context.colors.textMuted,
+                ),
+              ),
+              IconButton(
+                key: const ValueKey('queue-run-next'),
+                tooltip: 'Run next',
+                onPressed: itemsAsync.isLoading
+                    ? null
+                    : () => unawaited(notifier.runNext()),
+                icon: const Icon(Icons.play_arrow),
+              ),
+              IconButton(
+                tooltip: 'Refresh',
+                onPressed: itemsAsync.isLoading
+                    ? null
+                    : () => unawaited(notifier.refresh()),
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: itemsAsync.isLoading
-                ? null
-                : () => unawaited(notifier.refresh()),
-            icon: const Icon(Icons.refresh),
+          Expanded(
+            child: itemsAsync.when(
+              loading: () => Center(
+                child: Semantics(
+                  label: 'Loading resume queue',
+                  child: const CircularProgressIndicator(
+                    key: ValueKey('queue-loading'),
+                  ),
+                ),
+              ),
+              error: (error, stackTrace) => Center(
+                child: Semantics(
+                  label: 'Could not load the resume queue',
+                  child: Text(
+                    'Could not load the resume queue',
+                    key: const ValueKey('queue-error'),
+                    style: context.typography.body,
+                  ),
+                ),
+              ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return const _QueueEmptyState(key: ValueKey('queue-empty'));
+                }
+                final active = items
+                    .where(
+                      (i) =>
+                          i.status == ResumeQueueStatus.pending ||
+                          i.status == ResumeQueueStatus.running,
+                    )
+                    .toList();
+                final history = items
+                    .where(
+                      (i) =>
+                          i.status != ResumeQueueStatus.pending &&
+                          i.status != ResumeQueueStatus.running,
+                    )
+                    .toList();
+                return Semantics(
+                  container: true,
+                  label:
+                      'Resume queue, ${items.length} '
+                      '${items.length == 1 ? 'item' : 'items'}',
+                  child: ListView(
+                    key: const ValueKey('queue-list'),
+                    padding: const EdgeInsets.all(Spacing.md),
+                    children: [
+                      for (final item in active)
+                        _QueueItemTile(
+                          key: ValueKey('queue-item-${item.id}'),
+                          item: item,
+                          onCancel: item.status == ResumeQueueStatus.pending
+                              ? () =>
+                                    unawaited(_cancel(context, notifier, item))
+                              : null,
+                          onRemove: item.status == ResumeQueueStatus.running
+                              ? null
+                              : () => unawaited(notifier.remove(item.id)),
+                          onRetry: item.status == ResumeQueueStatus.failed
+                              ? () => unawaited(notifier.retry(item.id))
+                              : null,
+                        ),
+                      if (history.isNotEmpty) ...[
+                        if (active.isNotEmpty)
+                          const SizedBox(height: Spacing.sm),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: Spacing.xs,
+                          ),
+                          child: Text(
+                            'History',
+                            style: context.typography.section,
+                          ),
+                        ),
+                        for (final item in history)
+                          _QueueItemTile(
+                            key: ValueKey('queue-item-${item.id}'),
+                            item: item,
+                            onRemove: () => unawaited(notifier.remove(item.id)),
+                            onRetry: item.status == ResumeQueueStatus.failed
+                                ? () => unawaited(notifier.retry(item.id))
+                                : null,
+                          ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: itemsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(key: ValueKey('queue-loading')),
-        ),
-        error: (error, stackTrace) => Center(
-          child: Text(
-            'Could not load the resume queue',
-            key: const ValueKey('queue-error'),
-            style: context.typography.body,
-          ),
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return const _QueueEmptyState(key: ValueKey('queue-empty'));
-          }
-          return ListView.builder(
-            key: const ValueKey('queue-list'),
-            padding: const EdgeInsets.all(Spacing.md),
-            itemCount: items.length,
-            itemBuilder: (context, index) => _QueueItemTile(
-              item: items[index],
-              onRemove: items[index].status == ResumeQueueStatus.running
-                  ? null
-                  : () => unawaited(notifier.remove(items[index].id)),
-              onRetry: items[index].status == ResumeQueueStatus.failed
-                  ? () => unawaited(notifier.retry(items[index].id))
-                  : null,
-            ),
-          );
-        },
-      ),
     );
   }
+}
+
+/// Confirms before cancelling a pending item (V4 §6.1) — cancelling keeps
+/// it in the list (as `cancelled`, for history) rather than deleting it,
+/// so a confirmation is worth the click unlike a plain list refresh.
+Future<void> _cancel(
+  BuildContext context,
+  ResumeQueueController notifier,
+  ResumeQueueItem item,
+) async {
+  final confirmed = await showConfirmationDialog(
+    context,
+    title: 'Cancel this task?',
+    body: "It'll move to History as cancelled instead of running.",
+    confirmLabel: 'Cancel task',
+  );
+  if (confirmed) await notifier.cancel(item.id);
 }
 
 final class _QueueItemTile extends StatelessWidget {
@@ -129,9 +224,16 @@ final class _QueueItemTile extends StatelessWidget {
     required this.item,
     required this.onRemove,
     required this.onRetry,
+    super.key,
+    this.onCancel,
   });
 
   final ResumeQueueItem item;
+
+  /// Non-null only for a `pending` item — marks it `cancelled` instead of
+  /// deleting it (V4 §6.1). Takes precedence over [onRemove] in the UI
+  /// when both would otherwise apply to the same pending item.
+  final VoidCallback? onCancel;
 
   /// `null` when this item can't be removed yet (currently `running` —
   /// there's no cooperative cancellation of an in-flight resume).
@@ -174,21 +276,29 @@ final class _QueueItemTile extends StatelessWidget {
                     iconSize: 18,
                     visualDensity: VisualDensity.compact,
                   ),
-                IconButton(
-                  key: ValueKey('queue-remove-${item.id}'),
-                  tooltip: item.status == ResumeQueueStatus.pending
-                      ? 'Cancel'
-                      : 'Remove',
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.close),
-                  iconSize: 18,
-                  visualDensity: VisualDensity.compact,
-                ),
+                if (onCancel != null)
+                  IconButton(
+                    key: ValueKey('queue-cancel-${item.id}'),
+                    tooltip: 'Cancel',
+                    onPressed: onCancel,
+                    icon: const Icon(Icons.close),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                  )
+                else
+                  IconButton(
+                    key: ValueKey('queue-remove-${item.id}'),
+                    tooltip: 'Remove',
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.close),
+                    iconSize: 18,
+                    visualDensity: VisualDensity.compact,
+                  ),
               ],
             ),
             const SizedBox(height: Spacing.xs),
             Text(
-              item.cwd,
+              truncatePath(item.cwd),
               style: type.caption,
               overflow: TextOverflow.ellipsis,
             ),
@@ -238,22 +348,10 @@ final class _QueueEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('No queued tasks', style: type.emptyTitle),
-            const SizedBox(height: Spacing.sm),
-            Text(
-              "Queue a task from a session's detail page.",
-              style: type.bodySmall,
-            ),
-          ],
-        ),
-      ),
+    return const EmptyState(
+      icon: Icons.pending_actions_outlined,
+      title: 'No queued tasks',
+      body: "Queue a task from a session's detail page.",
     );
   }
 }

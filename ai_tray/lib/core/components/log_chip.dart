@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/components/status_presentation.dart';
 import 'package:ai_tray/core/logging/log_level.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
@@ -11,13 +12,11 @@ final class LogChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (level) {
-      LogLevel.debug => context.colors.textMuted,
-      LogLevel.info => context.colors.success,
-      LogLevel.success => context.colors.cyanAccent,
-      LogLevel.warning => context.colors.warning,
-      LogLevel.error => context.colors.error,
-    };
+    final presentation = StatusPresentation.fromLogLevel(
+      level,
+      context.colors,
+    );
+    final color = presentation.color;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
@@ -30,7 +29,7 @@ final class LogChip extends StatelessWidget {
           vertical: 2,
         ),
         child: Text(
-          level.label,
+          presentation.label,
           style: context.typography.caption.copyWith(
             color: color,
             fontWeight: FontWeight.w700,

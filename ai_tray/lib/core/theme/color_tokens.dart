@@ -43,16 +43,6 @@ final class TrayColorTokens extends ThemeExtension<TrayColorTokens> {
   final Color buttonDisabled;
   final Color meterTrack;
 
-  // --- Compatibility aliases used by existing call sites ---
-  Color get surfaceRaised => surfaceAlt;
-  Color get divider => border;
-  Color get title => textPrimary;
-  Color get primary => purpleAccent;
-  Color get onPrimary => onAccent;
-  Color get meterFill => purpleAccent;
-  Color get statusRefreshing => info;
-  Color get statusIdle => textMuted;
-
   /// Usage-band color for progress rings (0–100).
   Color usageBand(double percent) {
     final p = percent.clamp(0.0, 100.0);

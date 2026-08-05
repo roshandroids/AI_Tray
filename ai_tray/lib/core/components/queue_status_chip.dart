@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/components/status_presentation.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/sessions/queue/domain/models/resume_queue_item.dart';
@@ -12,13 +13,12 @@ final class QueueStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final (label, color) = switch (status) {
-      ResumeQueueStatus.pending => ('Pending', colors.textMuted),
-      ResumeQueueStatus.running => ('Running', colors.info),
-      ResumeQueueStatus.succeeded => ('Succeeded', colors.success),
-      ResumeQueueStatus.failed => ('Failed', colors.error),
-    };
+    final presentation = StatusPresentation.fromResumeQueueStatus(
+      status,
+      context.colors,
+    );
+    final label = presentation.label;
+    final color = presentation.color;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),

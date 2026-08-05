@@ -4,7 +4,7 @@ import 'package:meta/meta.dart';
 
 /// Lifecycle of one queued resume (§8 of
 /// `docs/planning/v2-vision-and-roadmap.md`).
-enum ResumeQueueStatus { pending, running, succeeded, failed }
+enum ResumeQueueStatus { pending, running, succeeded, failed, cancelled }
 
 /// One unattended (or queued-but-attended) resume request (§8). Lives in
 /// the `queue/` subdomain — used only there, unlike `ResumeOutcome` which

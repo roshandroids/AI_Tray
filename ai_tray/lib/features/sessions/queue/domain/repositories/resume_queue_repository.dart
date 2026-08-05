@@ -32,6 +32,13 @@ abstract interface class ResumeQueueRepository {
 
   Future<Result<Unit>> remove(String id);
 
+  /// Marks a `pending` item `cancelled` instead of deleting it, so it
+  /// survives into the queue's history (V4 §6.1) — distinct from
+  /// [remove], which is a hard delete for terminal items the user wants
+  /// cleared. Callers must not offer this for a `running` item (no
+  /// cooperative cancellation exists yet, same limitation as [remove]).
+  Future<Result<Unit>> cancel(String id);
+
   /// Resets a `failed` item back to `pending` — clears
   /// [ResumeQueueItem.startedAt], [ResumeQueueItem.executedAt], and
   /// [ResumeQueueItem.result] so the retried attempt starts clean rather

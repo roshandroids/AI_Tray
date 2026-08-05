@@ -68,6 +68,9 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         trayPercentThreshold:
             _prefs.getDouble('${_prefix}trayPercentThreshold') ??
             defaults.trayPercentThreshold,
+        hasCompletedOnboarding:
+            _prefs.getBool('${_prefix}hasCompletedOnboarding') ??
+            defaults.hasCompletedOnboarding,
       );
     } on Exception {
       return AppSettings.defaults();
@@ -175,6 +178,12 @@ final class SharedPreferencesSettingsRepository implements SettingsRepository {
         _prefs.setDouble(
           '${_prefix}trayPercentThreshold',
           settings.trayPercentThreshold,
+        ),
+      );
+      await _requireSaved(
+        _prefs.setBool(
+          '${_prefix}hasCompletedOnboarding',
+          settings.hasCompletedOnboarding,
         ),
       );
       return const Result.success(Unit.unit);

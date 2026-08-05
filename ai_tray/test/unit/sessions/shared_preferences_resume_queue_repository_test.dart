@@ -116,6 +116,24 @@ void main() {
   });
 
   test(
+    'cancel() marks a pending item cancelled instead of deleting it',
+    () async {
+      final a = (await repository.enqueue(
+        sessionId: 'a',
+        cwd: '/x',
+        prompt: 'p',
+        maxBudgetUsd: 1,
+      )).valueOrNull!;
+
+      await repository.cancel(a.id);
+
+      final items = (await repository.list()).valueOrNull!;
+      expect(items, hasLength(1));
+      expect(items.single.status, ResumeQueueStatus.cancelled);
+    },
+  );
+
+  test(
     'evicts the oldest succeeded/failed item first when the bounded list '
     'is full',
     () async {
