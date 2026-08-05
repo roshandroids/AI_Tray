@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 enum AppThemePreference {
   system,
   light,
-  dark;
+  dark
+  ;
 
   ThemeMode get materialThemeMode => switch (this) {
     AppThemePreference.system => ThemeMode.system,
