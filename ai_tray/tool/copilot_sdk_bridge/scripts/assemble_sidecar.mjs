@@ -69,9 +69,19 @@ try {
 
   const extractRoot = join(workRoot, "node-extract");
   await mkdir(extractRoot);
-  // --force-local: Windows runners can have GNU tar ahead of bsdtar on PATH,
-  // and GNU tar misparses a "D:\..." path as a "D:" remote host without it.
-  await run("tar", ["--force-local", "-xf", archivePath, "-C", extractRoot]);
+  // The Windows Node distribution ships as .zip, not .tar.gz, and GNU tar
+  // (which Windows runners can have ahead of bsdtar on PATH) can't read zip
+  // at all. Use PowerShell's Expand-Archive there instead of tar.
+  if (target.platform === "win32") {
+    await run("powershell", [
+      "-NoProfile",
+      "-NonInteractive",
+      "-Command",
+      `Expand-Archive -LiteralPath '${archivePath}' -DestinationPath '${extractRoot}' -Force`,
+    ]);
+  } else {
+    await run("tar", ["-xf", archivePath, "-C", extractRoot]);
+  }
   const extractedEntries = await readdir(extractRoot);
   if (extractedEntries.length !== 1) {
     fail(`Node archive must contain one root directory, found ${extractedEntries.length}`);
