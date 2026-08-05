@@ -25,6 +25,7 @@ final class AppSettings {
     bool copilotEnabled = true,
     TrayDisplayMode trayDisplayMode = TrayDisplayModeX.defaultMode,
     double trayPercentThreshold = defaultTrayPercentThreshold,
+    bool hasCompletedOnboarding = false,
   }) {
     _validateRefreshInterval(refreshInterval);
     final threshold = notifyAtSessionPercent;
@@ -49,6 +50,7 @@ final class AppSettings {
       copilotEnabled: copilotEnabled,
       trayDisplayMode: trayDisplayMode,
       trayPercentThreshold: trayPercentThreshold,
+      hasCompletedOnboarding: hasCompletedOnboarding,
     );
   }
 
@@ -68,6 +70,7 @@ final class AppSettings {
     required this.copilotEnabled,
     required this.trayDisplayMode,
     required this.trayPercentThreshold,
+    required this.hasCompletedOnboarding,
   });
 
   /// MVP defaults aligned with planning (60s auto-refresh).
@@ -104,6 +107,11 @@ final class AppSettings {
   final TrayDisplayMode trayDisplayMode;
   final double trayPercentThreshold;
 
+  /// Gates the onboarding flow (V4 §9.1) — `false` only for a genuinely
+  /// fresh install; once the flow completes, this is saved `true` and
+  /// never read back to `false` by anything but a fresh store.
+  final bool hasCompletedOnboarding;
+
   /// Full reconstruct helper when a nullable field must be cleared to null.
   AppSettings replace({
     bool? autoRefreshEnabled,
@@ -121,6 +129,7 @@ final class AppSettings {
     bool? copilotEnabled,
     TrayDisplayMode? trayDisplayMode,
     double? trayPercentThreshold,
+    bool? hasCompletedOnboarding,
   }) {
     return AppSettings(
       autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
@@ -142,6 +151,8 @@ final class AppSettings {
       copilotEnabled: copilotEnabled ?? this.copilotEnabled,
       trayDisplayMode: trayDisplayMode ?? this.trayDisplayMode,
       trayPercentThreshold: trayPercentThreshold ?? this.trayPercentThreshold,
+      hasCompletedOnboarding:
+          hasCompletedOnboarding ?? this.hasCompletedOnboarding,
     );
   }
 
@@ -161,6 +172,7 @@ final class AppSettings {
     bool? copilotEnabled,
     TrayDisplayMode? trayDisplayMode,
     double? trayPercentThreshold,
+    bool? hasCompletedOnboarding,
   }) {
     return AppSettings(
       autoRefreshEnabled: autoRefreshEnabled ?? this.autoRefreshEnabled,
@@ -179,6 +191,8 @@ final class AppSettings {
       copilotEnabled: copilotEnabled ?? this.copilotEnabled,
       trayDisplayMode: trayDisplayMode ?? this.trayDisplayMode,
       trayPercentThreshold: trayPercentThreshold ?? this.trayPercentThreshold,
+      hasCompletedOnboarding:
+          hasCompletedOnboarding ?? this.hasCompletedOnboarding,
     );
   }
 
@@ -199,7 +213,8 @@ final class AppSettings {
         other.appIconPreset == appIconPreset &&
         other.copilotEnabled == copilotEnabled &&
         other.trayDisplayMode == trayDisplayMode &&
-        other.trayPercentThreshold == trayPercentThreshold;
+        other.trayPercentThreshold == trayPercentThreshold &&
+        other.hasCompletedOnboarding == hasCompletedOnboarding;
   }
 
   @override
@@ -219,6 +234,7 @@ final class AppSettings {
     copilotEnabled,
     trayDisplayMode,
     trayPercentThreshold,
+    hasCompletedOnboarding,
   );
 }
 

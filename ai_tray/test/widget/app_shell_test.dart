@@ -9,6 +9,7 @@ import 'package:ai_tray/features/providers/data/claude/claude_cli_adapter.dart';
 import 'package:ai_tray/features/providers/data/process/fake_process_runner.dart';
 import 'package:ai_tray/features/providers/data/process/process_runner.dart';
 import 'package:ai_tray/features/settings/data/repositories/settings_repository_impl.dart';
+import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
 import 'package:ai_tray/features/usage/data/cache/usage_cache.dart';
 import 'package:ai_tray/features/usage/data/parsers/usage_parser.dart';
 import 'package:ai_tray/features/usage/data/repositories/usage_repository_impl.dart';
@@ -41,6 +42,13 @@ Future<ProviderContainer> _offlineContainer() async {
     overrides: [
       bufferedAppLoggerProvider.overrideWithValue(logger),
       sharedPreferencesProvider.overrideWithValue(prefs),
+      // These tests exercise AppShell, not onboarding — treat this run as
+      // already onboarded.
+      settingsRepositoryProvider.overrideWithValue(
+        InMemorySettingsRepository(
+          AppSettings.defaults().copyWith(hasCompletedOnboarding: true),
+        ),
+      ),
       processRunnerProvider.overrideWithValue(runner),
       usageRepositoryProvider.overrideWith((ref) {
         final repo = UsageRepositoryImpl(
