@@ -186,7 +186,7 @@ final class _ProjectGroupTile extends StatelessWidget {
         'updated ${UsageStatusMapper.relativeUpdated(group.lastActivityAt)}';
     final subtitle = mostRecent.projectPath == null
         ? countLabel
-        : '${mostRecent.projectPath} · $countLabel';
+        : '${truncatePath(mostRecent.projectPath!)} · $countLabel';
 
     return ProjectCard(
       title: name,

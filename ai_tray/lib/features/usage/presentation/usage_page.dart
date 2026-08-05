@@ -335,7 +335,8 @@ final class _CoachBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final queueItems = ref.watch(resumeQueueControllerProvider).value ?? const [];
+    final queueItems =
+        ref.watch(resumeQueueControllerProvider).value ?? const [];
     final settings = ref.watch(settingsControllerProvider).value;
     final message = selectCoachMessage(
       isProviderError: isProviderError,

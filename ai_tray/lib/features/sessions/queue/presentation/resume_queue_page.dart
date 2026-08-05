@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ai_tray/core/components/confirmation_dialog.dart';
 import 'package:ai_tray/core/components/empty_state.dart';
+import 'package:ai_tray/core/components/inline_help.dart';
 import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
@@ -77,6 +78,17 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
           PageHeader(
             title: 'Queue',
             actions: [
+              InlineHelp(
+                message:
+                    'Tasks run one at a time, in the background. Nothing '
+                    'executes until you press Run next — queuing a task '
+                    'never starts it on its own.',
+                child: Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: context.colors.textMuted,
+                ),
+              ),
               IconButton(
                 key: const ValueKey('queue-run-next'),
                 tooltip: 'Run next',
@@ -99,7 +111,7 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
               loading: () => Center(
                 child: Semantics(
                   label: 'Loading resume queue',
-                  child: CircularProgressIndicator(
+                  child: const CircularProgressIndicator(
                     key: ValueKey('queue-loading'),
                   ),
                 ),
@@ -286,7 +298,7 @@ final class _QueueItemTile extends StatelessWidget {
             ),
             const SizedBox(height: Spacing.xs),
             Text(
-              item.cwd,
+              truncatePath(item.cwd),
               style: type.caption,
               overflow: TextOverflow.ellipsis,
             ),

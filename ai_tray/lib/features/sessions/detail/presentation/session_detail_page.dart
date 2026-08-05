@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/inline_help.dart';
 import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
@@ -483,9 +484,19 @@ final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
                 ),
                 style: type.body,
                 enabled: !_submitting,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Budget cap (USD) — required',
                   hintText: 'e.g. 2.00',
+                  suffixIcon: InlineHelp(
+                    message:
+                        'The task stops itself once its cost reaches this '
+                        "cap, even mid-response — it won't run unbounded.",
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: context.colors.textMuted,
+                    ),
+                  ),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
