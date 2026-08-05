@@ -11,8 +11,7 @@ abstract final class Breakpoints {
 enum WindowSize {
   compact,
   wide,
-  ultrawide
-  ;
+  ultrawide;
 
   bool get isCompact => this == WindowSize.compact;
 }
