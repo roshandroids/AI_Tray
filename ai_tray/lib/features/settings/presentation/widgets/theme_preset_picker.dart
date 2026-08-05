@@ -72,52 +72,73 @@ class _ThemePresetPickerState extends State<ThemePresetPicker> {
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: Spacing.sm),
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 220),
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: presets.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              color: context.colors.border,
-            ),
-            itemBuilder: (context, index) {
-              final preset = presets[index];
-              final selected = preset == widget.selected;
-              return Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  onTap: () => widget.onChanged(preset),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            preset.displayName,
-                            style: context.typography.body.copyWith(
-                              fontWeight: selected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: selected
-                                  ? context.colors.purpleAccent
-                                  : context.colors.textPrimary,
-                            ),
+        // No height cap: `shrinkWrap` sizes to content and the outer
+        // Settings page is itself scrollable, so a tall preview-card list
+        // doesn't need its own nested scroll region.
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: presets.length,
+          separatorBuilder: (_, _) => Divider(
+            height: 1,
+            color: context.colors.border,
+          ),
+          itemBuilder: (context, index) {
+            final preset = presets[index];
+            final selected = preset == widget.selected;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(RadiusTokens.md),
+                  border: Border.all(
+                    color: selected
+                        ? context.colors.purpleAccent
+                        : context.colors.border,
+                    width: selected ? 1.5 : 1,
+                  ),
+                ),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(RadiusTokens.md),
+                    onTap: () => widget.onChanged(preset),
+                    child: Padding(
+                      padding: const EdgeInsets.all(Spacing.sm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _PaletteStrip(
+                            colors: preset.paletteFor(brightness).previewStrip,
+                            height: 28,
                           ),
-                        ),
-                        _PaletteStrip(
-                          colors: preset.paletteFor(brightness).previewStrip,
-                          width: 88,
-                        ),
-                        const SizedBox(width: Spacing.sm),
-                        SelectionCheck(selected: selected),
-                      ],
+                          const SizedBox(height: Spacing.sm),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  preset.displayName,
+                                  style: context.typography.body.copyWith(
+                                    fontWeight: selected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                    color: selected
+                                        ? context.colors.purpleAccent
+                                        : context.colors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              SelectionCheck(selected: selected),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -125,16 +146,17 @@ class _ThemePresetPickerState extends State<ThemePresetPicker> {
 }
 
 class _PaletteStrip extends StatelessWidget {
-  const _PaletteStrip({required this.colors, required this.width});
+  const _PaletteStrip({required this.colors, this.width, this.height = 14});
 
   final List<Color> colors;
-  final double width;
+  final double? width;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: width,
-      height: 14,
+      height: height,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(3),
         child: Row(

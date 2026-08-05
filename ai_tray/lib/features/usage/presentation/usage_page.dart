@@ -9,6 +9,7 @@ import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
+import 'package:ai_tray/core/theme/breakpoints.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
@@ -20,11 +21,13 @@ import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
 import 'package:ai_tray/features/sessions/queue/domain/models/resume_queue_item.dart';
 import 'package:ai_tray/features/sessions/queue/presentation/resume_queue_controller.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
+import 'package:ai_tray/features/settings/presentation/settings_controller.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
 import 'package:ai_tray/features/usage/domain/models/usage_info.dart';
 import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
+import 'package:ai_tray/features/usage/domain/services/dashboard_coach.dart';
 import 'package:ai_tray/features/usage/domain/services/dashboard_data_mapper.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/features/usage/presentation/widgets/tray_empty_state.dart';
@@ -85,7 +88,7 @@ final class UsagePage extends ConsumerWidget {
                     tooltip: 'Diagnostics',
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const DiagnosticsPage(),
+                        builder: (_) => DiagnosticsPage(),
                       ),
                     ),
                     icon: const Icon(Icons.monitor_heart_outlined),
@@ -96,8 +99,15 @@ final class UsagePage extends ConsumerWidget {
                 child: Align(
                   alignment: Alignment.topCenter,
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: Spacing.contentMaxWidth,
+                    // Scales with window width (V4 §3.1) instead of a flat
+                    // 720px cap, so wide/ultrawide monitors don't carry a
+                    // large dead margin either side of the dashboard.
+                    constraints: BoxConstraints(
+                      maxWidth: switch (windowSizeOf(context)) {
+                        WindowSize.compact => Spacing.contentMaxWidth,
+                        WindowSize.wide => 960,
+                        WindowSize.ultrawide => 1200,
+                      },
                     ),
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
@@ -125,6 +135,10 @@ final class UsagePage extends ConsumerWidget {
                             ),
                             const SizedBox(height: Spacing.sm),
                           ],
+                          _CoachBanner(
+                            usage: usage,
+                            isProviderError: kind == TrayStatusKind.error,
+                          ),
                           const _ContinueYourWorkSection(),
                           const SizedBox(height: Spacing.md),
                           _ProviderHeader(
@@ -307,6 +321,49 @@ final class _ContinueYourWorkSection extends ConsumerWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+/// Productivity Coach v1 (V4 §3.2) — surfaces the single highest-priority
+/// situational message for the current dashboard state, or nothing.
+final class _CoachBanner extends ConsumerWidget {
+  const _CoachBanner({required this.usage, required this.isProviderError});
+
+  final UsageInfo? usage;
+  final bool isProviderError;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final queueItems = ref.watch(resumeQueueControllerProvider).value ?? const [];
+    final settings = ref.watch(settingsControllerProvider).value;
+    final message = selectCoachMessage(
+      isProviderError: isProviderError,
+      usage: usage,
+      queueItems: queueItems,
+      notificationsEnabled: settings?.notificationsEnabled ?? true,
+    );
+    if (message == null) return const SizedBox.shrink();
+
+    final colors = context.colors;
+    final (icon, color) = switch (message.kind) {
+      CoachKind.info => (Icons.info_outline, colors.info),
+      CoachKind.warning => (Icons.warning_amber_outlined, colors.warning),
+      CoachKind.error => (Icons.error_outline, colors.error),
+      CoachKind.queue => (Icons.pending_actions_outlined, colors.info),
+      CoachKind.notificationsOff => (
+        Icons.notifications_off_outlined,
+        colors.textSecondary,
+      ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Spacing.sm),
+      child: _DashboardStatusNotice(
+        icon: icon,
+        message: message.text,
+        color: color,
+      ),
     );
   }
 }
@@ -759,6 +816,16 @@ final class _SkeletonLine extends StatelessWidget {
   }
 }
 
+/// Deep-links from a dashboard health row into Diagnostics' health panel
+/// (V4 §3.3) instead of requiring the Diagnostics page for all detail.
+void _openDiagnosticsHealth(BuildContext context) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => DiagnosticsPage(scrollToHealth: true),
+    ),
+  );
+}
+
 final class _DashboardBody extends ConsumerWidget {
   const _DashboardBody({
     required this.usage,
@@ -905,36 +972,42 @@ final class _DashboardBody extends ConsumerWidget {
                         ),
                         const SizedBox(width: Spacing.sm),
                         Expanded(
-                          child: SectionCard(
-                            title: 'Provider Health',
-                            child: Column(
-                              children: [
-                                if (dashboardData.capabilities.healthCheck)
-                                  HealthIndicator(label: 'Auth', ok: authOk),
-                                HealthIndicator(
-                                  label: 'Parser',
-                                  ok: parserOk,
-                                  detail: parser == null
-                                      ? '—'
-                                      : parserOk
-                                      ? '✓ OK'
-                                      : '✗ ${parser.validation.name}',
-                                ),
-                                HealthIndicator(
-                                  label: 'Cache',
-                                  ok: !usage.isFromCache,
-                                  detail: usage.isFromCache
-                                      ? 'Using LKG'
-                                      : '✓ Fresh',
-                                ),
-                                InfoRow(
-                                  label: 'Last error',
-                                  value: error?.message ?? 'None',
-                                  valueColor: error == null
-                                      ? context.colors.textMuted
-                                      : context.colors.error,
-                                ),
-                              ],
+                          child: InkWell(
+                            onTap: () => _openDiagnosticsHealth(context),
+                            child: SectionCard(
+                              title: 'Provider Health',
+                              child: Column(
+                                children: [
+                                  if (dashboardData.capabilities.healthCheck)
+                                    HealthIndicator(
+                                      label: 'Auth',
+                                      ok: authOk,
+                                    ),
+                                  HealthIndicator(
+                                    label: 'Parser',
+                                    ok: parserOk,
+                                    detail: parser == null
+                                        ? '—'
+                                        : parserOk
+                                        ? '✓ OK'
+                                        : '✗ ${parser.validation.name}',
+                                  ),
+                                  HealthIndicator(
+                                    label: 'Cache',
+                                    ok: !usage.isFromCache,
+                                    detail: usage.isFromCache
+                                        ? 'Using LKG'
+                                        : '✓ Fresh',
+                                  ),
+                                  InfoRow(
+                                    label: 'Last error',
+                                    value: error?.message ?? 'None',
+                                    valueColor: error == null
+                                        ? context.colors.textMuted
+                                        : context.colors.error,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -964,19 +1037,22 @@ final class _DashboardBody extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: Spacing.sm),
-                    SectionCard(
-                      title: 'Provider Health',
-                      child: Column(
-                        children: [
-                          if (dashboardData.capabilities.healthCheck)
-                            HealthIndicator(label: 'Auth', ok: authOk),
-                          HealthIndicator(label: 'Parser', ok: parserOk),
-                          HealthIndicator(
-                            label: 'Cache',
-                            ok: !usage.isFromCache,
-                            detail: usage.isFromCache ? 'LKG' : '✓ Fresh',
-                          ),
-                        ],
+                    InkWell(
+                      onTap: () => _openDiagnosticsHealth(context),
+                      child: SectionCard(
+                        title: 'Provider Health',
+                        child: Column(
+                          children: [
+                            if (dashboardData.capabilities.healthCheck)
+                              HealthIndicator(label: 'Auth', ok: authOk),
+                            HealthIndicator(label: 'Parser', ok: parserOk),
+                            HealthIndicator(
+                              label: 'Cache',
+                              ok: !usage.isFromCache,
+                              detail: usage.isFromCache ? 'LKG' : '✓ Fresh',
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],

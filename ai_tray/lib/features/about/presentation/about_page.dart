@@ -225,7 +225,7 @@ final class _SupportCard extends StatelessWidget {
           const SizedBox(width: Spacing.sm),
           OutlinedButton(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const DiagnosticsPage()),
+              MaterialPageRoute<void>(builder: (_) => DiagnosticsPage()),
             ),
             child: const Text('Open Diagnostics'),
           ),

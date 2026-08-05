@@ -443,7 +443,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 unawaited(
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const DiagnosticsPage(),
+                      builder: (_) => DiagnosticsPage(),
                     ),
                   ),
                 );

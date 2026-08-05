@@ -20,6 +20,7 @@ import 'package:ai_tray/features/settings/release_history_providers.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_outcome.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_phase.dart';
 import 'package:ai_tray/features/usage/domain/models/refresh_status.dart';
+import 'package:ai_tray/features/usage/domain/models/validation_status.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:ai_tray/theme/personalization_controller.dart';
 import 'package:flutter/foundation.dart';
@@ -30,10 +31,30 @@ import 'package:local_notifier/local_notifier.dart';
 
 /// Live diagnostics dashboard aligned to the design system (PD-021).
 final class DiagnosticsPage extends ConsumerWidget {
-  const DiagnosticsPage({super.key});
+  DiagnosticsPage({super.key, this.scrollToHealth = false});
+
+  /// Set when opened via the dashboard's health-summary deep link (V4
+  /// §3.3) — jump-scrolls to the health panel once, on open.
+  final bool scrollToHealth;
+
+  final GlobalKey _healthPanelKey = GlobalKey();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (scrollToHealth) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final healthContext = _healthPanelKey.currentContext;
+        if (healthContext != null) {
+          unawaited(
+            Scrollable.ensureVisible(
+              healthContext,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+            ),
+          );
+        }
+      });
+    }
     final repository = ref.watch(usageRepositoryProvider);
     final logger = ref.watch(bufferedAppLoggerProvider);
     final themePref = ref
@@ -170,6 +191,16 @@ final class DiagnosticsPage extends ConsumerWidget {
                                       result?.status == RefreshOutcome.failure
                                       ? context.colors.error
                                       : null,
+                                  repairLabel:
+                                      result?.status == RefreshOutcome.failure
+                                      ? 'Retry'
+                                      : null,
+                                  onRepair:
+                                      result?.status == RefreshOutcome.failure
+                                      ? () => unawaited(
+                                          repository.refresh(manual: true),
+                                        )
+                                      : null,
                                 ),
                                 InfoRow(
                                   label: 'Duration',
@@ -189,70 +220,96 @@ final class DiagnosticsPage extends ConsumerWidget {
                             ),
                           ),
                           if (selectedProvider.providerId == ProviderId.copilot)
-                            _CopilotDiagnosticsPanel(
-                              state: copilotDiagnostics,
-                              onRetry: () => unawaited(
-                                ref
-                                    .read(copilotDiagnosticsProvider.notifier)
-                                    .retry(),
+                            KeyedSubtree(
+                              key: _healthPanelKey,
+                              child: _CopilotDiagnosticsPanel(
+                                state: copilotDiagnostics,
+                                onRetry: () => unawaited(
+                                  ref
+                                      .read(copilotDiagnosticsProvider.notifier)
+                                      .retry(),
+                                ),
                               ),
                             )
                           else
-                            SectionCard(
-                              title: 'Parser / Cache',
-                              child: Column(
-                                children: [
-                                  InfoRow(
-                                    label: 'Parser',
-                                    value: parser?.shape.name ?? '—',
-                                  ),
-                                  InfoRow(
-                                    label: 'Validation',
-                                    value: parser?.validation.name ?? '—',
-                                  ),
-                                  InfoRow(
-                                    label: 'Session line',
-                                    value: parser == null
-                                        ? '—'
-                                        : parser.matchedSessionLine
-                                        ? 'matched'
-                                        : 'miss',
-                                  ),
-                                  InfoRow(
-                                    label: 'Week lines',
-                                    value: parser == null
-                                        ? '—'
-                                        : '${parser.matchedWeekLineCount}',
-                                  ),
-                                  InfoRow(
-                                    label: 'Cache',
-                                    value: usage == null
-                                        ? 'empty'
-                                        : usage.isFromCache
-                                        ? 'LKG'
-                                        : 'live',
-                                    valueColor: usage == null
-                                        ? context.colors.textMuted
-                                        : usage.isFromCache
-                                        ? context.colors.warning
-                                        : context.colors.success,
-                                  ),
-                                  InfoRow(
-                                    label: 'Exit code',
-                                    value:
-                                        result?.cliExitCode?.toString() ?? '—',
-                                  ),
-                                  InfoRow(
-                                    label: 'CLI binary',
-                                    value:
-                                        (settings
-                                                ?.claudeBinaryPath
-                                                ?.isNotEmpty ??
-                                            false)
-                                        ? settings!.claudeBinaryPath!
-                                        : 'claude (PATH)',
-                                  ),
-                                ],
+                            KeyedSubtree(
+                              key: _healthPanelKey,
+                              child: SectionCard(
+                                title: 'Parser / Cache',
+                                child: Column(
+                                  children: [
+                                    InfoRow(
+                                      label: 'Parser',
+                                      value: parser?.shape.name ?? '—',
+                                    ),
+                                    InfoRow(
+                                      label: 'Validation',
+                                      value: parser?.validation.name ?? '—',
+                                      valueColor:
+                                          parser?.validation ==
+                                              ValidationStatus.invalid
+                                          ? context.colors.error
+                                          : null,
+                                      repairLabel:
+                                          parser?.validation ==
+                                              ValidationStatus.invalid
+                                          ? 'Force refresh'
+                                          : null,
+                                      onRepair:
+                                          parser?.validation ==
+                                              ValidationStatus.invalid
+                                          ? () => unawaited(
+                                              repository.refresh(
+                                                manual: true,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    InfoRow(
+                                      label: 'Session line',
+                                      value: parser == null
+                                          ? '—'
+                                          : parser.matchedSessionLine
+                                          ? 'matched'
+                                          : 'miss',
+                                    ),
+                                    InfoRow(
+                                      label: 'Week lines',
+                                      value: parser == null
+                                          ? '—'
+                                          : '${parser.matchedWeekLineCount}',
+                                    ),
+                                    InfoRow(
+                                      label: 'Cache',
+                                      value: usage == null
+                                          ? 'empty'
+                                          : usage.isFromCache
+                                          ? 'LKG'
+                                          : 'live',
+                                      valueColor: usage == null
+                                          ? context.colors.textMuted
+                                          : usage.isFromCache
+                                          ? context.colors.warning
+                                          : context.colors.success,
+                                    ),
+                                    InfoRow(
+                                      label: 'Exit code',
+                                      value:
+                                          result?.cliExitCode?.toString() ??
+                                          '—',
+                                    ),
+                                    InfoRow(
+                                      label: 'CLI binary',
+                                      value:
+                                          (settings
+                                                  ?.claudeBinaryPath
+                                                  ?.isNotEmpty ??
+                                              false)
+                                          ? settings!.claudeBinaryPath!
+                                          : 'claude (PATH)',
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           SectionCard(

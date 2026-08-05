@@ -11,12 +11,19 @@ final class InfoRow extends StatelessWidget {
     super.key,
     this.valueColor,
     this.labelWidth = 112,
+    this.repairLabel,
+    this.onRepair,
   });
 
   final String label;
   final String value;
   final Color? valueColor;
   final double labelWidth;
+
+  /// Optional repair-action slot (V4 §9.5) — every Diagnostics health
+  /// check gets somewhere to fix the problem inline, not just see it.
+  final String? repairLabel;
+  final VoidCallback? onRepair;
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +45,17 @@ final class InfoRow extends StatelessWidget {
               ),
             ),
           ),
+          if (repairLabel != null && onRepair != null)
+            Padding(
+              padding: const EdgeInsets.only(left: Spacing.sm),
+              child: InkWell(
+                onTap: onRepair,
+                child: Text(
+                  repairLabel!,
+                  style: type.label.copyWith(color: context.colors.info),
+                ),
+              ),
+            ),
         ],
       ),
     );

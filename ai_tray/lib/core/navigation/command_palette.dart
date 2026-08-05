@@ -83,7 +83,7 @@ List<CommandPaletteAction> _buildActions(BuildContext context, WidgetRef ref) {
       label: 'Open Diagnostics',
       icon: Icons.monitor_heart_outlined,
       onInvoke: (context, ref) => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const DiagnosticsPage()),
+        MaterialPageRoute<void>(builder: (_) => DiagnosticsPage()),
       ),
     ),
     CommandPaletteAction(
