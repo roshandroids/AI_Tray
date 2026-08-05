@@ -27,7 +27,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:local_notifier/local_notifier.dart';
 
 /// Live diagnostics dashboard aligned to the design system (PD-021).
 final class DiagnosticsPage extends ConsumerWidget {
@@ -358,8 +357,9 @@ final class DiagnosticsPage extends ConsumerWidget {
                                 ),
                                 _ToolButton(
                                   label: 'Test notification',
-                                  onPressed: () =>
-                                      unawaited(_testNotification(context)),
+                                  onPressed: () => unawaited(
+                                    _testNotification(context, ref),
+                                  ),
                                 ),
                                 _ToolButton(
                                   label: 'Show cache',
@@ -503,13 +503,15 @@ final class DiagnosticsPage extends ConsumerWidget {
     }
   }
 
-  static Future<void> _testNotification(BuildContext context) async {
+  static Future<void> _testNotification(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     try {
-      final notification = LocalNotification(
+      await ref.read(notificationGatewayProvider).notify(
         title: 'AI Tray',
         body: 'Test notification from Diagnostics',
       );
-      await notification.show();
     } on Exception catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

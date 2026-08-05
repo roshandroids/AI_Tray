@@ -5,6 +5,8 @@ import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
 import 'package:ai_tray/core/result/result.dart';
+import 'package:ai_tray/features/notifications/data/repositories/fake_notification_history_repository.dart';
+import 'package:ai_tray/features/notifications/notification_providers.dart';
 import 'package:ai_tray/features/providers/copilot/diagnostics/copilot_diagnostics.dart';
 import 'package:ai_tray/features/providers/copilot/sdk/copilot_sdk.dart';
 import 'package:ai_tray/features/providers/core/models/provider_models.dart';
@@ -58,6 +60,9 @@ Future<void> _pumpSettings(WidgetTester tester) async {
             logger: BufferedAppLogger(),
             clock: () => DateTime.utc(2026),
           ),
+        ),
+        notificationHistoryRepositoryProvider.overrideWithValue(
+          FakeNotificationHistoryRepository(),
         ),
       ],
       child: MaterialApp(theme: AppTheme.dark(), home: const SettingsPage()),
@@ -148,6 +153,30 @@ void main() {
     expect(find.text('About'), findsWidgets);
     expect(find.text('AI Tray'), findsOneWidget);
   });
+
+  testWidgets(
+    'View notification history in Notifications opens the Notifications '
+    'page',
+    (tester) async {
+      await _pumpSettings(tester);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SettingsNavRail),
+          matching: find.text('Notifications'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('View notification history'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('notifications-empty')),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 final class _NoOpCopilotSdk implements CopilotSdk {
