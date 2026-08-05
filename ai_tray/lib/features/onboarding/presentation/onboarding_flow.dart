@@ -76,7 +76,14 @@ final class _OnboardingFlowState extends ConsumerState<OnboardingFlow> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: content),
+                  Expanded(
+                    child: Semantics(
+                      container: true,
+                      label:
+                          'Step ${_step.index + 1} of ${_Step.values.length}',
+                      child: content,
+                    ),
+                  ),
                   if (_finishError != null) ...[
                     Text(
                       _finishError!,

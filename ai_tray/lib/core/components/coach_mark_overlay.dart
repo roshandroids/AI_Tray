@@ -206,44 +206,49 @@ final class _CoachMarkCallout extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final type = context.typography;
-    return Material(
-      color: Colors.transparent,
-      child: DecoratedBox(
-        decoration: ComponentTheme.panel(colors),
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$stepNumber / $totalSteps',
-                style: type.caption.copyWith(color: colors.textMuted),
-              ),
-              const SizedBox(height: Spacing.xs),
-              Text(
-                step.title,
-                style: type.body.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: Spacing.xs),
-              Text(step.body, style: type.caption),
-              const SizedBox(height: Spacing.sm),
-              Row(
-                children: [
-                  TextButton(
-                    key: const ValueKey('coach-mark-skip'),
-                    onPressed: onSkip,
-                    child: const Text('Skip'),
-                  ),
-                  const Spacer(),
-                  FilledButton(
-                    key: const ValueKey('coach-mark-next'),
-                    onPressed: onNext,
-                    child: Text(isLastStep ? 'Done' : 'Next'),
-                  ),
-                ],
-              ),
-            ],
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      label: 'Step $stepNumber of $totalSteps: ${step.title}. ${step.body}',
+      child: Material(
+        color: Colors.transparent,
+        child: DecoratedBox(
+          decoration: ComponentTheme.panel(colors),
+          child: Padding(
+            padding: const EdgeInsets.all(Spacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$stepNumber / $totalSteps',
+                  style: type.caption.copyWith(color: colors.textMuted),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  step.title,
+                  style: type.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(step.body, style: type.caption),
+                const SizedBox(height: Spacing.sm),
+                Row(
+                  children: [
+                    TextButton(
+                      key: const ValueKey('coach-mark-skip'),
+                      onPressed: onSkip,
+                      child: const Text('Skip'),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      key: const ValueKey('coach-mark-next'),
+                      onPressed: onNext,
+                      child: Text(isLastStep ? 'Done' : 'Next'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

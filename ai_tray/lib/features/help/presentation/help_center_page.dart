@@ -63,12 +63,18 @@ final class _HelpCenterPageState extends State<HelpCenterPage> {
                     title: 'No help topics match this search',
                     body: 'Clear the search to see every topic.',
                   )
-                : ListView.builder(
-                    key: const ValueKey('help-list'),
-                    padding: const EdgeInsets.all(Spacing.md),
-                    itemCount: matches.length,
-                    itemBuilder: (context, index) =>
-                        _HelpTopicCard(topic: matches[index]),
+                : Semantics(
+                    container: true,
+                    label:
+                        'Help topics, ${matches.length} '
+                        '${matches.length == 1 ? 'result' : 'results'}',
+                    child: ListView.builder(
+                      key: const ValueKey('help-list'),
+                      padding: const EdgeInsets.all(Spacing.md),
+                      itemCount: matches.length,
+                      itemBuilder: (context, index) =>
+                          _HelpTopicCard(topic: matches[index]),
+                    ),
                   ),
           ),
         ],
