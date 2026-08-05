@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:ai_tray/core/components/section_chrome.dart';
-import 'package:ai_tray/core/components/status_badge.dart';
+import 'package:ai_tray/core/components/empty_state.dart';
+import 'package:ai_tray/core/components/page_header.dart';
+import 'package:ai_tray/core/components/session_card.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
@@ -10,7 +11,6 @@ import 'package:ai_tray/features/sessions/browser/presentation/session_browser_c
 import 'package:ai_tray/features/sessions/browser/presentation/session_list_filter.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_project_grouping.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
-import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
 import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,31 +58,31 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
     final sessionsAsync = ref.watch(sessionBrowserControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sessions'),
-        actions: [
-          IconButton(
-            tooltip: 'Queue',
-            onPressed: () => ref
-                .read(appShellDestinationProvider.notifier)
-                .select(AppDestination.queue),
-            icon: const Icon(Icons.pending_actions_outlined),
-          ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: sessionsAsync.isLoading
-                ? null
-                : () => unawaited(
-                    ref
-                        .read(sessionBrowserControllerProvider.notifier)
-                        .refresh(),
-                  ),
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
       body: Column(
         children: [
+          PageHeader(
+            title: 'Sessions',
+            actions: [
+              IconButton(
+                tooltip: 'Queue',
+                onPressed: () => ref
+                    .read(appShellDestinationProvider.notifier)
+                    .select(AppDestination.queue),
+                icon: const Icon(Icons.pending_actions_outlined),
+              ),
+              IconButton(
+                tooltip: 'Refresh',
+                onPressed: sessionsAsync.isLoading
+                    ? null
+                    : () => unawaited(
+                        ref
+                            .read(sessionBrowserControllerProvider.notifier)
+                            .refresh(),
+                      ),
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               Spacing.md,
@@ -90,15 +90,19 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
               Spacing.md,
               Spacing.sm,
             ),
-            child: TextField(
-              key: const ValueKey('sessions-search-field'),
-              controller: _search,
-              style: context.typography.body,
-              decoration: const InputDecoration(
-                hintText: 'Filter by project path…',
-                prefixIcon: Icon(Icons.search, size: 16),
+            child: Semantics(
+              textField: true,
+              label: 'Filter sessions by project path',
+              child: TextField(
+                key: const ValueKey('sessions-search-field'),
+                controller: _search,
+                style: context.typography.body,
+                decoration: const InputDecoration(
+                  hintText: 'Filter by project path…',
+                  prefixIcon: Icon(Icons.search, size: 16),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
             ),
           ),
           Expanded(
@@ -171,93 +175,40 @@ final class _ProjectGroupTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
     final mostRecent = group.sessions.first;
     final name = projectDisplayName(
       projectPath: mostRecent.projectPath,
       sanitizedProjectDirName: mostRecent.sanitizedProjectDirName,
     );
-    final subtitle =
+    final countLabel =
         '${group.sessions.length} '
         '${group.sessions.length == 1 ? 'session' : 'sessions'} · '
         'updated ${UsageStatusMapper.relativeUpdated(group.lastActivityAt)}';
+    final subtitle = mostRecent.projectPath == null
+        ? countLabel
+        : '${mostRecent.projectPath} · $countLabel';
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.sm),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: PageStorageKey('project-group-${group.key}'),
-          initiallyExpanded: initiallyExpanded,
-          onExpansionChanged: onExpansionChanged,
-          title: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  name,
-                  style: type.body.copyWith(fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (group.hasLiveSession) ...[
-                const SizedBox(width: Spacing.sm),
-                const StatusBadge(kind: TrayStatusKind.live, compact: true),
-              ],
-            ],
-          ),
-          subtitle: mostRecent.projectPath == null
-              ? Text(subtitle, style: type.caption)
-              : Text(
-                  '${mostRecent.projectPath} · $subtitle',
-                  style: type.caption,
-                  overflow: TextOverflow.ellipsis,
-                ),
-          children: [
-            for (final session in group.sessions)
-              _SessionRow(session: session, onTap: onOpenSession),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-final class _SessionRow extends StatelessWidget {
-  const _SessionRow({required this.session, required this.onTap});
-
-  final SessionSummary session;
-  final ValueChanged<String> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    return InkWell(
-      onTap: () => onTap(session.sessionId),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.md,
-          vertical: Spacing.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
+    return ProjectCard(
+      title: name,
+      subtitle: subtitle,
+      hasLiveSession: group.hasLiveSession,
+      initiallyExpanded: initiallyExpanded,
+      onExpansionChanged: onExpansionChanged,
+      storageKey: PageStorageKey('project-group-${group.key}'),
+      children: [
+        for (final session in group.sessions)
+          SessionCard(
+            primaryText:
                 '${UsageStatusMapper.relativeUpdated(session.lastActivityAt)} '
                 '· ${session.messageCount} messages',
-                style: type.body,
-              ),
-            ),
             // A live badge appears only when `agents --json --all` matched
             // this session — absence (false or unconfirmed) is never shown
             // as "not live" (design principle 3): there is no visual
             // distinction between false and null.
-            if (session.isLive ?? false) ...[
-              const SizedBox(width: Spacing.sm),
-              const StatusBadge(kind: TrayStatusKind.live, compact: true),
-            ],
-          ],
-        ),
-      ),
+            live: session.isLive ?? false,
+            onTap: () => onOpenSession(session.sessionId),
+          ),
+      ],
     );
   }
 }
@@ -269,29 +220,12 @@ final class _SessionListEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
-    final title = noMatch ? 'No sessions match this filter' : 'No sessions yet';
-    final body = noMatch
-        ? 'Clear the search to see every session.'
-        : 'Sessions appear here once you use Claude Code in a project.';
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Semantics(
-          container: true,
-          label: '$title. $body',
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: type.emptyTitle),
-              const SizedBox(height: Spacing.sm),
-              Text(body, style: type.bodySmall),
-            ],
-          ),
-        ),
-      ),
+    return EmptyState(
+      icon: noMatch ? Icons.search_off : Icons.folder_open_outlined,
+      title: noMatch ? 'No sessions match this filter' : 'No sessions yet',
+      body: noMatch
+          ? 'Clear the search to see every session.'
+          : 'Sessions appear here once you use Claude Code in a project.',
     );
   }
 }
@@ -310,9 +244,9 @@ final class _SessionListError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Could not load sessions', style: type.emptyTitle),
+            Text('Could not load sessions', style: type.section),
             const SizedBox(height: Spacing.sm),
-            Text('$error', style: type.bodySmall, textAlign: TextAlign.center),
+            Text('$error', style: type.caption, textAlign: TextAlign.center),
           ],
         ),
       ),

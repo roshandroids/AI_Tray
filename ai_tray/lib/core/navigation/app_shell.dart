@@ -4,6 +4,7 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/navigation/command_palette.dart';
+import 'package:ai_tray/core/theme/breakpoints.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_browser_page.dart';
@@ -113,36 +114,45 @@ final class _AppShellState extends ConsumerState<AppShell> {
     final colors = context.colors;
 
     return Scaffold(
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: selected.index,
-            onDestinationSelected: (index) =>
-                _select(AppDestination.values[index]),
-            labelType: NavigationRailLabelType.all,
-            destinations: [
-              for (final destination in AppDestination.values)
-                NavigationRailDestination(
-                  icon: Icon(destination.icon),
-                  selectedIcon: Icon(destination.selectedIcon),
-                  label: Text(destination.label),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Collapses to icon-only at Compact width (V4 §2.2) instead of
+          // always reserving space for labels.
+          final extended =
+              windowSizeForWidth(constraints.maxWidth) != WindowSize.compact;
+          return Row(
+            children: [
+              NavigationRail(
+                selectedIndex: selected.index,
+                onDestinationSelected: (index) =>
+                    _select(AppDestination.values[index]),
+                extended: extended,
+                labelType: extended ? null : NavigationRailLabelType.none,
+                destinations: [
+                  for (final destination in AppDestination.values)
+                    NavigationRailDestination(
+                      icon: Icon(destination.icon),
+                      selectedIcon: Icon(destination.selectedIcon),
+                      label: Text(destination.label),
+                    ),
+                ],
+              ),
+              VerticalDivider(width: 1, color: colors.border),
+              Expanded(
+                child: IndexedStack(
+                  index: selected.index,
+                  children: const [
+                    UsagePage(),
+                    SessionBrowserPage(),
+                    ResumeQueuePage(),
+                    LogsPage(),
+                    SettingsPage(),
+                  ],
                 ),
+              ),
             ],
-          ),
-          VerticalDivider(width: 1, color: colors.border),
-          Expanded(
-            child: IndexedStack(
-              index: selected.index,
-              children: const [
-                UsagePage(),
-                SessionBrowserPage(),
-                ResumeQueuePage(),
-                LogsPage(),
-                SettingsPage(),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

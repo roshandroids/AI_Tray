@@ -10,7 +10,7 @@ abstract final class ComponentTheme {
   static BoxDecoration panel(TrayColorTokens colors) {
     return BoxDecoration(
       color: colors.surface,
-      borderRadius: BorderRadius.circular(RadiusTokens.md),
+      borderRadius: BorderRadius.circular(RadiusTokens.lg),
       border: Border.all(color: colors.border),
     );
   }
@@ -18,7 +18,7 @@ abstract final class ComponentTheme {
   static BoxDecoration panelAlt(TrayColorTokens colors) {
     return BoxDecoration(
       color: colors.surfaceAlt,
-      borderRadius: BorderRadius.circular(RadiusTokens.md),
+      borderRadius: BorderRadius.circular(RadiusTokens.lg),
       border: Border.all(color: colors.border),
     );
   }

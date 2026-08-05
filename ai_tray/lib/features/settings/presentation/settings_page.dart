@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/settings_chrome.dart';
 import 'package:ai_tray/core/di/providers.dart';
@@ -94,65 +95,75 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ref.read(settingsControllerProvider.notifier).lastSettings;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: settings == null
-          ? _SettingsLoadState(
-              loading: settingsState.isLoading,
-              message: _settingsErrorMessage(settingsState.error),
-              onRetry: () => unawaited(
-                ref.read(settingsControllerProvider.notifier).retry(),
-              ),
-            )
-          : Builder(
-              builder: (context) {
-                if (!_binaryInitialized) {
-                  _binaryController.text = settings.claudeBinaryPath ?? '';
-                  _binaryInitialized = true;
-                }
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SettingsNavRail(
-                      selected: _section,
-                      onSelect: (section) => setState(() => _section = section),
+      body: Column(
+        children: [
+          const PageHeader(title: 'Settings'),
+          Expanded(
+            child: settings == null
+                ? _SettingsLoadState(
+                    loading: settingsState.isLoading,
+                    message: _settingsErrorMessage(settingsState.error),
+                    onRetry: () => unawaited(
+                      ref.read(settingsControllerProvider.notifier).retry(),
                     ),
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(Spacing.md),
+                  )
+                : Builder(
+                    builder: (context) {
+                      if (!_binaryInitialized) {
+                        _binaryController.text =
+                            settings.claudeBinaryPath ?? '';
+                        _binaryInitialized = true;
+                      }
+
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (settingsState.hasError) ...[
-                            _InlineError(
-                              message: _settingsErrorMessage(
-                                settingsState.error,
-                              ),
-                              onRetry: () => unawaited(
-                                ref
-                                    .read(settingsControllerProvider.notifier)
-                                    .retry(),
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.md),
-                          ],
-                          Text(
-                            _section.label,
-                            style: context.typography.title,
+                          SettingsNavRail(
+                            selected: _section,
+                            onSelect: (section) =>
+                                setState(() => _section = section),
                           ),
-                          const SizedBox(height: Spacing.md),
-                          ..._buildSection(
-                            settings,
-                            personalization,
-                            iconSwitcher.isSupported,
-                            selectedProvider,
-                            settingsState.isLoading,
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.all(Spacing.md),
+                              children: [
+                                if (settingsState.hasError) ...[
+                                  _InlineError(
+                                    message: _settingsErrorMessage(
+                                      settingsState.error,
+                                    ),
+                                    onRetry: () => unawaited(
+                                      ref
+                                          .read(
+                                            settingsControllerProvider.notifier,
+                                          )
+                                          .retry(),
+                                    ),
+                                  ),
+                                  const SizedBox(height: Spacing.md),
+                                ],
+                                Text(
+                                  _section.label,
+                                  style: context.typography.title,
+                                ),
+                                const SizedBox(height: Spacing.md),
+                                ..._buildSection(
+                                  settings,
+                                  personalization,
+                                  iconSwitcher.isSupported,
+                                  selectedProvider,
+                                  settingsState.isLoading,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

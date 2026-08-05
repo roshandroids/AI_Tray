@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/components/metric_card.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/session_card.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
@@ -60,149 +62,153 @@ final class UsagePage extends ConsumerWidget {
         final kind = UsageStatusMapper.kind(status);
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('AI Tray'),
-            actions: [
-              ProviderSelector(
-                providers: selectableProviders,
-                selectedId: selectedProvider.providerId,
-                enabled: !selectionBusy,
-                onSelected: (providerId) async {
-                  final changed = await ref
-                      .read(selectedProviderIdProvider.notifier)
-                      .select(providerId);
-                  if (changed) {
-                    await repository.refresh(manual: true);
-                  }
-                },
-              ),
-              const SizedBox(width: Spacing.sm),
-              Padding(
-                padding: const EdgeInsets.only(right: Spacing.sm),
-                child: Center(child: StatusBadge(kind: kind, compact: true)),
-              ),
-              IconButton(
-                tooltip: 'Diagnostics',
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const DiagnosticsPage(),
+          body: Column(
+            children: [
+              PageHeader(
+                title: 'AI Tray',
+                actions: [
+                  ProviderSelector(
+                    providers: selectableProviders,
+                    selectedId: selectedProvider.providerId,
+                    enabled: !selectionBusy,
+                    onSelected: (providerId) async {
+                      final changed = await ref
+                          .read(selectedProviderIdProvider.notifier)
+                          .select(providerId);
+                      if (changed) {
+                        await repository.refresh(manual: true);
+                      }
+                    },
                   ),
-                ),
-                icon: const Icon(Icons.monitor_heart_outlined),
-              ),
-            ],
-          ),
-          body: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: Spacing.contentMaxWidth,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Spacing.md,
-                  Spacing.sm,
-                  Spacing.md,
-                  Spacing.sm,
-                ),
-                child: Column(
-                  children: [
-                    if (selectionFailure != null) ...[
-                      _DashboardStatusNotice(
-                        icon: Icons.save_outlined,
-                        message:
-                            '${selectionFailure.message}. '
-                            'Selection is active in memory — '
-                            'tap Retry to save.',
-                        color: context.colors.warning,
-                        actionLabel: 'Retry',
-                        onAction: () => unawaited(
-                          ref
-                              .read(selectedProviderIdProvider.notifier)
-                              .retryPersistence(),
-                        ),
+                  Center(child: StatusBadge(kind: kind, compact: true)),
+                  IconButton(
+                    tooltip: 'Diagnostics',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DiagnosticsPage(),
                       ),
-                      const SizedBox(height: Spacing.sm),
-                    ],
-                    const _ContinueYourWorkSection(),
-                    const SizedBox(height: Spacing.md),
-                    _ProviderHeader(
-                      key: ValueKey(
-                        'provider-header-${selectedProvider.providerId.value}',
-                      ),
-                      provider: selectedProvider,
-                      status: status,
                     ),
-                    const SizedBox(height: Spacing.sm),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration:
-                            MediaQuery.maybeOf(context)?.disableAnimations ??
-                                false
-                            ? Duration.zero
-                            : const Duration(milliseconds: 220),
-                        switchInCurve: Curves.easeOutCubic,
-                        switchOutCurve: Curves.easeInCubic,
-                        child: usage == null
-                            ? refreshing
-                                  ? _DashboardSkeleton(
-                                      key: ValueKey(
-                                        'dashboard-skeleton-'
-                                        '${selectedProvider.providerId.value}',
-                                      ),
-                                    )
-                                  : SingleChildScrollView(
-                                      key: ValueKey(
-                                        'dashboard-empty-'
-                                        '${selectedProvider.providerId.value}',
-                                      ),
-                                      child: TrayEmptyState(
-                                        failure: error,
-                                        provider: selectedProvider,
-                                      ),
-                                    )
-                            : _DashboardBody(
-                                key: ValueKey(
-                                  'dashboard-'
-                                  '${selectedProvider.providerId.value}',
-                                ),
-                                usage: usage,
-                                status: status,
-                                kind: kind,
-                                provider: selectedProvider,
+                    icon: const Icon(Icons.monitor_heart_outlined),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: Spacing.contentMaxWidth,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        Spacing.md,
+                        Spacing.sm,
+                        Spacing.md,
+                        Spacing.sm,
+                      ),
+                      child: Column(
+                        children: [
+                          if (selectionFailure != null) ...[
+                            _DashboardStatusNotice(
+                              icon: Icons.save_outlined,
+                              message:
+                                  '${selectionFailure.message}. '
+                                  'Selection is active in memory — '
+                                  'tap Retry to save.',
+                              color: context.colors.warning,
+                              actionLabel: 'Retry',
+                              onAction: () => unawaited(
+                                ref
+                                    .read(selectedProviderIdProvider.notifier)
+                                    .retryPersistence(),
                               ),
-                      ),
-                    ),
-                    const SectionDivider(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '⌘K Commands · ⌘R Refresh · ⌘L Logs · ⌘, Settings',
-                            style: context.typography.caption,
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                          ],
+                          const _ContinueYourWorkSection(),
+                          const SizedBox(height: Spacing.md),
+                          _ProviderHeader(
+                            key: ValueKey(
+                              'provider-header-${selectedProvider.providerId.value}',
+                            ),
+                            provider: selectedProvider,
+                            status: status,
                           ),
-                        ),
-                        TextButton(
-                          onPressed: refreshing
-                              ? null
-                              : () => unawaited(
-                                  repository.refresh(manual: true),
-                                ),
-                          child: Text(
-                            refreshing ? 'Refreshing…' : 'Refresh',
-                            style: context.typography.label.copyWith(
-                              color: refreshing
-                                  ? context.colors.textMuted
-                                  : context.colors.success,
+                          const SizedBox(height: Spacing.sm),
+                          Expanded(
+                            child: AnimatedSwitcher(
+                              duration:
+                                  MediaQuery.maybeOf(
+                                        context,
+                                      )?.disableAnimations ??
+                                      false
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 220),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              child: usage == null
+                                  ? refreshing
+                                        ? _DashboardSkeleton(
+                                            key: ValueKey(
+                                              'dashboard-skeleton-'
+                                              '${selectedProvider.providerId.value}',
+                                            ),
+                                          )
+                                        : SingleChildScrollView(
+                                            key: ValueKey(
+                                              'dashboard-empty-'
+                                              '${selectedProvider.providerId.value}',
+                                            ),
+                                            child: TrayEmptyState(
+                                              failure: error,
+                                              provider: selectedProvider,
+                                            ),
+                                          )
+                                  : _DashboardBody(
+                                      key: ValueKey(
+                                        'dashboard-'
+                                        '${selectedProvider.providerId.value}',
+                                      ),
+                                      usage: usage,
+                                      status: status,
+                                      kind: kind,
+                                      provider: selectedProvider,
+                                    ),
                             ),
                           ),
-                        ),
-                      ],
+                          const SectionDivider(),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '⌘K Commands · ⌘R Refresh · ⌘L Logs · ⌘, Settings',
+                                  style: context.typography.caption,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: refreshing
+                                    ? null
+                                    : () => unawaited(
+                                        repository.refresh(manual: true),
+                                      ),
+                                child: Text(
+                                  refreshing ? 'Refreshing…' : 'Refresh',
+                                  style: context.typography.label.copyWith(
+                                    color: refreshing
+                                        ? context.colors.textMuted
+                                        : context.colors.success,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         );
       },
@@ -332,30 +338,14 @@ final class _RecentSessionsCard extends StatelessWidget {
             )
           else
             for (final (index, session) in recent.indexed) ...[
-              InkWell(
-                onTap: () => onOpenSession(session.sessionId),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          session.projectPath ??
-                              session.sanitizedProjectDirName,
-                          style: type.body,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.sm),
-                      Text(
-                        UsageStatusMapper.relativeUpdated(
-                          session.lastActivityAt,
-                        ),
-                        style: type.caption,
-                      ),
-                    ],
-                  ),
+              SessionCard(
+                primaryText:
+                    session.projectPath ?? session.sanitizedProjectDirName,
+                secondaryText: UsageStatusMapper.relativeUpdated(
+                  session.lastActivityAt,
                 ),
+                live: session.isLive ?? false,
+                onTap: () => onOpenSession(session.sessionId),
               ),
               if (index < recent.length - 1) const Divider(height: Spacing.md),
             ],

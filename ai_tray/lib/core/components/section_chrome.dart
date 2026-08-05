@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/theme/component_theme.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
@@ -52,14 +53,14 @@ final class SectionCard extends StatelessWidget {
     required Widget this.child,
     super.key,
     this.title,
-    this.padding = const EdgeInsets.all(Spacing.md),
+    this.padding = const EdgeInsets.all(Spacing.lg),
   }) : children = null;
 
   const SectionCard.divided({
     required this.children,
     super.key,
     this.title,
-    this.padding = const EdgeInsets.all(Spacing.md),
+    this.padding = const EdgeInsets.all(Spacing.lg),
   }) : child = null;
 
   final Widget? child;
@@ -84,11 +85,7 @@ final class SectionCard extends StatelessWidget {
             ],
           );
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(RadiusTokens.md),
-        border: Border.all(color: colors.border),
-      ),
+      decoration: ComponentTheme.panel(colors),
       // ListTile/InkWell children paint their background and ink splashes
       // on the nearest Material ancestor — without this, this DecoratedBox
       // hides those effects (Flutter's ListTile debug assertion catches it).

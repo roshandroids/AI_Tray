@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ai_tray/core/components/log_chip.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/log_entry.dart';
@@ -81,74 +82,74 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
     final providers = _availableProviders;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Logs'),
-        actions: [
-          IconButton(
-            tooltip: _groupByProvider ? 'Ungroup' : 'Group by provider',
-            onPressed: () =>
-                setState(() => _groupByProvider = !_groupByProvider),
-            icon: Icon(
-              _groupByProvider
-                  ? Icons.view_list_outlined
-                  : Icons.layers_outlined,
-            ),
-          ),
-          IconButton(
-            tooltip: 'Copy',
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              await Clipboard.setData(
-                ClipboardData(text: logger.exportPlainText()),
-              );
-              if (!mounted) return;
-              messenger
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  const SnackBar(content: Text('Logs copied')),
-                );
-            },
-            icon: const Icon(Icons.copy_outlined),
-          ),
-          PopupMenuButton<_ExportFormat>(
-            tooltip: 'Export',
-            icon: const Icon(Icons.download_outlined),
-            onSelected: (format) => unawaited(_export(logger, format)),
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: _ExportFormat.plainText,
-                child: Text('Export as .txt'),
+      body: Column(
+        children: [
+          PageHeader(
+            title: 'Logs',
+            actions: [
+              IconButton(
+                tooltip: _groupByProvider ? 'Ungroup' : 'Group by provider',
+                onPressed: () =>
+                    setState(() => _groupByProvider = !_groupByProvider),
+                icon: Icon(
+                  _groupByProvider
+                      ? Icons.view_list_outlined
+                      : Icons.layers_outlined,
+                ),
               ),
-              PopupMenuItem(
-                value: _ExportFormat.json,
-                child: Text('Export as .json'),
+              IconButton(
+                tooltip: 'Copy',
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  await Clipboard.setData(
+                    ClipboardData(text: logger.exportPlainText()),
+                  );
+                  if (!mounted) return;
+                  messenger
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(
+                      const SnackBar(content: Text('Logs copied')),
+                    );
+                },
+                icon: const Icon(Icons.copy_outlined),
+              ),
+              PopupMenuButton<_ExportFormat>(
+                tooltip: 'Export',
+                icon: const Icon(Icons.download_outlined),
+                onSelected: (format) => unawaited(_export(logger, format)),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _ExportFormat.plainText,
+                    child: Text('Export as .txt'),
+                  ),
+                  PopupMenuItem(
+                    value: _ExportFormat.json,
+                    child: Text('Export as .json'),
+                  ),
+                ],
+              ),
+              IconButton(
+                tooltip: 'Clear',
+                onPressed: logger.entries.isEmpty
+                    ? null
+                    : () {
+                        logger.clear();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context)
+                          ..hideCurrentSnackBar()
+                          ..showSnackBar(
+                            const SnackBar(content: Text('Logs cleared')),
+                          );
+                      },
+                icon: const Icon(Icons.delete_outline),
+              ),
+              IconButton(
+                tooltip: 'Reveal export folder',
+                onPressed: () => unawaited(_reveal(Directory.systemTemp.path)),
+                icon: const Icon(Icons.folder_open_outlined),
               ),
             ],
           ),
-          IconButton(
-            tooltip: 'Clear',
-            onPressed: logger.entries.isEmpty
-                ? null
-                : () {
-                    logger.clear();
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context)
-                      ..hideCurrentSnackBar()
-                      ..showSnackBar(
-                        const SnackBar(content: Text('Logs cleared')),
-                      );
-                  },
-            icon: const Icon(Icons.delete_outline),
-          ),
-          IconButton(
-            tooltip: 'Reveal export folder',
-            onPressed: () => unawaited(_reveal(Directory.systemTemp.path)),
-            icon: const Icon(Icons.folder_open_outlined),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
               Spacing.md,
@@ -156,14 +157,18 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
               Spacing.md,
               Spacing.sm,
             ),
-            child: TextField(
-              controller: _search,
-              style: context.typography.body,
-              decoration: const InputDecoration(
-                hintText: 'Search logs…',
-                prefixIcon: Icon(Icons.search, size: 16),
+            child: Semantics(
+              textField: true,
+              label: 'Search logs',
+              child: TextField(
+                controller: _search,
+                style: context.typography.body,
+                decoration: const InputDecoration(
+                  hintText: 'Search logs…',
+                  prefixIcon: Icon(Icons.search, size: 16),
+                ),
+                onChanged: (_) => setState(() {}),
               ),
-              onChanged: (_) => setState(() {}),
             ),
           ),
           SingleChildScrollView(
@@ -209,18 +214,26 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
           const SectionDivider(),
           Expanded(
             child: rows.isEmpty
-                ? Center(
-                    child: Text(
-                      _entries.isEmpty
-                          ? 'No log entries yet. Run a refresh or diagnostics '
-                                'check to generate logs.'
-                          : 'No logs match these filters. Clear the search or '
-                                'choose All Providers.',
-                      key: ValueKey(
-                        _entries.isEmpty ? 'logs-empty' : 'logs-no-match',
+                ? Semantics(
+                    container: true,
+                    label: _entries.isEmpty
+                        ? 'No log entries yet. Run a refresh or diagnostics '
+                              'check to generate logs.'
+                        : 'No logs match these filters. Clear the search or '
+                              'choose All Providers.',
+                    child: Center(
+                      child: Text(
+                        _entries.isEmpty
+                            ? 'No log entries yet. Run a refresh or diagnostics '
+                                  'check to generate logs.'
+                            : 'No logs match these filters. Clear the search or '
+                                  'choose All Providers.',
+                        key: ValueKey(
+                          _entries.isEmpty ? 'logs-empty' : 'logs-no-match',
+                        ),
+                        style: context.typography.caption,
+                        textAlign: TextAlign.center,
                       ),
-                      style: context.typography.caption,
-                      textAlign: TextAlign.center,
                     ),
                   )
                 : _groupByProvider

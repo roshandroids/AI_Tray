@@ -144,16 +144,6 @@ final class TrayTypography extends ThemeExtension<TrayTypography> {
   final TextStyle button;
   final TextStyle error;
 
-  // --- Compatibility aliases for older screens ---
-  TextStyle get heading => section;
-  TextStyle get sectionTitle => section;
-  TextStyle get appBarTitle => title;
-  TextStyle get bodySmall => caption;
-  TextStyle get muted => caption;
-  TextStyle get meterValue => monoData;
-  TextStyle get badge => status;
-  TextStyle get emptyTitle => section;
-
   @override
   TrayTypography copyWith({
     TextStyle? display,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
@@ -30,31 +31,42 @@ final class AboutPage extends ConsumerWidget {
     final history = ref.watch(releaseHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: Spacing.contentMaxWidth),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(Spacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const _Hero(),
-                const SizedBox(height: Spacing.md),
-                _VersionCard(packageInfo: packageInfo, history: history),
-                const SizedBox(height: Spacing.md),
-                const _LinksCard(),
-                const SizedBox(height: Spacing.md),
-                _ChangelogCard(packageInfo: packageInfo, history: history),
-                const SizedBox(height: Spacing.md),
-                const _SystemInfoCard(),
-                const SizedBox(height: Spacing.md),
-                const _SupportCard(),
-              ],
+      body: Column(
+        children: [
+          const PageHeader(title: 'About'),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: Spacing.contentMaxWidth,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(Spacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _Hero(),
+                      const SizedBox(height: Spacing.md),
+                      _VersionCard(packageInfo: packageInfo, history: history),
+                      const SizedBox(height: Spacing.md),
+                      const _LinksCard(),
+                      const SizedBox(height: Spacing.md),
+                      _ChangelogCard(
+                        packageInfo: packageInfo,
+                        history: history,
+                      ),
+                      const SizedBox(height: Spacing.md),
+                      const _SystemInfoCard(),
+                      const SizedBox(height: Spacing.md),
+                      const _SupportCard(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -66,32 +78,40 @@ final class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return Column(
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surfaceAlt,
-            shape: BoxShape.circle,
-            border: Border.all(color: colors.border),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(Spacing.md),
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              size: 40,
-              color: colors.success,
+    return Semantics(
+      container: true,
+      label:
+          'AI Tray — terminal-inspired desktop companion for '
+          'AI coding providers.',
+      child: Column(
+        children: [
+          ExcludeSemantics(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surfaceAlt,
+                shape: BoxShape.circle,
+                border: Border.all(color: colors.border),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(Spacing.md),
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 40,
+                  color: colors.success,
+                ),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: Spacing.sm),
-        Text('AI Tray', style: context.typography.display),
-        const SizedBox(height: Spacing.xs),
-        Text(
-          'Terminal-inspired desktop companion for AI coding providers.',
-          style: context.typography.caption,
-          textAlign: TextAlign.center,
-        ),
-      ],
+          const SizedBox(height: Spacing.sm),
+          Text('AI Tray', style: context.typography.display),
+          const SizedBox(height: Spacing.xs),
+          Text(
+            'Terminal-inspired desktop companion for AI coding providers.',
+            style: context.typography.caption,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -111,23 +131,27 @@ final class _VersionCard extends StatelessWidget {
         ? null
         : releaseHistory?.entryForVersion(version);
 
-    return SectionCard.divided(
-      title: 'Version',
-      children: [
-        if (packageInfo.isLoading && info == null)
-          const InfoRow(label: 'Version', value: '…')
-        else if (packageInfo.hasError && info == null)
-          const InfoRow(label: 'Version', value: 'unavailable')
-        else ...[
-          InfoRow(label: 'Version', value: version ?? '—'),
-          InfoRow(label: 'Build', value: info?.buildNumber ?? '—'),
-          InfoRow(label: 'Released', value: current?.date ?? '—'),
-          const InfoRow(
-            label: 'Mode',
-            value: kReleaseMode ? 'Release' : 'Debug',
-          ),
+    return Semantics(
+      container: true,
+      label: 'Version information, current version ${version ?? 'unknown'}',
+      child: SectionCard.divided(
+        title: 'Version',
+        children: [
+          if (packageInfo.isLoading && info == null)
+            const InfoRow(label: 'Version', value: '…')
+          else if (packageInfo.hasError && info == null)
+            const InfoRow(label: 'Version', value: 'unavailable')
+          else ...[
+            InfoRow(label: 'Version', value: version ?? '—'),
+            InfoRow(label: 'Build', value: info?.buildNumber ?? '—'),
+            InfoRow(label: 'Released', value: current?.date ?? '—'),
+            const InfoRow(
+              label: 'Mode',
+              value: kReleaseMode ? 'Release' : 'Debug',
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

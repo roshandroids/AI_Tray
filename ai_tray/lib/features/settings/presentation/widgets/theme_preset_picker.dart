@@ -100,7 +100,7 @@ class _ThemePresetPickerState extends State<ThemePresetPicker> {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: selected
-                                  ? context.colors.primary
+                                  ? context.colors.purpleAccent
                                   : context.colors.textPrimary,
                             ),
                           ),

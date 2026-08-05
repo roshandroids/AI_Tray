@@ -1,12 +1,14 @@
+import 'package:ai_tray/core/components/empty_state.dart';
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
-import 'package:ai_tray/core/theme/spacing.dart';
-import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/providers/core/models/provider_id.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:flutter/material.dart';
 
 /// Polished empty / error guidance for the usage window (PD-013 / PD-014).
+///
+/// Owns copy selection per [FailureCode]/provider only — chrome comes from
+/// the shared [EmptyState] primitive (V4 §1.3).
 final class TrayEmptyState extends StatelessWidget {
   const TrayEmptyState({
     required this.failure,
@@ -20,23 +22,11 @@ final class TrayEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final copy = _copyFor(failure, provider);
-    final type = context.typography;
-
-    return Semantics(
-      container: true,
-      label: '${copy.title}. ${copy.body}',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(copy.title, style: type.emptyTitle),
-          const SizedBox(height: Spacing.sm),
-          Text(copy.body, style: type.bodySmall),
-          if (copy.hint != null) ...[
-            const SizedBox(height: Spacing.md),
-            Text(copy.hint!, style: type.muted),
-          ],
-        ],
-      ),
+    return EmptyState(
+      icon: Icons.cloud_off_outlined,
+      title: copy.title,
+      body: copy.body,
+      hint: copy.hint,
     );
   }
 

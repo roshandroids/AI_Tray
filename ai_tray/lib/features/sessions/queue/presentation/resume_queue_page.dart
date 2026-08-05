@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/empty_state.dart';
+import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
@@ -69,56 +71,76 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
     final notifier = ref.read(resumeQueueControllerProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Queue'),
-        actions: [
-          IconButton(
-            key: const ValueKey('queue-run-next'),
-            tooltip: 'Run next',
-            onPressed: itemsAsync.isLoading
-                ? null
-                : () => unawaited(notifier.runNext()),
-            icon: const Icon(Icons.play_arrow),
+      body: Column(
+        children: [
+          PageHeader(
+            title: 'Queue',
+            actions: [
+              IconButton(
+                key: const ValueKey('queue-run-next'),
+                tooltip: 'Run next',
+                onPressed: itemsAsync.isLoading
+                    ? null
+                    : () => unawaited(notifier.runNext()),
+                icon: const Icon(Icons.play_arrow),
+              ),
+              IconButton(
+                tooltip: 'Refresh',
+                onPressed: itemsAsync.isLoading
+                    ? null
+                    : () => unawaited(notifier.refresh()),
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
           ),
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: itemsAsync.isLoading
-                ? null
-                : () => unawaited(notifier.refresh()),
-            icon: const Icon(Icons.refresh),
+          Expanded(
+            child: itemsAsync.when(
+              loading: () => Center(
+                child: Semantics(
+                  label: 'Loading resume queue',
+                  child: CircularProgressIndicator(
+                    key: ValueKey('queue-loading'),
+                  ),
+                ),
+              ),
+              error: (error, stackTrace) => Center(
+                child: Semantics(
+                  label: 'Could not load the resume queue',
+                  child: Text(
+                    'Could not load the resume queue',
+                    key: const ValueKey('queue-error'),
+                    style: context.typography.body,
+                  ),
+                ),
+              ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return const _QueueEmptyState(key: ValueKey('queue-empty'));
+                }
+                return Semantics(
+                  container: true,
+                  label:
+                      'Resume queue, ${items.length} '
+                      '${items.length == 1 ? 'item' : 'items'}',
+                  child: ListView.builder(
+                    key: const ValueKey('queue-list'),
+                    padding: const EdgeInsets.all(Spacing.md),
+                    itemCount: items.length,
+                    itemBuilder: (context, index) => _QueueItemTile(
+                      item: items[index],
+                      onRemove: items[index].status == ResumeQueueStatus.running
+                          ? null
+                          : () => unawaited(notifier.remove(items[index].id)),
+                      onRetry: items[index].status == ResumeQueueStatus.failed
+                          ? () => unawaited(notifier.retry(items[index].id))
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
-      ),
-      body: itemsAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(key: ValueKey('queue-loading')),
-        ),
-        error: (error, stackTrace) => Center(
-          child: Text(
-            'Could not load the resume queue',
-            key: const ValueKey('queue-error'),
-            style: context.typography.body,
-          ),
-        ),
-        data: (items) {
-          if (items.isEmpty) {
-            return const _QueueEmptyState(key: ValueKey('queue-empty'));
-          }
-          return ListView.builder(
-            key: const ValueKey('queue-list'),
-            padding: const EdgeInsets.all(Spacing.md),
-            itemCount: items.length,
-            itemBuilder: (context, index) => _QueueItemTile(
-              item: items[index],
-              onRemove: items[index].status == ResumeQueueStatus.running
-                  ? null
-                  : () => unawaited(notifier.remove(items[index].id)),
-              onRetry: items[index].status == ResumeQueueStatus.failed
-                  ? () => unawaited(notifier.retry(items[index].id))
-                  : null,
-            ),
-          );
-        },
       ),
     );
   }
@@ -238,22 +260,10 @@ final class _QueueEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('No queued tasks', style: type.emptyTitle),
-            const SizedBox(height: Spacing.sm),
-            Text(
-              "Queue a task from a session's detail page.",
-              style: type.bodySmall,
-            ),
-          ],
-        ),
-      ),
+    return const EmptyState(
+      icon: Icons.pending_actions_outlined,
+      title: 'No queued tasks',
+      body: "Queue a task from a session's detail page.",
     );
   }
 }

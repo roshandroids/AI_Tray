@@ -53,7 +53,7 @@ class TrayDisplaySettingsGroup extends StatelessWidget {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: value == mode
-                                  ? context.colors.primary
+                                  ? context.colors.purpleAccent
                                   : context.colors.textPrimary,
                             ),
                           ),

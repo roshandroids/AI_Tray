@@ -1,8 +1,7 @@
 import 'package:ai_tray/core/components/section_chrome.dart';
-import 'package:ai_tray/core/theme/color_tokens.dart';
+import 'package:ai_tray/core/components/status_presentation.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
-import 'package:ai_tray/features/usage/presentation/usage_status.dart';
 import 'package:flutter/material.dart';
 
 /// Compact status badge: color + text (never color alone).
@@ -23,9 +22,12 @@ final class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final color = _color(kind, colors);
-    final label = UsageStatusMapper.label(kind);
+    final presentation = StatusPresentation.fromTrayStatusKind(
+      kind,
+      context.colors,
+    );
+    final color = presentation.color;
+    final label = presentation.label;
 
     return Semantics(
       label: detail == null ? label : '$label. $detail',
@@ -63,16 +65,6 @@ final class StatusBadge extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  static Color _color(TrayStatusKind kind, TrayColorTokens colors) {
-    return switch (kind) {
-      TrayStatusKind.live => colors.success,
-      TrayStatusKind.cached => colors.warning,
-      TrayStatusKind.error => colors.error,
-      TrayStatusKind.refreshing => colors.info,
-      TrayStatusKind.idle => colors.textMuted,
-    };
   }
 }
 
