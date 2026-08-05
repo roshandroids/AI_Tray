@@ -151,7 +151,10 @@ try {
   );
 
   await rm(outputRoot, { recursive: true, force: true });
-  await rename(stagingRoot, outputRoot);
+  // Windows can transiently EPERM this rename right after writing/chmod'ing
+  // the CLI executable (Defender's real-time scan briefly locks it). Retry
+  // rather than fail the build on that lock window.
+  await renameWithRetry(stagingRoot, outputRoot);
   process.stdout.write(`Assembled ${targetName} sidecar at ${outputRoot}\n`);
 } finally {
   await rm(workRoot, { recursive: true, force: true });
@@ -178,6 +181,21 @@ function npmCliPath(nodeRoot, platform) {
   return platform === "win32"
     ? join(nodeRoot, "node_modules", "npm", "bin", "npm-cli.js")
     : join(nodeRoot, "lib", "node_modules", "npm", "bin", "npm-cli.js");
+}
+
+async function renameWithRetry(source, destination, attempts = 5, delayMs = 500) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      await rename(source, destination);
+      return;
+    } catch (error) {
+      const transient = error?.code === "EPERM" || error?.code === "EBUSY";
+      if (!transient || attempt === attempts) {
+        throw error;
+      }
+      await new Promise((resolvePromise) => setTimeout(resolvePromise, delayMs));
+    }
+  }
 }
 
 async function download(url, destination) {
