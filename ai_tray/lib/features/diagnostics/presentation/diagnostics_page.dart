@@ -163,7 +163,8 @@ final class DiagnosticsPage extends ConsumerWidget {
                                   label: 'Interval',
                                   value: settings == null
                                       ? '—'
-                                      : '${settings.refreshInterval.inSeconds}s',
+                                      : '${settings.refreshInterval.inSeconds}'
+                                            's',
                                 ),
                                 InfoRow(
                                   label: 'Phase',

@@ -224,10 +224,10 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
                     child: Center(
                       child: Text(
                         _entries.isEmpty
-                            ? 'No log entries yet. Run a refresh or diagnostics '
-                                  'check to generate logs.'
-                            : 'No logs match these filters. Clear the search or '
-                                  'choose All Providers.',
+                            ? 'No log entries yet. Run a refresh or '
+                                  'diagnostics check to generate logs.'
+                            : 'No logs match these filters. Clear the '
+                                  'search or choose All Providers.',
                         key: ValueKey(
                           _entries.isEmpty ? 'logs-empty' : 'logs-no-match',
                         ),

@@ -45,6 +45,7 @@ final class UsagePage extends ConsumerWidget {
     final repository = ref.watch(usageRepositoryProvider);
     final selectableProviders = ref.watch(selectableAIProvidersProvider);
     final selectedProvider = ref.watch(selectedAIProviderProvider);
+    final providerIdValue = selectedProvider.providerId.value;
     final selectionAsync = ref.watch(selectedProviderIdProvider);
     final selectionNotifier = ref.read(selectedProviderIdProvider.notifier);
     final selectionBusy = selectionAsync.isLoading;
@@ -142,9 +143,7 @@ final class UsagePage extends ConsumerWidget {
                           const _ContinueYourWorkSection(),
                           const SizedBox(height: Spacing.md),
                           _ProviderHeader(
-                            key: ValueKey(
-                              'provider-header-${selectedProvider.providerId.value}',
-                            ),
+                            key: ValueKey('provider-header-$providerIdValue'),
                             provider: selectedProvider,
                             status: status,
                           ),
@@ -165,13 +164,13 @@ final class UsagePage extends ConsumerWidget {
                                         ? _DashboardSkeleton(
                                             key: ValueKey(
                                               'dashboard-skeleton-'
-                                              '${selectedProvider.providerId.value}',
+                                              '$providerIdValue',
                                             ),
                                           )
                                         : SingleChildScrollView(
                                             key: ValueKey(
                                               'dashboard-empty-'
-                                              '${selectedProvider.providerId.value}',
+                                              '$providerIdValue',
                                             ),
                                             child: TrayEmptyState(
                                               failure: error,
@@ -180,8 +179,7 @@ final class UsagePage extends ConsumerWidget {
                                           )
                                   : _DashboardBody(
                                       key: ValueKey(
-                                        'dashboard-'
-                                        '${selectedProvider.providerId.value}',
+                                        'dashboard-$providerIdValue',
                                       ),
                                       usage: usage,
                                       status: status,
@@ -195,7 +193,8 @@ final class UsagePage extends ConsumerWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  '⌘K Commands · ⌘R Refresh · ⌘L Logs · ⌘, Settings',
+                                  '⌘K Commands · ⌘R Refresh · ⌘L Logs · '
+                                  '⌘, Settings',
                                   style: context.typography.caption,
                                 ),
                               ),
