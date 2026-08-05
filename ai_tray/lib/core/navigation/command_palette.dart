@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/keyboard_shortcuts_dialog.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
@@ -9,6 +10,7 @@ import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/about/presentation/about_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/help/presentation/help_center_page.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_list_filter.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_page.dart';
 import 'package:ai_tray/features/sessions/domain/models/session_summary.dart';
@@ -92,6 +94,18 @@ List<CommandPaletteAction> _buildActions(BuildContext context, WidgetRef ref) {
       onInvoke: (context, ref) => Navigator.of(context).push(
         MaterialPageRoute<void>(builder: (_) => const AboutPage()),
       ),
+    ),
+    CommandPaletteAction(
+      label: 'Open Help Center',
+      icon: Icons.help_outline,
+      onInvoke: (context, ref) => Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => const HelpCenterPage()),
+      ),
+    ),
+    CommandPaletteAction(
+      label: 'Keyboard shortcuts',
+      icon: Icons.keyboard_outlined,
+      onInvoke: (context, ref) => showKeyboardShortcutsDialog(context),
     ),
     CommandPaletteAction(
       label: 'Continue last session',

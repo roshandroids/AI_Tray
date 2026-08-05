@@ -6,6 +6,7 @@ library;
 export 'confirmation_dialog.dart';
 export 'empty_state.dart';
 export 'inline_help.dart';
+export 'keyboard_shortcuts_dialog.dart';
 export 'log_chip.dart';
 export 'metric_card.dart';
 export 'page_header.dart';

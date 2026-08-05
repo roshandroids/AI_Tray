@@ -135,6 +135,55 @@ void main() {
     expect(railAfterAction.selectedIndex, AppDestination.settings.index);
   });
 
+  testWidgets(
+    'the palette can open Help Center and the keyboard shortcuts list',
+    (tester) async {
+      final container = await _offlineContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const AiTrayApp(),
+        ),
+      );
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Open Help Center'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.byKey(const ValueKey('help-list')), findsOneWidget);
+
+      Navigator.of(tester.element(find.byKey(const ValueKey('help-list'))))
+          .pop();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Keyboard shortcuts'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Open the command palette'), findsOneWidget);
+    },
+  );
+
   testWidgets('arrow keys move the palette highlight, Enter invokes it', (
     tester,
   ) async {
