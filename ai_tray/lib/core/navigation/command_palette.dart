@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:ai_tray/core/components/coach_mark_overlay.dart';
 import 'package:ai_tray/core/components/keyboard_shortcuts_dialog.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
+import 'package:ai_tray/core/navigation/product_tour_keys.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/motion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
@@ -106,6 +108,14 @@ List<CommandPaletteAction> _buildActions(BuildContext context, WidgetRef ref) {
       label: 'Keyboard shortcuts',
       icon: Icons.keyboard_outlined,
       onInvoke: (context, ref) => showKeyboardShortcutsDialog(context),
+    ),
+    CommandPaletteAction(
+      label: 'Restart Product Tour',
+      icon: Icons.tour_outlined,
+      onInvoke: (context, ref) {
+        final keys = ref.read(productTourKeysProvider);
+        return showCoachMarks(context, buildProductTourSteps(keys));
+      },
     ),
     CommandPaletteAction(
       label: 'Continue last session',

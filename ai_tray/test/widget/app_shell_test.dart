@@ -184,6 +184,57 @@ void main() {
     },
   );
 
+  testWidgets(
+    'Restart Product Tour spotlights real nav rail destinations',
+    (tester) async {
+      final container = await _offlineContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const AiTrayApp(),
+        ),
+      );
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.meta);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyK);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyK);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.meta);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      await tester.tap(find.text('Restart Product Tour'));
+      await tester.pump();
+
+      expect(find.text('1 / 3'), findsOneWidget);
+      expect(
+        find.text('Usage, provider health, and quick actions at a glance.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(
+        find.text('Browse past sessions, grouped by project.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(
+        find.text('Queue tasks to run unattended, one at a time.'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('coach-mark-next')));
+      await tester.pump();
+      expect(find.text('3 / 3'), findsNothing);
+    },
+  );
+
   testWidgets('arrow keys move the palette highlight, Enter invokes it', (
     tester,
   ) async {

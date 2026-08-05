@@ -36,7 +36,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> _pumpSettings(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(1100, 900));
+  await tester.binding.setSurfaceSize(const Size(1100, 1400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
   await tester.pumpWidget(
@@ -172,6 +172,26 @@ void main() {
 
     expect(find.byKey(const ValueKey('help-list')), findsOneWidget);
   });
+
+  testWidgets(
+    'Restart Product Tour in Advanced shows the coach-mark overlay',
+    (tester) async {
+      await _pumpSettings(tester);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SettingsNavRail),
+          matching: find.text('Advanced'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Restart Product Tour'));
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('coach-mark-skip')), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'View notification history in Notifications opens the Notifications '

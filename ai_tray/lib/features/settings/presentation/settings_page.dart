@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:ai_tray/core/components/coach_mark_overlay.dart';
 import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/settings_chrome.dart';
@@ -8,6 +9,7 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/errors/app_failure.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
+import 'package:ai_tray/core/navigation/product_tour_keys.dart';
 import 'package:ai_tray/core/theme/app_theme_mode.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
@@ -486,6 +488,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       builder: (_) => const HelpCenterPage(),
                     ),
                   ),
+                );
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Restart Product Tour'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                final keys = ref.read(productTourKeysProvider);
+                unawaited(
+                  showCoachMarks(context, buildProductTourSteps(keys)),
                 );
               },
             ),

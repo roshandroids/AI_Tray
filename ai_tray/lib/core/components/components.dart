@@ -3,6 +3,7 @@
 /// into individual files as the primitive count grows.
 library;
 
+export 'coach_mark_overlay.dart';
 export 'confirmation_dialog.dart';
 export 'empty_state.dart';
 export 'inline_help.dart';

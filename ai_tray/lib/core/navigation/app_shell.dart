@@ -4,6 +4,7 @@ import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/navigation/command_palette.dart';
+import 'package:ai_tray/core/navigation/product_tour_keys.dart';
 import 'package:ai_tray/core/theme/breakpoints.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/logs_page.dart';
@@ -112,6 +113,7 @@ final class _AppShellState extends ConsumerState<AppShell> {
 
     final selected = ref.watch(appShellDestinationProvider);
     final colors = context.colors;
+    final tourKeys = ref.watch(productTourKeysProvider);
 
     return Scaffold(
       body: LayoutBuilder(
@@ -131,8 +133,14 @@ final class _AppShellState extends ConsumerState<AppShell> {
                 destinations: [
                   for (final destination in AppDestination.values)
                     NavigationRailDestination(
-                      icon: Icon(destination.icon),
-                      selectedIcon: Icon(destination.selectedIcon),
+                      icon: _withTourKey(
+                        _tourKeyFor(destination, tourKeys),
+                        Icon(destination.icon),
+                      ),
+                      selectedIcon: _withTourKey(
+                        _tourKeyFor(destination, tourKeys),
+                        Icon(destination.selectedIcon),
+                      ),
                       label: Text(destination.label),
                     ),
                 ],
@@ -157,3 +165,18 @@ final class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 }
+
+/// `null` for destinations the Product Tour (V4 §9.3) doesn't spotlight.
+GlobalKey? _tourKeyFor(AppDestination destination, ProductTourKeys keys) =>
+    switch (destination) {
+      AppDestination.dashboard => keys.dashboard,
+      AppDestination.sessions => keys.sessions,
+      AppDestination.queue => keys.queue,
+      AppDestination.logs || AppDestination.settings => null,
+    };
+
+/// The unselected and selected icon variants for one destination are
+/// mutually exclusive in the tree at any moment (`NavigationRail` swaps
+/// between them), so both can safely share the same key.
+Widget _withTourKey(GlobalKey? key, Widget child) =>
+    key == null ? child : KeyedSubtree(key: key, child: child);
