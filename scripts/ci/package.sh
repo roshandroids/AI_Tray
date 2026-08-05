@@ -70,8 +70,18 @@ case "${TARGET}" in
     if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
       PS=powershell.exe
       command -v pwsh >/dev/null 2>&1 && PS=pwsh
-      "${PS}" -NoProfile -Command \
-        "Compress-Archive -Path '${REL_DIR}/*' -DestinationPath '${ZIP}' -Force"
+      # Git Bash auto-converts POSIX-looking paths in argv, but mangles one
+      # embedded inside this quoted -Command string (e.g. /d/a/... becomes
+      # D:\d\a\...). Pre-convert with cygpath and disable that conversion so
+      # our already-native path passes through untouched.
+      REL_DIR_WIN="${REL_DIR}"
+      ZIP_WIN="${ZIP}"
+      if command -v cygpath >/dev/null 2>&1; then
+        REL_DIR_WIN="$(cygpath -w "${REL_DIR}")"
+        ZIP_WIN="$(cygpath -w "${ZIP}")"
+      fi
+      MSYS_NO_PATHCONV=1 "${PS}" -NoProfile -Command \
+        "Compress-Archive -Path '${REL_DIR_WIN}\\*' -DestinationPath '${ZIP_WIN}' -Force"
     elif command -v zip >/dev/null 2>&1; then
       (
         cd "${REL_DIR}"
