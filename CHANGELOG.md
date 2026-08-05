@@ -5,7 +5,42 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-08-05
+
 ### Added
+- **App shell redesign (V3):** persistent `AppShell` (NavigationRail +
+  IndexedStack) replaces ad hoc `Navigator.push`; a global Cmd+K command
+  palette shares one action registry with shell navigation (switch provider,
+  continue last session, queue task, refresh, open logs/diagnostics/about,
+  toggle theme), gains arrow-key highlight navigation, and adds a keyboard
+  shortcuts dialog.
+- **All seven screens redesigned work-first (V3):** Dashboard leads with
+  Continue Last Session / Queue a Task / Recent Sessions / Recent Queue;
+  Sessions groups by project with the current session pinned; Session Detail
+  puts Continue Conversation first with technical fields under Advanced;
+  Queue gained a live active/history split with a cancel action; Logs became
+  an explorer (provider filters, expandable metadata, JSON export); Settings
+  gained global keyword search; About became its own product page.
+- Dynamic color-coded tray icon states: the ring colors by usage band
+  (healthy/high-usage/near-limit/exhausted) and dashes when offline,
+  replacing the static monochrome glyph and manual opacity-pulse timer.
+- **V4 responsive foundations:** breakpoint-aware shell and shared primitives
+  (`ResponsiveGrid`, `PageHeader`, `EmptyState`, `StatusPresentation`,
+  `SessionCard`/`ProjectCard`, `ConfirmationDialog`, `InlineHelp`) unify
+  status colors/labels and page headers across all 8 pages.
+- Dashboard Productivity Coach v1 banner (surfaces provider errors, usage
+  exhaustion, queue failures, notifications-off) and tappable Provider Health
+  cards that deep-link into Diagnostics.
+- First-launch onboarding flow (welcome, provider choice, CLI check, feature
+  tour, ready) and a Product Tour coach-mark overlay spotlighting the nav
+  rail, gated on reduced motion, restartable from the command palette and
+  Settings.
+- Searchable Help Center page (Queue, Budget cap, Providers, Diagnostics,
+  Notifications, Sessions topics), reachable from Settings and the command
+  palette.
+- Notifications page with persisted history (`NotificationHistoryRepository`),
+  recording every threshold/queue-completion/test notification through one
+  gateway choke point.
 - **Session management (V2 Milestone 1 + 2):** Session Browser and Session
   Detail views, reading directly from `~/.claude/projects/**/*.jsonl` (no new
   database). Manual "Resume now" action. A bounded, persisted Resume Queue —
@@ -26,6 +61,11 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 - Copilot screenshots plus provider docs and the EP-002 implementation report.
 
 ### Changed
+- Diagnostics' `InfoRow` gains an optional repair-action slot (Force Refresh,
+  Parser/Cache invalid-state repair); Settings' theme/font pickers render
+  bordered preview cards instead of thin rows.
+- Grouped Logs view now virtualizes rows once a group exceeds 30 entries,
+  instead of eagerly mounting every row via `ExpansionTile.children`.
 - Provider selector disables while selection persistence is busy and surfaces a
   retryable save-failure banner on the shared dashboard.
 - Session list is now sorted most-recently-active first, instead of
@@ -47,6 +87,12 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
   classes were never instantiated anywhere.
 
 ### Fixed
+- `SectionCard`'s `ListTile` children now sit above a `Material` ancestor, so
+  ink splashes render on Settings Advanced rows, Dashboard, Diagnostics, and
+  About instead of being silently swallowed.
+- Accessibility sweep: Semantics coverage added to Help Center's result list,
+  the onboarding flow's current step, and the coach-mark callout (announced
+  as a live region).
 - macOS App Sandbox is now disabled. It virtualized `$HOME` for the app and
   every spawned `claude`/provider CLI process, making Session Browser (and
   any provider CLI call) blind to the real `~/.claude` tree regardless of
