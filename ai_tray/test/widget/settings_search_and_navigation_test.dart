@@ -154,6 +154,25 @@ void main() {
     expect(find.text('AI Tray'), findsOneWidget);
   });
 
+  testWidgets('Help Center in Advanced opens the Help Center page', (
+    tester,
+  ) async {
+    await _pumpSettings(tester);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SettingsNavRail),
+        matching: find.text('Advanced'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Help Center'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('help-list')), findsOneWidget);
+  });
+
   testWidgets(
     'View notification history in Notifications opens the Notifications '
     'page',

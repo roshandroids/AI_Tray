@@ -14,6 +14,7 @@ import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/about/presentation/about_page.dart';
 import 'package:ai_tray/features/diagnostics/presentation/copilot_diagnostics_controller.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
+import 'package:ai_tray/features/help/presentation/help_center_page.dart';
 import 'package:ai_tray/features/notifications/presentation/notifications_page.dart';
 import 'package:ai_tray/features/providers/domain/ports/ai_provider.dart';
 import 'package:ai_tray/features/settings/domain/models/app_settings.dart';
@@ -472,6 +473,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ref
                     .read(appShellDestinationProvider.notifier)
                     .select(AppDestination.logs);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Help Center'),
+              trailing: const Icon(Icons.chevron_right, size: 16),
+              onTap: () {
+                unawaited(
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HelpCenterPage(),
+                    ),
+                  ),
+                );
               },
             ),
             ListTile(
