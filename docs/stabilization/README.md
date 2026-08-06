@@ -1,6 +1,6 @@
 # Phase 2 Stabilization — Progress Log
 
-**Checklist:** [AI_Tray_Phase2_Stabilization_Checklist.md](../../AI_Tray_Phase2_Stabilization_Checklist.md)  
+**Checklist:** [AI_Tray_Phase2_Stabilization_Checklist.md](../archive/AI_Tray_Phase2_Stabilization_Checklist.md)  
 **Status:** **S-010 complete** — stopped for PO approval  
 **Platform policy:** macOS validated · Windows Experimental ([PD-010](PD-010-defer-windows.md))
 

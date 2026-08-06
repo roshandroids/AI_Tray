@@ -1,6 +1,6 @@
 # Phase 2 Stabilization Report
 
-**Checklist:** [AI_Tray_Phase2_Stabilization_Checklist.md](../../AI_Tray_Phase2_Stabilization_Checklist.md)  
+**Checklist:** [AI_Tray_Phase2_Stabilization_Checklist.md](../archive/AI_Tray_Phase2_Stabilization_Checklist.md)  
 **Completed:** 2026-07-12  
 **PO decisions applied:** PD-010 (Windows deferred / Experimental)
 
