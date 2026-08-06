@@ -9,6 +9,10 @@
 # Requires: clean working tree (except CHANGELOG edits you intend to make first),
 #           entries under ## [Unreleased] in CHANGELOG.md.
 #
+# Before running: audit `git log --oneline <last-tag>..HEAD` against
+# [Unreleased] and fill any gaps — see docs/release/CI-CD.md#changelog-convention
+# for the grouping/format convention (v1.4.0's CHANGELOG entry is the reference).
+#
 # Source of truth for notes: CHANGELOG.md. Derived asset (do not hand-edit):
 #   ai_tray/assets/release_history.json
 set -euo pipefail

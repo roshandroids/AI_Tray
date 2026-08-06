@@ -8,75 +8,85 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 ## [1.4.0] — 2026-08-05
 
 ### Added
-- **App shell redesign (V3):** persistent `AppShell` (NavigationRail +
-  IndexedStack) replaces ad hoc `Navigator.push`; a global Cmd+K command
-  palette shares one action registry with shell navigation (switch provider,
-  continue last session, queue task, refresh, open logs/diagnostics/about,
-  toggle theme), gains arrow-key highlight navigation, and adds a keyboard
-  shortcuts dialog.
-- **All seven screens redesigned work-first (V3):** Dashboard leads with
-  Continue Last Session / Queue a Task / Recent Sessions / Recent Queue;
+
+**Navigation & shell (V3)**
+- **App shell:** persistent `AppShell` (NavigationRail + IndexedStack)
+  replaces ad hoc `Navigator.push`.
+- **Command palette:** global Cmd+K palette sharing one action registry with
+  shell navigation (switch provider, continue last session, queue task,
+  refresh, open logs/diagnostics/about, toggle theme), plus arrow-key
+  highlight navigation and a keyboard shortcuts dialog.
+- **Screen redesign:** all seven screens rebuilt work-first — Dashboard leads
+  with Continue Last Session / Queue a Task / Recent Sessions / Recent Queue;
   Sessions groups by project with the current session pinned; Session Detail
   puts Continue Conversation first with technical fields under Advanced;
   Queue gained a live active/history split with a cancel action; Logs became
   an explorer (provider filters, expandable metadata, JSON export); Settings
   gained global keyword search; About became its own product page.
-- Dynamic color-coded tray icon states: the ring colors by usage band
-  (healthy/high-usage/near-limit/exhausted) and dashes when offline,
-  replacing the static monochrome glyph and manual opacity-pulse timer.
-- **V4 responsive foundations:** breakpoint-aware shell and shared primitives
+- **Tray icon:** dynamic color-coded ring by usage band
+  (healthy/high-usage/near-limit/exhausted), dashed when offline, replacing
+  the static monochrome glyph and manual opacity-pulse timer.
+
+**Responsive foundations & dashboard (V4)**
+- **Shared primitives:** breakpoint-aware shell and components
   (`ResponsiveGrid`, `PageHeader`, `EmptyState`, `StatusPresentation`,
   `SessionCard`/`ProjectCard`, `ConfirmationDialog`, `InlineHelp`) unify
   status colors/labels and page headers across all 8 pages.
-- Dashboard Productivity Coach v1 banner (surfaces provider errors, usage
-  exhaustion, queue failures, notifications-off) and tappable Provider Health
-  cards that deep-link into Diagnostics.
-- First-launch onboarding flow (welcome, provider choice, CLI check, feature
-  tour, ready) and a Product Tour coach-mark overlay spotlighting the nav
-  rail, gated on reduced motion, restartable from the command palette and
-  Settings.
-- Searchable Help Center page (Queue, Budget cap, Providers, Diagnostics,
-  Notifications, Sessions topics), reachable from Settings and the command
-  palette.
-- Notifications page with persisted history (`NotificationHistoryRepository`),
-  recording every threshold/queue-completion/test notification through one
-  gateway choke point.
+- **Productivity Coach:** Dashboard banner surfacing provider errors, usage
+  exhaustion, queue failures, and notifications-off; tappable Provider Health
+  cards deep-link into Diagnostics.
+
+**Onboarding, tour & help**
+- **First-launch onboarding:** welcome, provider choice, CLI check, feature
+  tour, and ready screens.
+- **Product Tour:** coach-mark overlay spotlighting the nav rail, gated on
+  reduced motion, restartable from the command palette and Settings.
+- **Help Center:** searchable page (Queue, Budget cap, Providers,
+  Diagnostics, Notifications, Sessions topics), reachable from Settings and
+  the command palette.
+
+**Sessions, queue & notifications**
 - **Session management (V2 Milestone 1 + 2):** Session Browser and Session
   Detail views, reading directly from `~/.claude/projects/**/*.jsonl` (no new
-  database). Manual "Resume now" action. A bounded, persisted Resume Queue —
+  database); manual "Resume now" action; a bounded, persisted Resume Queue —
   every queued item requires a budget cap, defaults to forking the session
   rather than continuing in place, and notifies on completion; clicking the
-  notification opens that session's detail page directly. A cancel/remove
+  notification opens that session's detail page directly; a cancel/remove
   action for queue items (pending items can be cancelled; finished items
   cleared; a running item can't be removed until it finishes).
-- `NotificationGateway` abstraction with a real `local_notifier`-backed
-  implementation, migrated `TrayController`'s threshold alert onto it.
-- FlexColorScheme branded personalization: selectable theme presets, bundled
-  fonts, and app-icon architecture (PD-026 / ADR-005).
-- Adaptive menu-bar title density — quiet by default, reveals a percentage
-  only past a configurable threshold — plus a monochrome template glyph
-  (PD-027).
-- EP-002 Phase 3 UI quality coverage: accessibility/state widget tests and
-  provider UI golden baselines for Claude and GitHub Copilot.
-- Copilot screenshots plus provider docs and the EP-002 implementation report.
+- **Notifications page:** persisted history (`NotificationHistoryRepository`),
+  recording every threshold/queue-completion/test notification through one
+  gateway choke point (`NotificationGateway`, backed by `local_notifier`),
+  replacing `TrayController`'s direct threshold alert.
+
+**Personalization**
+- **Themes:** FlexColorScheme branded presets, bundled fonts, and app-icon
+  architecture (PD-026 / ADR-005).
+- **Menu-bar density:** adaptive title — quiet by default, reveals a
+  percentage only past a configurable threshold — plus a monochrome
+  template glyph (PD-027).
+
+**Provider quality (EP-002)**
+- Phase 3 UI quality coverage: accessibility/state widget tests and provider
+  UI golden baselines for Claude and GitHub Copilot; Copilot screenshots plus
+  provider docs and the EP-002 implementation report.
 
 ### Changed
-- Diagnostics' `InfoRow` gains an optional repair-action slot (Force Refresh,
-  Parser/Cache invalid-state repair); Settings' theme/font pickers render
-  bordered preview cards instead of thin rows.
-- Grouped Logs view now virtualizes rows once a group exceeds 30 entries,
-  instead of eagerly mounting every row via `ExpansionTile.children`.
-- Provider selector disables while selection persistence is busy and surfaces a
-  retryable save-failure banner on the shared dashboard.
-- Session list is now sorted most-recently-active first, instead of
-  filesystem enumeration order.
-- CI migrated from repo-owned Actions workflows calling `./scripts/*.sh`
+- **Diagnostics & Settings:** `InfoRow` gains an optional repair-action slot
+  (Force Refresh, Parser/Cache invalid-state repair); theme/font pickers
+  render bordered preview cards instead of thin rows.
+- **Logs:** grouped view now virtualizes rows once a group exceeds 30
+  entries, instead of eagerly mounting every row via `ExpansionTile.children`.
+- **Sessions:** list sorted most-recently-active first, instead of filesystem
+  enumeration order.
+- **Providers:** selector disables while selection persistence is busy and
+  surfaces a retryable save-failure banner on the shared dashboard.
+- **CI:** migrated from repo-owned Actions workflows calling `./scripts/*.sh`
   directly to reusable workflows from `roshandroids/platform-ci@v1`,
   configured by root `ci.yaml`; a new `release-pr.yml` builds macOS/Windows
-  for any PR whose head branch starts with `release/`.
-- `platform-ci` workflow calls are now pinned to a resolved commit SHA
-  instead of the mutable `@v1` tag, so an upstream change can't silently
-  alter this repo's release behavior.
+  for any PR whose head branch starts with `release/`; workflow calls are
+  now pinned to a resolved commit SHA instead of the mutable `@v1` tag, so an
+  upstream change can't silently alter this repo's release behavior.
 
 ### Removed
 - 12 unreferenced files: 10 provider-platform compatibility re-export shims
@@ -87,16 +97,16 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
   classes were never instantiated anywhere.
 
 ### Fixed
-- `SectionCard`'s `ListTile` children now sit above a `Material` ancestor, so
-  ink splashes render on Settings Advanced rows, Dashboard, Diagnostics, and
-  About instead of being silently swallowed.
-- Accessibility sweep: Semantics coverage added to Help Center's result list,
+- **Accessibility:** Semantics coverage added to Help Center's result list,
   the onboarding flow's current step, and the coach-mark callout (announced
   as a live region).
-- macOS App Sandbox is now disabled. It virtualized `$HOME` for the app and
-  every spawned `claude`/provider CLI process, making Session Browser (and
-  any provider CLI call) blind to the real `~/.claude` tree regardless of
-  entitlement exceptions. Distribution remains signed/notarized GitHub
+- **Rendering:** `SectionCard`'s `ListTile` children now sit above a
+  `Material` ancestor, so ink splashes render on Settings Advanced rows,
+  Dashboard, Diagnostics, and About instead of being silently swallowed.
+- **macOS:** App Sandbox is now disabled. It virtualized `$HOME` for the app
+  and every spawned `claude`/provider CLI process, making Session Browser
+  (and any provider CLI call) blind to the real `~/.claude` tree regardless
+  of entitlement exceptions. Distribution remains signed/notarized GitHub
   Releases, not the Mac App Store, so sandboxing had no upside here.
 
 ## [1.3.3] — 2026-07-17

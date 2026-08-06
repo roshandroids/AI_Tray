@@ -33,7 +33,8 @@ Related: [REPOSITORY_GOVERNANCE.md](REPOSITORY_GOVERNANCE.md) ·
 
 - [ ] Acceptance criteria met
 - [ ] Does not violate PD-023 / PD-024 / PD-025 / ADR-004 constraints
-- [ ] `CHANGELOG.md` updated for user-facing changes
+- [ ] `CHANGELOG.md` updated for user-facing changes, following the
+      [CHANGELOG convention](../release/CI-CD.md#changelog-convention)
 
 ### Docs / process
 
