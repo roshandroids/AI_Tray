@@ -86,8 +86,8 @@ flutter run -d macos
 
 ## Product & process (historical)
 
-- [AI_Tray_Product_Owner_Master_Roadmap.md](AI_Tray_Product_Owner_Master_Roadmap.md)
-- [AI_Tray_Autonomous_Execution_Guide.md](AI_Tray_Autonomous_Execution_Guide.md)
+- [docs/archive/AI_Tray_Product_Owner_Master_Roadmap.md](docs/archive/AI_Tray_Product_Owner_Master_Roadmap.md)
+- [docs/archive/AI_Tray_Autonomous_Execution_Guide.md](docs/archive/AI_Tray_Autonomous_Execution_Guide.md)
 - Research PoC: [research/claude-cli.md](research/claude-cli.md)
 
 ## Dogfooding
