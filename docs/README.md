@@ -105,8 +105,8 @@ Blueprint: [PROJECT_BLUEPRINT.md](PROJECT_BLUEPRINT.md) · Engineering:
 | [POSTMORTEM.md](POSTMORTEM.md) | Early postmortem |
 | [planning/](planning/) | Historical planning |
 | [execution/autonomous-progress.md](execution/autonomous-progress.md) | Execution snapshot |
-| [../AI_Tray_Product_Owner_Master_Roadmap.md](../AI_Tray_Product_Owner_Master_Roadmap.md) | Historical PO roadmap |
-| [../AI_Tray_Autonomous_Execution_Guide.md](../AI_Tray_Autonomous_Execution_Guide.md) | Historical autonomous guide |
+| [archive/AI_Tray_Product_Owner_Master_Roadmap.md](archive/AI_Tray_Product_Owner_Master_Roadmap.md) | Historical PO roadmap |
+| [archive/AI_Tray_Autonomous_Execution_Guide.md](archive/AI_Tray_Autonomous_Execution_Guide.md) | Historical autonomous guide |
 | [../research/claude-cli.md](../research/claude-cli.md) | PoC report |
 
 ### App package
