@@ -2,7 +2,7 @@ name: ai_tray
 description: Native desktop companion for AI developer tool usage and Claude Code session management (macOS menu bar / Windows tray).
 publish_to: "none"
 repository: https://github.com/roshandroids/AI_Tray
-version: 1.4.0+10
+version: 1.5.0+11
 
 environment:
   sdk: ^3.10.8
