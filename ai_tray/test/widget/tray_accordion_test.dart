@@ -5,7 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   Widget wrap(Widget child) {
-    return MaterialApp(theme: AppTheme.dark(), home: Scaffold(body: child));
+    return MaterialApp(
+      theme: AppTheme.dark(),
+      home: Scaffold(body: child),
+    );
   }
 
   testWidgets('collapsed body is not built', (tester) async {
