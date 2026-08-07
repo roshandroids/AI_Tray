@@ -1,6 +1,6 @@
 import 'package:ai_tray/core/components/empty_state.dart';
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/help/domain/models/help_topic.dart';
@@ -29,15 +29,15 @@ final class _HelpCenterPageState extends State<HelpCenterPage> {
     final query = _search.text.trim();
     final matches = helpTopics.where((t) => t.matches(query)).toList();
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const PageHeader(title: 'Help Center'),
-          Padding(
+    return SliverPageScaffold(
+      title: 'Help Center',
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(
-              Spacing.md,
+              0,
               Spacing.sm,
-              Spacing.md,
+              0,
               Spacing.sm,
             ),
             child: Semantics(
@@ -55,30 +55,33 @@ final class _HelpCenterPageState extends State<HelpCenterPage> {
               ),
             ),
           ),
-          Expanded(
-            child: matches.isEmpty
-                ? const EmptyState(
-                    key: ValueKey('help-empty'),
-                    icon: Icons.search_off,
-                    title: 'No help topics match this search',
-                    body: 'Clear the search to see every topic.',
-                  )
-                : Semantics(
-                    container: true,
-                    label:
-                        'Help topics, ${matches.length} '
-                        '${matches.length == 1 ? 'result' : 'results'}',
-                    child: ListView.builder(
-                      key: const ValueKey('help-list'),
-                      padding: const EdgeInsets.all(Spacing.md),
-                      itemCount: matches.length,
-                      itemBuilder: (context, index) =>
-                          _HelpTopicCard(topic: matches[index]),
-                    ),
-                  ),
+        ),
+        if (matches.isEmpty)
+          const SliverFillRemaining(
+            child: EmptyState(
+              key: ValueKey('help-empty'),
+              icon: Icons.search_off,
+              title: 'No help topics match this search',
+              body: 'Clear the search to see every topic.',
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: Spacing.md),
+            sliver: SliverSemantics(
+              container: true,
+              label:
+                  'Help topics, ${matches.length} '
+                  '${matches.length == 1 ? 'result' : 'results'}',
+              sliver: SliverList.builder(
+                key: const ValueKey('help-list'),
+                itemCount: matches.length,
+                itemBuilder: (context, index) =>
+                    _HelpTopicCard(topic: matches[index]),
+              ),
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

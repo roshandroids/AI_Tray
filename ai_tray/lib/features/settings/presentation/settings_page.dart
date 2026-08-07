@@ -128,35 +128,42 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 setState(() => _section = section),
                           ),
                           Expanded(
-                            child: ListView(
-                              padding: const EdgeInsets.all(Spacing.md),
-                              children: [
-                                if (settingsState.hasError) ...[
-                                  _InlineError(
-                                    message: _settingsErrorMessage(
-                                      settingsState.error,
-                                    ),
-                                    onRetry: () => unawaited(
-                                      ref
-                                          .read(
-                                            settingsControllerProvider.notifier,
-                                          )
-                                          .retry(),
-                                    ),
+                            child: CustomScrollView(
+                              slivers: [
+                                SliverPadding(
+                                  padding: const EdgeInsets.all(Spacing.md),
+                                  sliver: SliverList.list(
+                                    children: [
+                                      if (settingsState.hasError) ...[
+                                        _InlineError(
+                                          message: _settingsErrorMessage(
+                                            settingsState.error,
+                                          ),
+                                          onRetry: () => unawaited(
+                                            ref
+                                                .read(
+                                                  settingsControllerProvider
+                                                      .notifier,
+                                                )
+                                                .retry(),
+                                          ),
+                                        ),
+                                        const SizedBox(height: Spacing.md),
+                                      ],
+                                      Text(
+                                        _section.label,
+                                        style: context.typography.title,
+                                      ),
+                                      const SizedBox(height: Spacing.md),
+                                      ..._buildSection(
+                                        settings,
+                                        personalization,
+                                        iconSwitcher.isSupported,
+                                        selectedProvider,
+                                        settingsState.isLoading,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: Spacing.md),
-                                ],
-                                Text(
-                                  _section.label,
-                                  style: context.typography.title,
-                                ),
-                                const SizedBox(height: Spacing.md),
-                                ..._buildSection(
-                                  settings,
-                                  personalization,
-                                  iconSwitcher.isSupported,
-                                  selectedProvider,
-                                  settingsState.isLoading,
                                 ),
                               ],
                             ),

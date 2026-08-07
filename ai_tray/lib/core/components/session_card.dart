@@ -1,5 +1,6 @@
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
+import 'package:ai_tray/core/components/tray_accordion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:flutter/material.dart';
@@ -65,53 +66,37 @@ final class ProjectCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.children,
+    required this.isExpanded,
+    required this.onExpandedChanged,
     super.key,
     this.hasLiveSession = false,
-    this.initiallyExpanded = false,
-    this.onExpansionChanged,
-    this.storageKey,
   });
 
   final String title;
   final String subtitle;
   final bool hasLiveSession;
-  final bool initiallyExpanded;
-  final ValueChanged<bool>? onExpansionChanged;
+  final bool isExpanded;
+  final ValueChanged<bool> onExpandedChanged;
   final List<Widget> children;
-  final Key? storageKey;
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
     return Padding(
       padding: const EdgeInsets.only(bottom: Spacing.sm),
       child: SectionCard(
         padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: storageKey,
-          initiallyExpanded: initiallyExpanded,
-          onExpansionChanged: onExpansionChanged,
-          title: Row(
-            children: [
-              Flexible(
-                child: Text(
-                  title,
-                  style: type.body.copyWith(fontWeight: FontWeight.w600),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (hasLiveSession) ...[
-                const SizedBox(width: Spacing.sm),
-                const StatusBadge(kind: TrayStatusKind.live, compact: true),
-              ],
-            ],
+        child: TrayAccordion(
+          title: title,
+          subtitle: subtitle,
+          isExpanded: isExpanded,
+          onExpandedChanged: onExpandedChanged,
+          trailing: hasLiveSession
+              ? const StatusBadge(kind: TrayStatusKind.live, compact: true)
+              : null,
+          bodyBuilder: (context) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
           ),
-          subtitle: Text(
-            subtitle,
-            style: type.caption,
-            overflow: TextOverflow.ellipsis,
-          ),
-          children: children,
         ),
       ),
     );

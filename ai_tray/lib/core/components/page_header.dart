@@ -9,11 +9,19 @@ final class PageHeader extends StatelessWidget {
   const PageHeader({
     required this.title,
     super.key,
+    this.subtitle,
+    this.titleTrailing,
     this.actions = const [],
     this.leading,
   });
 
   final String title;
+
+  /// Second header line, e.g. a project path under a session name.
+  final String? subtitle;
+
+  /// Rendered next to [title] on its own row, e.g. a live-status badge.
+  final Widget? titleTrailing;
   final List<Widget> actions;
   final Widget? leading;
 
@@ -36,7 +44,32 @@ final class PageHeader extends StatelessWidget {
               const SizedBox(width: Spacing.sm),
             ],
             Expanded(
-              child: Text(title, style: context.typography.title),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: context.typography.title,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (titleTrailing != null) ...[
+                        const SizedBox(width: Spacing.sm),
+                        titleTrailing!,
+                      ],
+                    ],
+                  ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: context.typography.caption,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
             for (final action in actions) ...[
               const SizedBox(width: Spacing.sm),

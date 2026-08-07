@@ -266,18 +266,6 @@ abstract final class ThemeFactory {
         contentTextStyle: typography.body,
         actionTextColor: palette.primary,
       ),
-      expansionTileTheme: ExpansionTileThemeData(
-        backgroundColor: Colors.transparent,
-        collapsedBackgroundColor: Colors.transparent,
-        textColor: palette.textPrimary,
-        iconColor: palette.textSecondary,
-        collapsedTextColor: palette.textPrimary,
-        collapsedIconColor: palette.textSecondary,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        tilePadding: EdgeInsets.zero,
-        childrenPadding: const EdgeInsets.only(top: Spacing.sm),
-      ),
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           visualDensity: VisualDensity.compact,

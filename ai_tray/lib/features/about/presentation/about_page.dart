@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
+import 'package:ai_tray/core/components/tray_accordion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/core/theme/typography.dart';
@@ -30,44 +31,31 @@ final class AboutPage extends ConsumerWidget {
     final packageInfo = ref.watch(packageInfoProvider);
     final history = ref.watch(releaseHistoryProvider);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const PageHeader(title: 'About'),
-          Expanded(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: Spacing.contentMaxWidth,
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(Spacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const _Hero(),
-                      const SizedBox(height: Spacing.md),
-                      _VersionCard(packageInfo: packageInfo, history: history),
-                      const SizedBox(height: Spacing.md),
-                      const _LinksCard(),
-                      const SizedBox(height: Spacing.md),
-                      _ChangelogCard(
-                        packageInfo: packageInfo,
-                        history: history,
-                      ),
-                      const SizedBox(height: Spacing.md),
-                      const _SystemInfoCard(),
-                      const SizedBox(height: Spacing.md),
-                      const _SupportCard(),
-                    ],
-                  ),
-                ),
-              ),
+    return SliverPageScaffold(
+      title: 'About',
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(Spacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _Hero(),
+                const SizedBox(height: Spacing.md),
+                _VersionCard(packageInfo: packageInfo, history: history),
+                const SizedBox(height: Spacing.md),
+                const _LinksCard(),
+                const SizedBox(height: Spacing.md),
+                _ChangelogCard(packageInfo: packageInfo, history: history),
+                const SizedBox(height: Spacing.md),
+                const _SystemInfoCard(),
+                const SizedBox(height: Spacing.md),
+                const _SupportCard(),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -235,14 +223,23 @@ final class _SupportCard extends StatelessWidget {
   }
 }
 
-final class _ChangelogCard extends StatelessWidget {
+final class _ChangelogCard extends StatefulWidget {
   const _ChangelogCard({required this.packageInfo, required this.history});
 
   final AsyncValue<PackageInfo> packageInfo;
   final AsyncValue<ReleaseHistory> history;
 
   @override
+  State<_ChangelogCard> createState() => _ChangelogCardState();
+}
+
+final class _ChangelogCardState extends State<_ChangelogCard> {
+  bool _previousExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final packageInfo = widget.packageInfo;
+    final history = widget.history;
     final version = packageInfo.value?.version;
     final releaseHistory = history.value;
     final current = version == null
@@ -278,25 +275,19 @@ final class _ChangelogCard extends StatelessWidget {
             ChangelogView(markdown: current.notesMarkdown),
           if (previous.isNotEmpty) ...[
             const SizedBox(height: Spacing.md),
-            Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                childrenPadding: EdgeInsets.zero,
-                title: Text(
-                  'Previous releases',
-                  style: context.typography.section,
-                ),
+            TrayAccordion(
+              title: 'Previous releases',
+              padding: EdgeInsets.zero,
+              isExpanded: _previousExpanded,
+              onExpandedChanged: (value) =>
+                  setState(() => _previousExpanded = value),
+              bodyBuilder: (context) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final entry in previous) ...[
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '${entry.version} — ${entry.date}',
-                        style: context.typography.monoData,
-                      ),
+                    Text(
+                      '${entry.version} — ${entry.date}',
+                      style: context.typography.monoData,
                     ),
                     const SizedBox(height: Spacing.xs),
                     ChangelogView(markdown: entry.notesMarkdown),

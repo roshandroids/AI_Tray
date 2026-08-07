@@ -1,15 +1,14 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/components/metric_card.dart';
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
 import 'package:ai_tray/core/components/session_card.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
-import 'package:ai_tray/core/theme/breakpoints.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/diagnostics/presentation/diagnostics_page.dart';
@@ -65,164 +64,143 @@ final class UsagePage extends ConsumerWidget {
         final refreshing = status.phase == RefreshPhase.refreshing;
         final kind = UsageStatusMapper.kind(status);
 
-        return Scaffold(
-          body: Column(
-            children: [
-              PageHeader(
-                title: 'AI Tray',
-                actions: [
-                  ProviderSelector(
-                    providers: selectableProviders,
-                    selectedId: selectedProvider.providerId,
-                    enabled: !selectionBusy,
-                    onSelected: (providerId) async {
-                      final changed = await ref
-                          .read(selectedProviderIdProvider.notifier)
-                          .select(providerId);
-                      if (changed) {
-                        await repository.refresh(manual: true);
-                      }
-                    },
-                  ),
-                  Center(child: StatusBadge(kind: kind, compact: true)),
-                  IconButton(
-                    tooltip: 'Diagnostics',
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => DiagnosticsPage(),
-                      ),
-                    ),
-                    icon: const Icon(Icons.monitor_heart_outlined),
-                  ),
-                ],
+        return SliverPageScaffold(
+          title: 'AI Tray',
+          actions: [
+            ProviderSelector(
+              providers: selectableProviders,
+              selectedId: selectedProvider.providerId,
+              enabled: !selectionBusy,
+              onSelected: (providerId) async {
+                final changed = await ref
+                    .read(selectedProviderIdProvider.notifier)
+                    .select(providerId);
+                if (changed) {
+                  await repository.refresh(manual: true);
+                }
+              },
+            ),
+            Center(child: StatusBadge(kind: kind, compact: true)),
+            IconButton(
+              tooltip: 'Diagnostics',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => DiagnosticsPage()),
               ),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    // Scales with window width (V4 §3.1) instead of a flat
-                    // 720px cap, so wide/ultrawide monitors don't carry a
-                    // large dead margin either side of the dashboard.
-                    constraints: BoxConstraints(
-                      maxWidth: switch (windowSizeOf(context)) {
-                        WindowSize.compact => Spacing.contentMaxWidth,
-                        WindowSize.wide => 960,
-                        WindowSize.ultrawide => 1200,
-                      },
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        Spacing.md,
-                        Spacing.sm,
-                        Spacing.md,
-                        Spacing.sm,
+              icon: const Icon(Icons.monitor_heart_outlined),
+            ),
+          ],
+          slivers: [
+            SliverFillRemaining(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  0,
+                  Spacing.sm,
+                  0,
+                  Spacing.sm,
+                ),
+                child: Column(
+                  children: [
+                    if (selectionFailure != null) ...[
+                      _DashboardStatusNotice(
+                        icon: Icons.save_outlined,
+                        message:
+                            '${selectionFailure.message}. '
+                            'Selection is active in memory — '
+                            'tap Retry to save.',
+                        color: context.colors.warning,
+                        actionLabel: 'Retry',
+                        onAction: () => unawaited(
+                          ref
+                              .read(selectedProviderIdProvider.notifier)
+                              .retryPersistence(),
+                        ),
                       ),
-                      child: Column(
-                        children: [
-                          if (selectionFailure != null) ...[
-                            _DashboardStatusNotice(
-                              icon: Icons.save_outlined,
-                              message:
-                                  '${selectionFailure.message}. '
-                                  'Selection is active in memory — '
-                                  'tap Retry to save.',
-                              color: context.colors.warning,
-                              actionLabel: 'Retry',
-                              onAction: () => unawaited(
-                                ref
-                                    .read(selectedProviderIdProvider.notifier)
-                                    .retryPersistence(),
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.sm),
-                          ],
-                          _CoachBanner(
-                            usage: usage,
-                            isProviderError: kind == TrayStatusKind.error,
-                          ),
-                          const _ContinueYourWorkSection(),
-                          const SizedBox(height: Spacing.md),
-                          _ProviderHeader(
-                            key: ValueKey('provider-header-$providerIdValue'),
-                            provider: selectedProvider,
-                            status: status,
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration:
-                                  MediaQuery.maybeOf(
-                                        context,
-                                      )?.disableAnimations ??
-                                      false
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 220),
-                              switchInCurve: Curves.easeOutCubic,
-                              switchOutCurve: Curves.easeInCubic,
-                              child: usage == null
-                                  ? refreshing
-                                        ? _DashboardSkeleton(
-                                            key: ValueKey(
-                                              'dashboard-skeleton-'
-                                              '$providerIdValue',
-                                            ),
-                                          )
-                                        : SingleChildScrollView(
-                                            key: ValueKey(
-                                              'dashboard-empty-'
-                                              '$providerIdValue',
-                                            ),
-                                            child: TrayEmptyState(
-                                              failure: error,
-                                              provider: selectedProvider,
-                                            ),
-                                          )
-                                  : _DashboardBody(
+                      const SizedBox(height: Spacing.sm),
+                    ],
+                    _CoachBanner(
+                      usage: usage,
+                      isProviderError: kind == TrayStatusKind.error,
+                    ),
+                    const _ContinueYourWorkSection(),
+                    const SizedBox(height: Spacing.md),
+                    _ProviderHeader(
+                      key: ValueKey('provider-header-$providerIdValue'),
+                      provider: selectedProvider,
+                      status: status,
+                    ),
+                    const SizedBox(height: Spacing.sm),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration:
+                            MediaQuery.maybeOf(
+                                  context,
+                                )?.disableAnimations ??
+                                false
+                            ? Duration.zero
+                            : const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOutCubic,
+                        switchOutCurve: Curves.easeInCubic,
+                        child: usage == null
+                            ? refreshing
+                                  ? _DashboardSkeleton(
                                       key: ValueKey(
-                                        'dashboard-$providerIdValue',
+                                        'dashboard-skeleton-'
+                                        '$providerIdValue',
                                       ),
-                                      usage: usage,
-                                      status: status,
-                                      kind: kind,
-                                      provider: selectedProvider,
-                                    ),
-                            ),
-                          ),
-                          const SectionDivider(),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '⌘K Commands · ⌘R Refresh · ⌘L Logs · '
-                                  '⌘, Settings',
-                                  style: context.typography.caption,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: refreshing
-                                    ? null
-                                    : () => unawaited(
-                                        repository.refresh(manual: true),
+                                    )
+                                  : SingleChildScrollView(
+                                      key: ValueKey(
+                                        'dashboard-empty-'
+                                        '$providerIdValue',
                                       ),
-                                child: Text(
-                                  refreshing ? 'Refreshing…' : 'Refresh',
-                                  style: context.typography.label.copyWith(
-                                    color: refreshing
-                                        ? context.colors.textMuted
-                                        : context.colors.success,
-                                  ),
+                                      child: TrayEmptyState(
+                                        failure: error,
+                                        provider: selectedProvider,
+                                      ),
+                                    )
+                            : _DashboardBody(
+                                key: ValueKey(
+                                  'dashboard-$providerIdValue',
                                 ),
+                                usage: usage,
+                                status: status,
+                                kind: kind,
+                                provider: selectedProvider,
                               ),
-                            ],
-                          ),
-                        ],
                       ),
                     ),
-                  ),
+                    const SectionDivider(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '⌘K Commands · ⌘R Refresh · ⌘L Logs · '
+                            '⌘, Settings',
+                            style: context.typography.caption,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: refreshing
+                              ? null
+                              : () => unawaited(
+                                  repository.refresh(manual: true),
+                                ),
+                          child: Text(
+                            refreshing ? 'Refreshing…' : 'Refresh',
+                            style: context.typography.label.copyWith(
+                              color: refreshing
+                                  ? context.colors.textMuted
+                                  : context.colors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );

@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/components/tray_accordion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/features/settings/presentation/widgets/theme_mode_picker.dart';
@@ -41,106 +42,97 @@ class _ThemePresetPickerState extends State<ThemePresetPicker> {
       return p.displayName.toLowerCase().contains(q);
     }).toList();
 
-    return ExpansionTile(
-      key: ValueKey('theme-${widget.expanded}'),
-      initiallyExpanded: widget.expanded,
-      onExpansionChanged: widget.onExpansionChanged,
-      title: Text('Color Theme', style: context.typography.body),
-      subtitle: Text(
-        widget.selected.displayName,
-        style: context.typography.caption,
+    return TrayAccordion(
+      title: 'Color Theme',
+      subtitle: widget.selected.displayName,
+      isExpanded: widget.expanded,
+      onExpandedChanged: widget.onExpansionChanged,
+      padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+      trailing: _PaletteStrip(
+        colors: widget.selected.paletteFor(brightness).previewStrip,
+        width: 72,
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+      bodyBuilder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PaletteStrip(
-            colors: widget.selected.paletteFor(brightness).previewStrip,
-            width: 72,
+          PersonalizationSearchField(
+            controller: _query,
+            hintText: 'Search themes',
+            onChanged: (_) => setState(() {}),
           ),
-          const SizedBox(width: Spacing.xs),
-          Icon(
-            widget.expanded ? Icons.expand_less : Icons.expand_more,
-            size: 18,
-            color: context.colors.textSecondary,
-          ),
-        ],
-      ),
-      children: [
-        PersonalizationSearchField(
-          controller: _query,
-          hintText: 'Search themes',
-          onChanged: (_) => setState(() {}),
-        ),
-        const SizedBox(height: Spacing.sm),
-        // No height cap: `shrinkWrap` sizes to content and the outer
-        // Settings page is itself scrollable, so a tall preview-card list
-        // doesn't need its own nested scroll region.
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: presets.length,
-          separatorBuilder: (_, _) => Divider(
-            height: 1,
-            color: context.colors.border,
-          ),
-          itemBuilder: (context, index) {
-            final preset = presets[index];
-            final selected = preset == widget.selected;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(RadiusTokens.md),
-                  border: Border.all(
-                    color: selected
-                        ? context.colors.purpleAccent
-                        : context.colors.border,
-                    width: selected ? 1.5 : 1,
-                  ),
-                ),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
+          const SizedBox(height: Spacing.sm),
+          // No height cap: `shrinkWrap` sizes to content and the outer
+          // Settings page is itself scrollable, so a tall preview-card list
+          // doesn't need its own nested scroll region.
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: presets.length,
+            separatorBuilder: (_, _) => Divider(
+              height: 1,
+              color: context.colors.border,
+            ),
+            itemBuilder: (context, index) {
+              final preset = presets[index];
+              final selected = preset == widget.selected;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: Spacing.xs),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(RadiusTokens.md),
-                    onTap: () => widget.onChanged(preset),
-                    child: Padding(
-                      padding: const EdgeInsets.all(Spacing.sm),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _PaletteStrip(
-                            colors: preset.paletteFor(brightness).previewStrip,
-                            height: 28,
-                          ),
-                          const SizedBox(height: Spacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  preset.displayName,
-                                  style: context.typography.body.copyWith(
-                                    fontWeight: selected
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                    color: selected
-                                        ? context.colors.purpleAccent
-                                        : context.colors.textPrimary,
+                    border: Border.all(
+                      color: selected
+                          ? context.colors.purpleAccent
+                          : context.colors.border,
+                      width: selected ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(RadiusTokens.md),
+                      onTap: () => widget.onChanged(preset),
+                      child: Padding(
+                        padding: const EdgeInsets.all(Spacing.sm),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _PaletteStrip(
+                              colors: preset
+                                  .paletteFor(brightness)
+                                  .previewStrip,
+                              height: 28,
+                            ),
+                            const SizedBox(height: Spacing.sm),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    preset.displayName,
+                                    style: context.typography.body.copyWith(
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                      color: selected
+                                          ? context.colors.purpleAccent
+                                          : context.colors.textPrimary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SelectionCheck(selected: selected),
-                            ],
-                          ),
-                        ],
+                                SelectionCheck(selected: selected),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
