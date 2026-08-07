@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/components/inline_help.dart';
-import 'package:ai_tray/core/components/page_header.dart';
+import 'package:ai_tray/core/components/resizable_panel.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
+import 'package:ai_tray/features/layout/layout_providers.dart';
 import 'package:ai_tray/features/sessions/browser/presentation/session_project_grouping.dart';
 import 'package:ai_tray/features/sessions/detail/presentation/session_detail_controller.dart';
 import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
@@ -31,32 +33,60 @@ final class SessionDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(sessionDetailProvider(sessionId));
+    final backButton = IconButton(
+      tooltip: 'Back to Sessions',
+      onPressed: () => Navigator.of(context).pop(),
+      icon: const Icon(Icons.arrow_back),
+    );
 
-    return Scaffold(
-      body: Column(
-        children: [
-          const PageHeader(title: 'Session'),
-          Expanded(
-            child: sessionAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(
-                  key: ValueKey('session-detail-loading'),
-                ),
+    return sessionAsync.when(
+      loading: () => SliverPageScaffold(
+        title: 'Session',
+        leading: backButton,
+        slivers: const [
+          SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(
+                key: ValueKey('session-detail-loading'),
               ),
-              error: (error, stackTrace) {
-                if (error is SessionLoadException &&
-                    error.code == FailureCode.sessionNotFound) {
-                  return const _SessionNotFoundState(
-                    key: ValueKey('session-detail-not-found'),
-                  );
-                }
-                return _SessionDetailError(error: error);
-              },
-              data: (session) => _SessionDetailBody(session: session),
             ),
           ),
         ],
       ),
+      error: (error, stackTrace) {
+        final Widget body;
+        if (error is SessionLoadException &&
+            error.code == FailureCode.sessionNotFound) {
+          body = const _SessionNotFoundState(
+            key: ValueKey('session-detail-not-found'),
+          );
+        } else {
+          body = _SessionDetailError(error: error);
+        }
+        return SliverPageScaffold(
+          title: 'Session',
+          leading: backButton,
+          slivers: [SliverFillRemaining(child: body)],
+        );
+      },
+      data: (session) {
+        final name = projectDisplayName(
+          projectPath: session.projectPath,
+          sanitizedProjectDirName: session.sanitizedProjectDirName,
+        );
+        final fullPath = session.projectPath;
+        return SliverPageScaffold(
+          title: name,
+          subtitle: fullPath != null && fullPath != name ? fullPath : null,
+          titleTrailing: (session.isLive ?? false)
+              ? const StatusBadge(kind: TrayStatusKind.live, compact: true)
+              : null,
+          leading: backButton,
+          slivers: [
+            SliverToBoxAdapter(child: _SessionDetailBody(session: session)),
+          ],
+        );
+      },
     );
   }
 }
@@ -68,67 +98,30 @@ final class _SessionDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = context.typography;
-    final name = projectDisplayName(
-      projectPath: session.projectPath,
-      sanitizedProjectDirName: session.sanitizedProjectDirName,
-    );
-    final fullPath = session.projectPath;
-
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Spacing.contentMaxWidth),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(Spacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: type.section,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (session.isLive ?? false) ...[
-                    const SizedBox(width: Spacing.sm),
-                    const StatusBadge(kind: TrayStatusKind.live, compact: true),
-                  ],
-                ],
-              ),
-              if (fullPath != null && fullPath != name) ...[
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  fullPath,
-                  style: type.caption,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: Spacing.sm),
-              // Incomplete sessions are shown honestly, not silently
-              // (design principle 4) — a killed process is an accepted,
-              // ordinary state, not corruption.
-              if (!session.isComplete) ...[
-                const _IncompleteBanner(key: ValueKey('session-incomplete')),
-                const SizedBox(height: Spacing.md),
-              ],
-              _ContinueConversationSection(
-                sessionId: session.sessionId,
-                workingDirectory: session.projectPath,
-              ),
-              const SizedBox(height: Spacing.md),
-              _QueueTaskSection(
-                sessionId: session.sessionId,
-                workingDirectory: session.projectPath,
-              ),
-              const SizedBox(height: Spacing.md),
-              _AdvancedDetailsSection(session: session),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(Spacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Incomplete sessions are shown honestly, not silently (design
+          // principle 4) — a killed process is an accepted, ordinary
+          // state, not corruption.
+          if (!session.isComplete) ...[
+            const _IncompleteBanner(key: ValueKey('session-incomplete')),
+            const SizedBox(height: Spacing.md),
+          ],
+          _ContinueConversationSection(
+            sessionId: session.sessionId,
+            workingDirectory: session.projectPath,
           ),
-        ),
+          const SizedBox(height: Spacing.md),
+          _QueueTaskSection(
+            sessionId: session.sessionId,
+            workingDirectory: session.projectPath,
+          ),
+          const SizedBox(height: Spacing.md),
+          _AdvancedDetailsSection(session: session),
+        ],
       ),
     );
   }
@@ -163,6 +156,8 @@ final class _ContinueConversationSectionState
     super.dispose();
   }
 
+  static const _panelId = 'session_detail.continue_conversation';
+
   @override
   Widget build(BuildContext context) {
     final type = context.typography;
@@ -173,74 +168,85 @@ final class _ContinueConversationSectionState
     final workingDirectory = widget.workingDirectory;
     final canResume =
         workingDirectory != null && !isBusy && _prompt.text.trim().isNotEmpty;
+    final layout = ref.watch(sessionDetailPanelLayoutProvider).value;
 
     return SectionCard(
-      title: 'Continue conversation',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Picks up where this session left off, in its original working '
-            'directory. Runs right now, in place — never a separate copy.',
-            style: type.caption,
-          ),
-          const SizedBox(height: Spacing.sm),
-          if (workingDirectory == null)
+      padding: EdgeInsets.zero,
+      child: ResizablePanel(
+        panelId: _panelId,
+        title: 'Continue conversation',
+        initialState: layout?[_panelId],
+        defaultExpanded: true,
+        onStateChanged: (state) => unawaited(
+          ref.read(panelLayoutRepositoryProvider).save(_panelId, state),
+        ),
+        bodyBuilder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             Text(
-              'Unavailable — the project path for this session '
-              "couldn't be determined.",
+              'Picks up where this session left off, in its original '
+              'working directory. Runs right now, in place — never a '
+              'separate copy.',
               style: type.caption,
-            )
-          else ...[
-            TextField(
-              key: const ValueKey('resume-prompt-field'),
-              controller: _prompt,
-              maxLines: 3,
-              style: type.body,
-              enabled: !isBusy,
-              decoration: const InputDecoration(hintText: 'Continue with…'),
-              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: Spacing.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                key: const ValueKey('resume-now-button'),
-                onPressed: canResume
-                    ? () => unawaited(
-                        ref
-                            .read(resumeControllerProvider.notifier)
-                            .resume(
-                              sessionId: widget.sessionId,
-                              prompt: _prompt.text.trim(),
-                              workingDirectory: workingDirectory,
-                            ),
-                      )
-                    : null,
-                child: isBusy
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Continue conversation'),
+            if (workingDirectory == null)
+              Text(
+                'Unavailable — the project path for this session '
+                "couldn't be determined.",
+                style: type.caption,
+              )
+            else ...[
+              TextField(
+                key: const ValueKey('resume-prompt-field'),
+                controller: _prompt,
+                maxLines: 3,
+                style: type.body,
+                enabled: !isBusy,
+                decoration: const InputDecoration(hintText: 'Continue with…'),
+                onChanged: (_) => setState(() {}),
               ),
-            ),
+              const SizedBox(height: Spacing.sm),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  key: const ValueKey('resume-now-button'),
+                  onPressed: canResume
+                      ? () => unawaited(
+                          ref
+                              .read(resumeControllerProvider.notifier)
+                              .resume(
+                                sessionId: widget.sessionId,
+                                prompt: _prompt.text.trim(),
+                                workingDirectory: workingDirectory,
+                              ),
+                        )
+                      : null,
+                  child: isBusy
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Continue conversation'),
+                ),
+              ),
+            ],
+            if (resumeState.hasError && !isBusy) ...[
+              const SizedBox(height: Spacing.sm),
+              Text(
+                '${resumeState.error}',
+                key: const ValueKey('resume-error'),
+                style: type.caption.copyWith(color: context.colors.error),
+              ),
+            ],
+            if (showResult) ...[
+              const SizedBox(height: Spacing.md),
+              const SectionDivider(),
+              _ResumeResult(outcome: attempt.outcome),
+            ],
           ],
-          if (resumeState.hasError && !isBusy) ...[
-            const SizedBox(height: Spacing.sm),
-            Text(
-              '${resumeState.error}',
-              key: const ValueKey('resume-error'),
-              style: type.caption.copyWith(color: context.colors.error),
-            ),
-          ],
-          if (showResult) ...[
-            const SizedBox(height: Spacing.md),
-            const SectionDivider(),
-            _ResumeResult(outcome: attempt.outcome),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -377,6 +383,8 @@ final class _QueueTaskSection extends ConsumerStatefulWidget {
 }
 
 final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
+  static const _panelId = 'session_detail.queue_task';
+
   final _prompt = TextEditingController();
   final _budgetCap = TextEditingController();
   bool _submitting = false;
@@ -437,27 +445,21 @@ final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
   Widget build(BuildContext context) {
     final type = context.typography;
     final workingDirectory = widget.workingDirectory;
+    final layout = ref.watch(sessionDetailPanelLayoutProvider).value;
 
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: const ValueKey('queue-task-expansion'),
-          title: Text(
-            'Queue task',
-            style: type.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            'Runs later, unattended, as a separate copy of this session',
-            style: type.caption,
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            Spacing.md,
-            0,
-            Spacing.md,
-            Spacing.md,
-          ),
+    return SectionCard(
+      padding: EdgeInsets.zero,
+      child: ResizablePanel(
+        key: const ValueKey('queue-task-expansion'),
+        panelId: _panelId,
+        title: 'Queue task',
+        subtitle: 'Runs later, unattended, as a separate copy of this session',
+        initialState: layout?[_panelId],
+        onStateChanged: (state) => unawaited(
+          ref.read(panelLayoutRepositoryProvider).save(_panelId, state),
+        ),
+        bodyBuilder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (workingDirectory == null)
               Text(
@@ -542,42 +544,53 @@ final class _QueueTaskSectionState extends ConsumerState<_QueueTaskSection> {
 /// Technical fields (V3: moved under an "Advanced" disclosure at the
 /// bottom of the page instead of leading it — a user resuming or queueing
 /// work rarely needs the model name or raw token counts up front).
-final class _AdvancedDetailsSection extends StatelessWidget {
+final class _AdvancedDetailsSection extends ConsumerStatefulWidget {
   const _AdvancedDetailsSection({required this.session});
 
   final ClaudeSession session;
 
   @override
-  Widget build(BuildContext context) {
-    final type = context.typography;
-    final tokens = session.tokenTotals;
+  ConsumerState<_AdvancedDetailsSection> createState() =>
+      _AdvancedDetailsSectionState();
+}
 
-    return Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: SectionCard(
-        padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          key: const ValueKey('advanced-details-expansion'),
-          title: Text(
-            'Advanced',
-            style: type.body.copyWith(fontWeight: FontWeight.w600),
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            Spacing.md,
-            0,
-            Spacing.md,
-            Spacing.md,
-          ),
+final class _AdvancedDetailsSectionState
+    extends ConsumerState<_AdvancedDetailsSection> {
+  static const _panelId = 'session_detail.advanced';
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = widget.session.tokenTotals;
+    final layout = ref.watch(sessionDetailPanelLayoutProvider).value;
+
+    return SectionCard(
+      padding: EdgeInsets.zero,
+      child: ResizablePanel(
+        key: const ValueKey('advanced-details-expansion'),
+        panelId: _panelId,
+        title: 'Advanced',
+        initialState: layout?[_panelId],
+        onStateChanged: (state) => unawaited(
+          ref.read(panelLayoutRepositoryProvider).save(_panelId, state),
+        ),
+        bodyBuilder: (context) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            InfoRow(label: 'Model', value: session.model ?? '—'),
-            InfoRow(label: 'Git branch', value: session.gitBranch ?? '—'),
+            InfoRow(label: 'Model', value: widget.session.model ?? '—'),
+            InfoRow(
+              label: 'Git branch',
+              value: widget.session.gitBranch ?? '—',
+            ),
             InfoRow(
               label: 'Last activity',
               value: UsageStatusMapper.relativeUpdated(
-                session.lastActivityAt,
+                widget.session.lastActivityAt,
               ),
             ),
-            InfoRow(label: 'Messages', value: '${session.messageCount}'),
+            InfoRow(
+              label: 'Messages',
+              value: '${widget.session.messageCount}',
+            ),
             InfoRow(label: 'Input tokens', value: '${tokens.inputTokens}'),
             InfoRow(label: 'Output tokens', value: '${tokens.outputTokens}'),
           ],

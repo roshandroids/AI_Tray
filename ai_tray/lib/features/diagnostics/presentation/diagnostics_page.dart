@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/components/status_badge.dart';
 import 'package:ai_tray/core/di/providers.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
@@ -86,294 +86,289 @@ final class DiagnosticsPage extends ConsumerWidget {
             final settings = settingsSnap.data;
             final themeLabel = (themePref ?? settings?.themeMode)?.label ?? '—';
 
-            return Scaffold(
-              body: Column(
-                children: [
-                  PageHeader(
-                    title: 'Diagnostics',
-                    actions: [
-                      StatusBadge(kind: kind, compact: true),
-                      IconButton(
-                        tooltip: 'Open logs',
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          ref
-                              .read(appShellDestinationProvider.notifier)
-                              .select(AppDestination.logs);
-                        },
-                        icon: const Icon(Icons.article_outlined),
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final wide = constraints.maxWidth >= 720;
-                        final panels = [
-                          SectionCard(
-                            title: 'Application',
-                            child: Semantics(
-                              container: true,
-                              label: 'Application diagnostics',
+            return SliverPageScaffold(
+              title: 'Diagnostics',
+              actions: [
+                StatusBadge(kind: kind, compact: true),
+                IconButton(
+                  tooltip: 'Open logs',
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    ref
+                        .read(appShellDestinationProvider.notifier)
+                        .select(AppDestination.logs);
+                  },
+                  icon: const Icon(Icons.article_outlined),
+                ),
+              ],
+              slivers: [
+                SliverToBoxAdapter(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final wide = constraints.maxWidth >= 720;
+                      final panels = [
+                        SectionCard(
+                          title: 'Application',
+                          child: Semantics(
+                            container: true,
+                            label: 'Application diagnostics',
+                            child: Column(
+                              children: [
+                                InfoRow(
+                                  label: 'App version',
+                                  value: appVersionLabel,
+                                ),
+                                InfoRow(
+                                  label: '${selectedProvider.displayName} CLI',
+                                  value: '—',
+                                ),
+                                InfoRow(label: 'Theme', value: themeLabel),
+                                InfoRow(
+                                  label: 'Platform',
+                                  value: _platformLabel(),
+                                ),
+                                InfoRow(
+                                  label: 'Architecture',
+                                  value: _archLabel(),
+                                ),
+                                const InfoRow(
+                                  label: 'Build',
+                                  value: kReleaseMode ? 'Release' : 'Debug',
+                                ),
+                                InfoRow(
+                                  label: 'Provider',
+                                  value: selectedProvider.sourceLabel,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SectionCard(
+                          title: 'Refresh',
+                          child: Column(
+                            children: [
+                              InfoRow(
+                                label: 'Mode',
+                                value: settings == null
+                                    ? '—'
+                                    : settings.autoRefreshEnabled
+                                    ? 'Auto'
+                                    : 'Manual',
+                              ),
+                              InfoRow(
+                                label: 'Interval',
+                                value: settings == null
+                                    ? '—'
+                                    : '${settings.refreshInterval.inSeconds}'
+                                          's',
+                              ),
+                              InfoRow(
+                                label: 'Phase',
+                                value: status.phase.name,
+                              ),
+                              InfoRow(
+                                label: 'Status',
+                                value: UsageStatusMapper.label(kind),
+                                valueColor: _statusColor(context, kind),
+                              ),
+                              InfoRow(
+                                label: 'Last success',
+                                value: UsageStatusMapper.relativeUpdated(
+                                  status.lastSuccessAt,
+                                ),
+                              ),
+                              InfoRow(
+                                label: 'Last failure',
+                                value: result?.status == RefreshOutcome.failure
+                                    ? (error?.message ?? 'failure')
+                                    : '—',
+                                valueColor:
+                                    result?.status == RefreshOutcome.failure
+                                    ? context.colors.error
+                                    : null,
+                                repairLabel:
+                                    result?.status == RefreshOutcome.failure
+                                    ? 'Retry'
+                                    : null,
+                                onRepair:
+                                    result?.status == RefreshOutcome.failure
+                                    ? () => unawaited(
+                                        repository.refresh(manual: true),
+                                      )
+                                    : null,
+                              ),
+                              InfoRow(
+                                label: 'Duration',
+                                value: result == null
+                                    ? '—'
+                                    : '${result.duration.inMilliseconds}ms',
+                              ),
+                              InfoRow(
+                                label: 'Soft fails',
+                                value: '${status.consecutiveSoftFailures}',
+                              ),
+                              InfoRow(
+                                label: 'Hard fails',
+                                value: '${status.consecutiveHardFailures}',
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (selectedProvider.providerId == ProviderId.copilot)
+                          KeyedSubtree(
+                            key: _healthPanelKey,
+                            child: _CopilotDiagnosticsPanel(
+                              state: copilotDiagnostics,
+                              onRetry: () => unawaited(
+                                ref
+                                    .read(copilotDiagnosticsProvider.notifier)
+                                    .retry(),
+                              ),
+                            ),
+                          )
+                        else
+                          KeyedSubtree(
+                            key: _healthPanelKey,
+                            child: SectionCard(
+                              title: 'Parser / Cache',
                               child: Column(
                                 children: [
                                   InfoRow(
-                                    label: 'App version',
-                                    value: appVersionLabel,
+                                    label: 'Parser',
+                                    value: parser?.shape.name ?? '—',
                                   ),
                                   InfoRow(
-                                    label:
-                                        '${selectedProvider.displayName} CLI',
-                                    value: '—',
+                                    label: 'Validation',
+                                    value: parser?.validation.name ?? '—',
+                                    valueColor:
+                                        parser?.validation ==
+                                            ValidationStatus.invalid
+                                        ? context.colors.error
+                                        : null,
+                                    repairLabel:
+                                        parser?.validation ==
+                                            ValidationStatus.invalid
+                                        ? 'Force refresh'
+                                        : null,
+                                    onRepair:
+                                        parser?.validation ==
+                                            ValidationStatus.invalid
+                                        ? () => unawaited(
+                                            repository.refresh(
+                                              manual: true,
+                                            ),
+                                          )
+                                        : null,
                                   ),
-                                  InfoRow(label: 'Theme', value: themeLabel),
                                   InfoRow(
-                                    label: 'Platform',
-                                    value: _platformLabel(),
+                                    label: 'Session line',
+                                    value: parser == null
+                                        ? '—'
+                                        : parser.matchedSessionLine
+                                        ? 'matched'
+                                        : 'miss',
                                   ),
                                   InfoRow(
-                                    label: 'Architecture',
-                                    value: _archLabel(),
-                                  ),
-                                  const InfoRow(
-                                    label: 'Build',
-                                    value: kReleaseMode ? 'Release' : 'Debug',
+                                    label: 'Week lines',
+                                    value: parser == null
+                                        ? '—'
+                                        : '${parser.matchedWeekLineCount}',
                                   ),
                                   InfoRow(
-                                    label: 'Provider',
-                                    value: selectedProvider.sourceLabel,
+                                    label: 'Cache',
+                                    value: usage == null
+                                        ? 'empty'
+                                        : usage.isFromCache
+                                        ? 'LKG'
+                                        : 'live',
+                                    valueColor: usage == null
+                                        ? context.colors.textMuted
+                                        : usage.isFromCache
+                                        ? context.colors.warning
+                                        : context.colors.success,
+                                  ),
+                                  InfoRow(
+                                    label: 'Exit code',
+                                    value:
+                                        result?.cliExitCode?.toString() ?? '—',
+                                  ),
+                                  InfoRow(
+                                    label: 'CLI binary',
+                                    value:
+                                        (settings
+                                                ?.claudeBinaryPath
+                                                ?.isNotEmpty ??
+                                            false)
+                                        ? settings!.claudeBinaryPath!
+                                        : 'claude (PATH)',
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          SectionCard(
-                            title: 'Refresh',
-                            child: Column(
-                              children: [
-                                InfoRow(
-                                  label: 'Mode',
-                                  value: settings == null
-                                      ? '—'
-                                      : settings.autoRefreshEnabled
-                                      ? 'Auto'
-                                      : 'Manual',
-                                ),
-                                InfoRow(
-                                  label: 'Interval',
-                                  value: settings == null
-                                      ? '—'
-                                      : '${settings.refreshInterval.inSeconds}'
-                                            's',
-                                ),
-                                InfoRow(
-                                  label: 'Phase',
-                                  value: status.phase.name,
-                                ),
-                                InfoRow(
-                                  label: 'Status',
-                                  value: UsageStatusMapper.label(kind),
-                                  valueColor: _statusColor(context, kind),
-                                ),
-                                InfoRow(
-                                  label: 'Last success',
-                                  value: UsageStatusMapper.relativeUpdated(
-                                    status.lastSuccessAt,
-                                  ),
-                                ),
-                                InfoRow(
-                                  label: 'Last failure',
-                                  value:
-                                      result?.status == RefreshOutcome.failure
-                                      ? (error?.message ?? 'failure')
-                                      : '—',
-                                  valueColor:
-                                      result?.status == RefreshOutcome.failure
-                                      ? context.colors.error
-                                      : null,
-                                  repairLabel:
-                                      result?.status == RefreshOutcome.failure
-                                      ? 'Retry'
-                                      : null,
-                                  onRepair:
-                                      result?.status == RefreshOutcome.failure
-                                      ? () => unawaited(
-                                          repository.refresh(manual: true),
-                                        )
-                                      : null,
-                                ),
-                                InfoRow(
-                                  label: 'Duration',
-                                  value: result == null
-                                      ? '—'
-                                      : '${result.duration.inMilliseconds}ms',
-                                ),
-                                InfoRow(
-                                  label: 'Soft fails',
-                                  value: '${status.consecutiveSoftFailures}',
-                                ),
-                                InfoRow(
-                                  label: 'Hard fails',
-                                  value: '${status.consecutiveHardFailures}',
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (selectedProvider.providerId == ProviderId.copilot)
-                            KeyedSubtree(
-                              key: _healthPanelKey,
-                              child: _CopilotDiagnosticsPanel(
-                                state: copilotDiagnostics,
-                                onRetry: () => unawaited(
+                        SectionCard(
+                          title: 'Tools',
+                          child: Wrap(
+                            spacing: Spacing.sm,
+                            runSpacing: Spacing.sm,
+                            children: [
+                              _ToolButton(
+                                label: 'Force refresh',
+                                onPressed:
+                                    status.phase == RefreshPhase.refreshing
+                                    ? null
+                                    : () => unawaited(
+                                        repository.refresh(manual: true),
+                                      ),
+                              ),
+                              _ToolButton(
+                                label: 'Open logs',
+                                onPressed: () {
+                                  Navigator.of(context).pop();
                                   ref
-                                      .read(copilotDiagnosticsProvider.notifier)
-                                      .retry(),
-                                ),
+                                      .read(
+                                        appShellDestinationProvider.notifier,
+                                      )
+                                      .select(AppDestination.logs);
+                                },
                               ),
-                            )
-                          else
-                            KeyedSubtree(
-                              key: _healthPanelKey,
-                              child: SectionCard(
-                                title: 'Parser / Cache',
-                                child: Column(
-                                  children: [
-                                    InfoRow(
-                                      label: 'Parser',
-                                      value: parser?.shape.name ?? '—',
-                                    ),
-                                    InfoRow(
-                                      label: 'Validation',
-                                      value: parser?.validation.name ?? '—',
-                                      valueColor:
-                                          parser?.validation ==
-                                              ValidationStatus.invalid
-                                          ? context.colors.error
-                                          : null,
-                                      repairLabel:
-                                          parser?.validation ==
-                                              ValidationStatus.invalid
-                                          ? 'Force refresh'
-                                          : null,
-                                      onRepair:
-                                          parser?.validation ==
-                                              ValidationStatus.invalid
-                                          ? () => unawaited(
-                                              repository.refresh(
-                                                manual: true,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
-                                    InfoRow(
-                                      label: 'Session line',
-                                      value: parser == null
-                                          ? '—'
-                                          : parser.matchedSessionLine
-                                          ? 'matched'
-                                          : 'miss',
-                                    ),
-                                    InfoRow(
-                                      label: 'Week lines',
-                                      value: parser == null
-                                          ? '—'
-                                          : '${parser.matchedWeekLineCount}',
-                                    ),
-                                    InfoRow(
-                                      label: 'Cache',
-                                      value: usage == null
-                                          ? 'empty'
-                                          : usage.isFromCache
-                                          ? 'LKG'
-                                          : 'live',
-                                      valueColor: usage == null
-                                          ? context.colors.textMuted
-                                          : usage.isFromCache
-                                          ? context.colors.warning
-                                          : context.colors.success,
-                                    ),
-                                    InfoRow(
-                                      label: 'Exit code',
-                                      value:
-                                          result?.cliExitCode?.toString() ??
-                                          '—',
-                                    ),
-                                    InfoRow(
-                                      label: 'CLI binary',
-                                      value:
-                                          (settings
-                                                  ?.claudeBinaryPath
-                                                  ?.isNotEmpty ??
-                                              false)
-                                          ? settings!.claudeBinaryPath!
-                                          : 'claude (PATH)',
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          SectionCard(
-                            title: 'Tools',
-                            child: Wrap(
-                              spacing: Spacing.sm,
-                              runSpacing: Spacing.sm,
-                              children: [
-                                _ToolButton(
-                                  label: 'Force refresh',
-                                  onPressed:
-                                      status.phase == RefreshPhase.refreshing
-                                      ? null
-                                      : () => unawaited(
-                                          repository.refresh(manual: true),
-                                        ),
-                                ),
-                                _ToolButton(
-                                  label: 'Open logs',
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    ref
-                                        .read(
-                                          appShellDestinationProvider.notifier,
-                                        )
-                                        .select(AppDestination.logs);
-                                  },
-                                ),
-                                _ToolButton(
-                                  label: 'Copy diagnostics',
-                                  onPressed: () => unawaited(
-                                    _copyDiagnostics(
-                                      context,
-                                      appVersion: appVersionLabel,
-                                      status: status,
-                                      settings: settings,
-                                      theme: themePref,
-                                      logger: logger,
-                                    ),
+                              _ToolButton(
+                                label: 'Copy diagnostics',
+                                onPressed: () => unawaited(
+                                  _copyDiagnostics(
+                                    context,
+                                    appVersion: appVersionLabel,
+                                    status: status,
+                                    settings: settings,
+                                    theme: themePref,
+                                    logger: logger,
                                   ),
                                 ),
-                                _ToolButton(
-                                  label: 'Export logs',
-                                  onPressed: () =>
-                                      unawaited(_exportLogs(context, logger)),
+                              ),
+                              _ToolButton(
+                                label: 'Export logs',
+                                onPressed: () =>
+                                    unawaited(_exportLogs(context, logger)),
+                              ),
+                              _ToolButton(
+                                label: 'Test notification',
+                                onPressed: () => unawaited(
+                                  _testNotification(context, ref),
                                 ),
-                                _ToolButton(
-                                  label: 'Test notification',
-                                  onPressed: () => unawaited(
-                                    _testNotification(context, ref),
-                                  ),
-                                ),
-                                _ToolButton(
-                                  label: 'Show cache',
-                                  onPressed: () =>
-                                      unawaited(_showCache(context, ref)),
-                                ),
-                              ],
-                            ),
+                              ),
+                              _ToolButton(
+                                label: 'Show cache',
+                                onPressed: () =>
+                                    unawaited(_showCache(context, ref)),
+                              ),
+                            ],
                           ),
-                        ];
+                        ),
+                      ];
 
-                        return ListView(
-                          padding: const EdgeInsets.all(Spacing.md),
+                      return Padding(
+                        padding: const EdgeInsets.all(Spacing.md),
+                        child: Column(
                           children: [
                             if (wide)
                               Row(
@@ -405,12 +400,12 @@ final class DiagnosticsPage extends ConsumerWidget {
                               panels[3],
                             ],
                           ],
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           },
         );

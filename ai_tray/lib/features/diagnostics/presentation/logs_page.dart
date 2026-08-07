@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:ai_tray/core/components/log_chip.dart';
 import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/tray_accordion.dart';
 import 'package:ai_tray/core/logging/buffered_app_logger.dart';
 import 'package:ai_tray/core/logging/log_entry.dart';
 import 'package:ai_tray/core/logging/log_level.dart';
@@ -33,6 +34,10 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
   String? _providerFilter;
   bool _groupByProvider = false;
   final Set<String> _expandedKeys = {};
+  // Membership means collapsed — every group defaults to expanded, matching
+  // the previous `ExpansionTile(initiallyExpanded: true)` behavior, without
+  // needing to pre-populate a set for groups that don't exist yet.
+  final Set<String> _collapsedGroups = {};
   StreamSubscription<List<LogEntry>>? _sub;
   List<LogEntry> _entries = const [];
 
@@ -240,27 +245,41 @@ final class _LogsPageState extends ConsumerState<LogsPage> {
                 ? _GroupedLogList(
                     rows: rows,
                     expandedKeys: _expandedKeys,
+                    collapsedGroups: _collapsedGroups,
                     rowKey: _rowKey,
                     onToggle: (key) => setState(() {
                       if (!_expandedKeys.remove(key)) _expandedKeys.add(key);
                     }),
+                    onToggleGroup: (key) => setState(() {
+                      if (!_collapsedGroups.remove(key)) {
+                        _collapsedGroups.add(key);
+                      }
+                    }),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                    itemCount: rows.length,
-                    itemBuilder: (context, index) {
-                      final entry = rows[index];
-                      final key = _rowKey(entry);
-                      return _LogRow(
-                        entry: entry,
-                        expanded: _expandedKeys.contains(key),
-                        onToggle: () => setState(() {
-                          if (!_expandedKeys.remove(key)) {
-                            _expandedKeys.add(key);
-                          }
-                        }),
-                      );
-                    },
+                : CustomScrollView(
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.md,
+                        ),
+                        sliver: SliverList.builder(
+                          itemCount: rows.length,
+                          itemBuilder: (context, index) {
+                            final entry = rows[index];
+                            final key = _rowKey(entry);
+                            return _LogRow(
+                              entry: entry,
+                              expanded: _expandedKeys.contains(key),
+                              onToggle: () => setState(() {
+                                if (!_expandedKeys.remove(key)) {
+                                  _expandedKeys.add(key);
+                                }
+                              }),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
           ),
           Padding(
@@ -365,20 +384,26 @@ final class _GroupedLogList extends StatelessWidget {
   const _GroupedLogList({
     required this.rows,
     required this.expandedKeys,
+    required this.collapsedGroups,
     required this.rowKey,
     required this.onToggle,
+    required this.onToggleGroup,
   });
 
   final List<LogEntry> rows;
   final Set<String> expandedKeys;
+  final Set<String> collapsedGroups;
   final String Function(LogEntry) rowKey;
   final ValueChanged<String> onToggle;
+  final ValueChanged<String> onToggleGroup;
 
   /// Above this many entries, a group's rows render inside a bounded,
-  /// virtualized `ListView.builder` instead of directly as
-  /// `ExpansionTile.children` — `ExpansionTile` mounts every child
-  /// eagerly (just height-animates them), so a single busy provider could
-  /// otherwise build hundreds of `_LogRow`s at once (§7.1).
+  /// virtualized `ListView.builder` instead of directly as the accordion's
+  /// body — this is independent of `TrayAccordion`'s own lazy `bodyBuilder`
+  /// (which already skips building a collapsed group at all): once a group
+  /// IS expanded, a single busy provider could still have hundreds of
+  /// entries, so that case additionally gets a bounded, virtualized nested
+  /// list instead of mounting every `_LogRow` at once (§7.1).
   static const _virtualizeThreshold = 30;
   static const _virtualizedHeight = 320.0;
 
@@ -390,50 +415,54 @@ final class _GroupedLogList extends StatelessWidget {
     }
     final groupKeys = byProvider.keys.toList()..sort();
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-      itemCount: groupKeys.length,
-      itemBuilder: (context, index) {
-        final key = groupKeys[index];
-        final entries = byProvider[key]!;
-        _LogRow rowBuilder(LogEntry entry) => _LogRow(
-          entry: entry,
-          expanded: expandedKeys.contains(rowKey(entry)),
-          onToggle: () => onToggle(rowKey(entry)),
-        );
-        return Padding(
-          padding: const EdgeInsets.only(bottom: Spacing.sm),
-          child: SectionCard(
-            padding: EdgeInsets.zero,
-            child: Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                initiallyExpanded: true,
-                title: Text(
-                  '${key.toUpperCase()} · ${entries.length}',
-                  style: context.typography.body.copyWith(
-                    fontWeight: FontWeight.w600,
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
+          sliver: SliverList.builder(
+            itemCount: groupKeys.length,
+            itemBuilder: (context, index) {
+              final key = groupKeys[index];
+              final entries = byProvider[key]!;
+              _LogRow rowBuilder(LogEntry entry) => _LogRow(
+                entry: entry,
+                expanded: expandedKeys.contains(rowKey(entry)),
+                onToggle: () => onToggle(rowKey(entry)),
+              );
+              return Padding(
+                padding: const EdgeInsets.only(bottom: Spacing.sm),
+                child: SectionCard(
+                  padding: EdgeInsets.zero,
+                  child: TrayAccordion(
+                    title: '${key.toUpperCase()} · ${entries.length}',
+                    headerStyle: AccordionHeaderStyle.sectionLabel,
+                    isExpanded: !collapsedGroups.contains(key),
+                    onExpandedChanged: (_) => onToggleGroup(key),
+                    bodyBuilder: (context) => Padding(
+                      padding: const EdgeInsets.only(bottom: Spacing.sm),
+                      child: entries.length > _virtualizeThreshold
+                          ? SizedBox(
+                              height: _virtualizedHeight,
+                              child: ListView.builder(
+                                itemCount: entries.length,
+                                itemBuilder: (context, i) =>
+                                    rowBuilder(entries[i]),
+                              ),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                for (final entry in entries) rowBuilder(entry),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
-                childrenPadding: const EdgeInsets.only(bottom: Spacing.sm),
-                children: entries.length > _virtualizeThreshold
-                    ? [
-                        SizedBox(
-                          height: _virtualizedHeight,
-                          child: ListView.builder(
-                            itemCount: entries.length,
-                            itemBuilder: (context, i) => rowBuilder(entries[i]),
-                          ),
-                        ),
-                      ]
-                    : [for (final entry in entries) rowBuilder(entry)],
-              ),
-            ),
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }

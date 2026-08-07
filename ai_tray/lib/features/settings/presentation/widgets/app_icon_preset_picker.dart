@@ -1,3 +1,4 @@
+import 'package:ai_tray/core/components/tray_accordion.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
 import 'package:ai_tray/core/theme/theme_context.dart';
 import 'package:ai_tray/theme/app_icons.dart';
@@ -26,65 +27,57 @@ class AppIconPresetPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      key: ValueKey('icon-$expanded'),
-      initiallyExpanded: expanded,
-      onExpansionChanged: onExpansionChanged,
-      title: Text('App Icon', style: context.typography.body),
-      subtitle: Text(selected.displayName, style: context.typography.caption),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+    return TrayAccordion(
+      title: 'App Icon',
+      subtitle: selected.displayName,
+      isExpanded: expanded,
+      onExpandedChanged: onExpansionChanged,
+      padding: const EdgeInsets.symmetric(vertical: Spacing.sm),
+      trailing: Image.asset(
+        selected.previewAssetPath,
+        width: 22,
+        height: 22,
+        filterQuality: FilterQuality.medium,
+      ),
+      bodyBuilder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Image.asset(
-            selected.previewAssetPath,
-            width: 22,
-            height: 22,
-            filterQuality: FilterQuality.medium,
-          ),
-          const SizedBox(width: Spacing.xs),
-          Icon(
-            expanded ? Icons.expand_less : Icons.expand_more,
-            size: 18,
-            color: context.colors.textSecondary,
+          if (!isSupported) ...[
+            Text(unsupportedMessage, style: context.typography.caption),
+            const SizedBox(height: Spacing.sm),
+          ],
+          Opacity(
+            opacity: isSupported ? 1 : 0.55,
+            child: IgnorePointer(
+              ignoring: !isSupported,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = constraints.maxWidth < 320 ? 4 : 6;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: AppIconPresets.all.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: Spacing.sm,
+                      crossAxisSpacing: Spacing.sm,
+                      childAspectRatio: 0.9,
+                    ),
+                    itemBuilder: (context, index) {
+                      final preset = AppIconPresets.all[index];
+                      return _IconTile(
+                        preset: preset,
+                        selected: preset == selected,
+                        onTap: () => onChanged(preset),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),
-      children: [
-        if (!isSupported) ...[
-          Text(unsupportedMessage, style: context.typography.caption),
-          const SizedBox(height: Spacing.sm),
-        ],
-        Opacity(
-          opacity: isSupported ? 1 : 0.55,
-          child: IgnorePointer(
-            ignoring: !isSupported,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final crossAxisCount = constraints.maxWidth < 320 ? 4 : 6;
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: AppIconPresets.all.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    mainAxisSpacing: Spacing.sm,
-                    crossAxisSpacing: Spacing.sm,
-                    childAspectRatio: 0.9,
-                  ),
-                  itemBuilder: (context, index) {
-                    final preset = AppIconPresets.all[index];
-                    return _IconTile(
-                      preset: preset,
-                      selected: preset == selected,
-                      onTap: () => onChanged(preset),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

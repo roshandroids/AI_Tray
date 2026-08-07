@@ -1,5 +1,7 @@
 import 'package:ai_tray/core/errors/failure_code.dart';
 import 'package:ai_tray/core/logging/logging_providers.dart';
+import 'package:ai_tray/features/layout/domain/models/panel_layout_state.dart';
+import 'package:ai_tray/features/layout/layout_providers.dart';
 import 'package:ai_tray/features/sessions/domain/models/claude_session.dart';
 import 'package:ai_tray/features/sessions/session_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,3 +83,13 @@ final sessionDetailProvider = FutureProvider.family<ClaudeSession, String>((
   }
   return result.valueOrNull!;
 });
+
+/// Loads persisted `ResizablePanel` heights/expanded state for this page's
+/// three sections (V4 §1.4). Tolerant of a load failure (returns an empty
+/// map, same as a fresh install) — a panel simply falls back to its own
+/// default size/expansion rather than blocking the page.
+final sessionDetailPanelLayoutProvider =
+    FutureProvider<Map<String, PanelLayoutState>>((ref) async {
+      final result = await ref.read(panelLayoutRepositoryProvider).loadAll();
+      return result.valueOrNull ?? const {};
+    });

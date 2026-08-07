@@ -14,12 +14,18 @@ import 'package:ai_tray/features/sessions/domain/models/session_token_totals.dar
 import 'package:ai_tray/features/sessions/queue/data/repositories/fake_resume_queue_repository.dart';
 import 'package:ai_tray/features/sessions/queue/queue_providers.dart';
 import 'package:ai_tray/features/sessions/session_providers.dart';
+import 'package:ai_tray/features/settings/settings_providers.dart';
 import 'package:ai_tray/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUpAll(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   ClaudeSession session({
     required String id,
     bool isComplete = true,
@@ -49,9 +55,11 @@ void main() {
     FakeProcessRunner? resumeRunner,
     FakeResumeQueueRepository? queueRepository,
   }) async {
+    final prefs = await SharedPreferences.getInstance();
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
           sessionRepositoryProvider.overrideWithValue(repository),
           resumeQueueRepositoryProvider.overrideWithValue(
             queueRepository ?? FakeResumeQueueRepository(),
@@ -75,12 +83,14 @@ void main() {
   }
 
   Future<void> expandAdvanced(WidgetTester tester) async {
-    await tester.tap(find.text('Advanced'));
+    // The Advanced panel's header uses TrayAccordion's sectionLabel style,
+    // which uppercases the title to match SectionCard's header convention.
+    await tester.tap(find.text('ADVANCED'));
     await tester.pumpAndSettle();
   }
 
   Future<void> expandQueueTask(WidgetTester tester) async {
-    await tester.tap(find.text('Queue task'));
+    await tester.tap(find.text('QUEUE TASK'));
     await tester.pumpAndSettle();
   }
 
@@ -100,6 +110,45 @@ void main() {
     expect(find.text('claude-opus-5'), findsOneWidget);
     expect(find.text('main'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
+  });
+
+  testWidgets('back button pops to the previous page', (tester) async {
+    final repository = FakeSessionRepository()..setSession(session(id: 'abc'));
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          sessionRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.dark(),
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SessionDetailPage(sessionId: 'abc'),
+                    ),
+                  ),
+                  child: const Text('Open session'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open session'));
+    await tester.pumpAndSettle();
+    expect(find.text('ai-tray'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    expect(find.text('Open session'), findsOneWidget);
   });
 
   testWidgets('renders the session-not-found state instead of throwing', (
@@ -341,6 +390,7 @@ void main() {
       await tester.ensureVisible(
         find.byKey(const ValueKey('enqueue-submit-button')),
       );
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('enqueue-submit-button')));
       await tester.pumpAndSettle();
 

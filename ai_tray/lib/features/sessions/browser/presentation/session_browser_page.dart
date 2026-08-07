@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:ai_tray/core/components/empty_state.dart';
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/session_card.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
@@ -57,39 +57,30 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
   Widget build(BuildContext context) {
     final sessionsAsync = ref.watch(sessionBrowserControllerProvider);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          PageHeader(
-            title: 'Sessions',
-            actions: [
-              IconButton(
-                tooltip: 'Queue',
-                onPressed: () => ref
-                    .read(appShellDestinationProvider.notifier)
-                    .select(AppDestination.queue),
-                icon: const Icon(Icons.pending_actions_outlined),
-              ),
-              IconButton(
-                tooltip: 'Refresh',
-                onPressed: sessionsAsync.isLoading
-                    ? null
-                    : () => unawaited(
-                        ref
-                            .read(sessionBrowserControllerProvider.notifier)
-                            .refresh(),
-                      ),
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Spacing.md,
-              Spacing.sm,
-              Spacing.md,
-              Spacing.sm,
-            ),
+    return SliverPageScaffold(
+      title: 'Sessions',
+      actions: [
+        IconButton(
+          tooltip: 'Queue',
+          onPressed: () => ref
+              .read(appShellDestinationProvider.notifier)
+              .select(AppDestination.queue),
+          icon: const Icon(Icons.pending_actions_outlined),
+        ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: sessionsAsync.isLoading
+              ? null
+              : () => unawaited(
+                  ref.read(sessionBrowserControllerProvider.notifier).refresh(),
+                ),
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(0, Spacing.sm, 0, Spacing.sm),
             child: Semantics(
               textField: true,
               label: 'Filter sessions by project path',
@@ -105,57 +96,59 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
               ),
             ),
           ),
-          Expanded(
-            child: sessionsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(
-                  key: ValueKey('sessions-loading'),
-                ),
+        ),
+        sessionsAsync.when(
+          loading: () => const SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(
+                key: ValueKey('sessions-loading'),
               ),
-              error: (error, stackTrace) => _SessionListError(error: error),
-              data: (sessions) {
-                final filtered = filterSessionsByProjectPath(
-                  sessions,
-                  _search.text,
-                );
-                if (sessions.isEmpty) {
-                  return const _SessionListEmptyState(
-                    key: ValueKey('sessions-empty'),
-                  );
-                }
-                if (filtered.isEmpty) {
-                  return const _SessionListEmptyState(
-                    key: ValueKey('sessions-no-match'),
-                    noMatch: true,
-                  );
-                }
-                final groups = groupSessionsByProject(filtered);
-                _ensureDefaultExpansion(groups);
-                return ListView.builder(
-                  key: const ValueKey('sessions-list'),
-                  padding: const EdgeInsets.symmetric(horizontal: Spacing.md),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _ProjectGroupTile(
-                      group: group,
-                      initiallyExpanded: _expandedKeys.contains(group.key),
-                      onExpansionChanged: (expanded) => setState(() {
-                        if (expanded) {
-                          _expandedKeys.add(group.key);
-                        } else {
-                          _expandedKeys.remove(group.key);
-                        }
-                      }),
-                      onOpenSession: _openSession,
-                    );
-                  },
-                );
-              },
             ),
           ),
-        ],
-      ),
+          error: (error, stackTrace) =>
+              SliverFillRemaining(child: _SessionListError(error: error)),
+          data: (sessions) {
+            final filtered = filterSessionsByProjectPath(
+              sessions,
+              _search.text,
+            );
+            if (sessions.isEmpty) {
+              return const SliverFillRemaining(
+                child: _SessionListEmptyState(key: ValueKey('sessions-empty')),
+              );
+            }
+            if (filtered.isEmpty) {
+              return const SliverFillRemaining(
+                child: _SessionListEmptyState(
+                  key: ValueKey('sessions-no-match'),
+                  noMatch: true,
+                ),
+              );
+            }
+            final groups = groupSessionsByProject(filtered);
+            _ensureDefaultExpansion(groups);
+            return SliverList.builder(
+              key: const ValueKey('sessions-list'),
+              itemCount: groups.length,
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                return _ProjectGroupTile(
+                  group: group,
+                  isExpanded: _expandedKeys.contains(group.key),
+                  onExpandedChanged: (expanded) => setState(() {
+                    if (expanded) {
+                      _expandedKeys.add(group.key);
+                    } else {
+                      _expandedKeys.remove(group.key);
+                    }
+                  }),
+                  onOpenSession: _openSession,
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -163,14 +156,14 @@ final class _SessionBrowserPageState extends ConsumerState<SessionBrowserPage> {
 final class _ProjectGroupTile extends StatelessWidget {
   const _ProjectGroupTile({
     required this.group,
-    required this.initiallyExpanded,
-    required this.onExpansionChanged,
+    required this.isExpanded,
+    required this.onExpandedChanged,
     required this.onOpenSession,
   });
 
   final ProjectGroup group;
-  final bool initiallyExpanded;
-  final ValueChanged<bool> onExpansionChanged;
+  final bool isExpanded;
+  final ValueChanged<bool> onExpandedChanged;
   final ValueChanged<String> onOpenSession;
 
   @override
@@ -192,9 +185,8 @@ final class _ProjectGroupTile extends StatelessWidget {
       title: name,
       subtitle: subtitle,
       hasLiveSession: group.hasLiveSession,
-      initiallyExpanded: initiallyExpanded,
-      onExpansionChanged: onExpansionChanged,
-      storageKey: PageStorageKey('project-group-${group.key}'),
+      isExpanded: isExpanded,
+      onExpandedChanged: onExpandedChanged,
       children: [
         for (final session in group.sessions)
           SessionCard(

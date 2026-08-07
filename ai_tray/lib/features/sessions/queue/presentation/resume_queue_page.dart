@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:ai_tray/core/components/confirmation_dialog.dart';
 import 'package:ai_tray/core/components/empty_state.dart';
 import 'package:ai_tray/core/components/inline_help.dart';
-import 'package:ai_tray/core/components/page_header.dart';
 import 'package:ai_tray/core/components/queue_status_chip.dart';
 import 'package:ai_tray/core/components/section_chrome.dart';
+import 'package:ai_tray/core/components/sliver_page_scaffold.dart';
 import 'package:ai_tray/core/navigation/app_destination.dart';
 import 'package:ai_tray/core/navigation/app_shell_providers.dart';
 import 'package:ai_tray/core/theme/spacing.dart';
@@ -72,132 +72,132 @@ final class _ResumeQueuePageState extends ConsumerState<ResumeQueuePage> {
     final itemsAsync = ref.watch(resumeQueueControllerProvider);
     final notifier = ref.read(resumeQueueControllerProvider.notifier);
 
-    return Scaffold(
-      body: Column(
-        children: [
-          PageHeader(
-            title: 'Queue',
-            actions: [
-              InlineHelp(
-                message:
-                    'Tasks run one at a time, in the background. Nothing '
-                    'executes until you press Run next — queuing a task '
-                    'never starts it on its own.',
-                child: Icon(
-                  Icons.info_outline,
-                  size: 18,
-                  color: context.colors.textMuted,
-                ),
-              ),
-              IconButton(
-                key: const ValueKey('queue-run-next'),
-                tooltip: 'Run next',
-                onPressed: itemsAsync.isLoading
-                    ? null
-                    : () => unawaited(notifier.runNext()),
-                icon: const Icon(Icons.play_arrow),
-              ),
-              IconButton(
-                tooltip: 'Refresh',
-                onPressed: itemsAsync.isLoading
-                    ? null
-                    : () => unawaited(notifier.refresh()),
-                icon: const Icon(Icons.refresh),
-              ),
-            ],
+    return SliverPageScaffold(
+      title: 'Queue',
+      actions: [
+        InlineHelp(
+          message:
+              'Tasks run one at a time, in the background. Nothing '
+              'executes until you press Run next — queuing a task '
+              'never starts it on its own.',
+          child: Icon(
+            Icons.info_outline,
+            size: 18,
+            color: context.colors.textMuted,
           ),
-          Expanded(
-            child: itemsAsync.when(
-              loading: () => Center(
-                child: Semantics(
-                  label: 'Loading resume queue',
-                  child: const CircularProgressIndicator(
-                    key: ValueKey('queue-loading'),
-                  ),
+        ),
+        IconButton(
+          key: const ValueKey('queue-run-next'),
+          tooltip: 'Run next',
+          onPressed: itemsAsync.isLoading
+              ? null
+              : () => unawaited(notifier.runNext()),
+          icon: const Icon(Icons.play_arrow),
+        ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: itemsAsync.isLoading
+              ? null
+              : () => unawaited(notifier.refresh()),
+          icon: const Icon(Icons.refresh),
+        ),
+      ],
+      slivers: [
+        itemsAsync.when(
+          loading: () => SliverFillRemaining(
+            child: Center(
+              child: Semantics(
+                label: 'Loading resume queue',
+                child: const CircularProgressIndicator(
+                  key: ValueKey('queue-loading'),
                 ),
               ),
-              error: (error, stackTrace) => Center(
-                child: Semantics(
-                  label: 'Could not load the resume queue',
-                  child: Text(
-                    'Could not load the resume queue',
-                    key: const ValueKey('queue-error'),
-                    style: context.typography.body,
-                  ),
+            ),
+          ),
+          error: (error, stackTrace) => SliverFillRemaining(
+            child: Center(
+              child: Semantics(
+                label: 'Could not load the resume queue',
+                child: Text(
+                  'Could not load the resume queue',
+                  key: const ValueKey('queue-error'),
+                  style: context.typography.body,
                 ),
               ),
-              data: (items) {
-                if (items.isEmpty) {
-                  return const _QueueEmptyState(key: ValueKey('queue-empty'));
-                }
-                final active = items
-                    .where(
-                      (i) =>
-                          i.status == ResumeQueueStatus.pending ||
-                          i.status == ResumeQueueStatus.running,
-                    )
-                    .toList();
-                final history = items
-                    .where(
-                      (i) =>
-                          i.status != ResumeQueueStatus.pending &&
-                          i.status != ResumeQueueStatus.running,
-                    )
-                    .toList();
-                return Semantics(
-                  container: true,
-                  label:
-                      'Resume queue, ${items.length} '
-                      '${items.length == 1 ? 'item' : 'items'}',
-                  child: ListView(
-                    key: const ValueKey('queue-list'),
-                    padding: const EdgeInsets.all(Spacing.md),
-                    children: [
-                      for (final item in active)
+            ),
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return const SliverFillRemaining(
+                child: _QueueEmptyState(key: ValueKey('queue-empty')),
+              );
+            }
+            final active = items
+                .where(
+                  (i) =>
+                      i.status == ResumeQueueStatus.pending ||
+                      i.status == ResumeQueueStatus.running,
+                )
+                .toList();
+            final history = items
+                .where(
+                  (i) =>
+                      i.status != ResumeQueueStatus.pending &&
+                      i.status != ResumeQueueStatus.running,
+                )
+                .toList();
+            return SliverPadding(
+              padding: const EdgeInsets.all(Spacing.md),
+              sliver: SliverSemantics(
+                container: true,
+                label:
+                    'Resume queue, ${items.length} '
+                    '${items.length == 1 ? 'item' : 'items'}',
+                sliver: SliverList.list(
+                  key: const ValueKey('queue-list'),
+                  children: [
+                    for (final item in active)
+                      _QueueItemTile(
+                        key: ValueKey('queue-item-${item.id}'),
+                        item: item,
+                        onCancel: item.status == ResumeQueueStatus.pending
+                            ? () => unawaited(_cancel(context, notifier, item))
+                            : null,
+                        onRemove: item.status == ResumeQueueStatus.running
+                            ? null
+                            : () => unawaited(notifier.remove(item.id)),
+                        onRetry: item.status == ResumeQueueStatus.failed
+                            ? () => unawaited(notifier.retry(item.id))
+                            : null,
+                      ),
+                    if (history.isNotEmpty) ...[
+                      if (active.isNotEmpty) const SizedBox(height: Spacing.sm),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: Spacing.xs,
+                        ),
+                        child: Text(
+                          'History',
+                          style: context.typography.section,
+                        ),
+                      ),
+                      for (final item in history)
                         _QueueItemTile(
                           key: ValueKey('queue-item-${item.id}'),
                           item: item,
-                          onCancel: item.status == ResumeQueueStatus.pending
-                              ? () =>
-                                    unawaited(_cancel(context, notifier, item))
-                              : null,
-                          onRemove: item.status == ResumeQueueStatus.running
-                              ? null
-                              : () => unawaited(notifier.remove(item.id)),
+                          onRemove: () => unawaited(notifier.remove(item.id)),
                           onRetry: item.status == ResumeQueueStatus.failed
                               ? () => unawaited(notifier.retry(item.id))
                               : null,
                         ),
-                      if (history.isNotEmpty) ...[
-                        if (active.isNotEmpty)
-                          const SizedBox(height: Spacing.sm),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: Spacing.xs,
-                          ),
-                          child: Text(
-                            'History',
-                            style: context.typography.section,
-                          ),
-                        ),
-                        for (final item in history)
-                          _QueueItemTile(
-                            key: ValueKey('queue-item-${item.id}'),
-                            item: item,
-                            onRemove: () => unawaited(notifier.remove(item.id)),
-                            onRetry: item.status == ResumeQueueStatus.failed
-                                ? () => unawaited(notifier.retry(item.id))
-                                : null,
-                          ),
-                      ],
                     ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
