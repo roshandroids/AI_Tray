@@ -5,6 +5,36 @@ Versioning: [SemVer](https://semver.org) on `ai_tray/pubspec.yaml` (single sourc
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-08-07
+
+### Added
+
+**Session Detail**
+- **Resizable panels:** Continue Conversation, Queue Task, and Advanced can
+  now be resized by drag handle (160px–50% of window height); height and
+  expanded/collapsed state persist across launches.
+
+### Fixed
+
+**Session Detail**
+- **Back navigation:** the V3 redesign dropped Session Detail's way back to
+  the Sessions list — restored via the page header's back button, which now
+  also carries the session name, live-status badge, and project path
+  (previously duplicated in the page body).
+- **Accordion spacing:** Queue Task and Advanced used Flutter's stock
+  `ExpansionTile`, whose header padding and title styling didn't match every
+  other card's. Both — and all other expandable panels app-wide (Settings
+  presets, session cards, About's release history, Logs' grouped list) —
+  now share one `TrayAccordion` component with consistent spacing and a
+  smooth expand/collapse animation.
+
+**Settings**
+- **Personalization search:** the Color Theme, Font, and App Icon pickers
+  no longer discard in-progress search text when expanded or collapsed. The
+  pickers were faking controlled expand/collapse with a key trick that
+  destroyed and rebuilt the whole picker — including the search field — on
+  every toggle.
+
 ## [1.4.0] — 2026-08-05
 
 ### Added
